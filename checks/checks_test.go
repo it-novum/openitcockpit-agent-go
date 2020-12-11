@@ -2,6 +2,8 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -23,6 +25,10 @@ func TestChecksWithDefault(t *testing.T) {
 		if r.Result == nil {
 			t.Fatal("invalid result")
 		}
-
+		js, err := json.Marshal(r.Result)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println(js)
 	}
 }
