@@ -1,0 +1,1 @@
+# openitcockpit-agent-go
