@@ -11,11 +11,11 @@ type CheckMem struct {
 }
 
 // Name will be used in the response as check name
-func (m *CheckMem) Name() string {
+func (c *CheckMem) Name() string {
 	return "memory"
 }
 
-type result struct {
+type resultMemory struct {
 	Total     uint64
 	Available uint64
 	Percent   float64
@@ -27,13 +27,13 @@ type result struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (m *CheckMem) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckMem) Run(ctx context.Context) (*CheckResult, error) {
 	v, err := mem.VirtualMemoryWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &CheckResult{
-		Result: &result{
+		Result: &resultMemory{
 			Total:     v.Total,
 			Available: v.Available,
 			Percent:   v.UsedPercent,
@@ -45,13 +45,13 @@ func (m *CheckMem) Run(ctx context.Context) (*CheckResult, error) {
 
 // DefaultConfiguration contains the variables for the configuration file and the default values
 // can be nil if no configuration is required
-func (m *CheckMem) DefaultConfiguration() interface{} {
+func (c *CheckMem) DefaultConfiguration() interface{} {
 	return nil
 }
 
 // Configure should verify the configuration and set it
 // will be run after every reload
 // if DefaultConfiguration returns nil, the parameter will also be nil
-func (m *CheckMem) Configure(_ interface{}) error {
+func (c *CheckMem) Configure(_ interface{}) error {
 	return nil
 }
