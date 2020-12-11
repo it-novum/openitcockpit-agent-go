@@ -10,12 +10,13 @@ import (
 func TestChecksWithDefault(t *testing.T) {
 	checks := []Check{
 		&CheckMem{},
+		&CheckProcess{},
 	}
 
 	for _, c := range checks {
 		config := c.DefaultConfiguration()
 		c.Configure(config)
-		if c.Name() != "memory" {
+		if c.Name() == "" {
 			t.Error("Invalid name")
 		}
 		r, err := c.Run(context.Background())
