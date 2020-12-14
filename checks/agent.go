@@ -2,7 +2,6 @@ package checks
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
@@ -25,6 +24,7 @@ type resultAgent struct {
 	SystemUptime         uint64 `json:"system_uptime"`
 	KernelVersion        string `json:"kernel_version"`
 	MacVersion           string `json:"mac_version"`
+	Family               string `json:"family"`
 	AgentVersion         string `json:"agent_version"`
 	TemperatureUnit      string `json:"temperature_unit"`
 }
@@ -41,9 +41,6 @@ func (c *CheckAgent) Run(ctx context.Context) (*CheckResult, error) {
 
 	kernel, _ := host.KernelVersionWithContext(ctx)
 	platfrom, family, pver, _ := host.PlatformInformationWithContext(ctx)
-	fmt.Println(platfrom)
-	fmt.Println(family)
-	fmt.Println(pver)
 
 	now := time.Now()
 	return &CheckResult{
@@ -54,6 +51,7 @@ func (c *CheckAgent) Run(ctx context.Context) (*CheckResult, error) {
 			SystemUptime:         uptime,
 			KernelVersion:        kernel,
 			MacVersion:           pver,
+			Family:               family,
 			AgentVersion:         config.AgentVersion,
 			TemperatureUnit:      "C",
 		},
