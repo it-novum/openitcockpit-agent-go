@@ -30,6 +30,6 @@ func TestChecksWithDefault(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println(js)
+		fmt.Println(string(js))
 	}
 }
