@@ -14,6 +14,8 @@ func TestChecksWithDefault(t *testing.T) {
 		&CheckAgent{},
 		&CheckSwap{},
 		&CheckUser{},
+		&CheckDisk{},
+		&CheckLoad{},
 	}
 
 	for _, c := range checks {
