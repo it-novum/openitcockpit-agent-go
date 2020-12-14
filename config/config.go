@@ -9,7 +9,7 @@ import (
 
 // Mode - Push or Pull
 type Mode struct {
-	Push bool
+	Push bool `key:"enabled"`
 }
 
 // WebServer will hold the configuration options for the WebServer
@@ -63,19 +63,20 @@ type WindowsEventLog struct {
 
 // Checks which should be enabled and executed by the Agent
 type Checks struct {
-	Interval        int64 `key:"interval"`
-	Docker          bool  `key:"dockerstats"`
-	Qemu            bool  `key:"qemustats"`
-	CPU             bool  `key:"cpustats"`
-	Processes       bool  `key:"processstats"`
-	Netstats        bool  `key:"netstats"`
-	NetIo           bool  `key:"netio"`
-	Diskstats       bool  `key:"diskstats"`
-	DiskIo          bool  `key:"diskio"`
-	WindowsServices bool  `key:"winservices"`
-	WindowsEventLog bool  `key:"wineventlog"`
-	SystemdServices bool  `key:"systemdservices"`
-	Alfresco        bool  `key:"alfrescostats"`
+	Interval           int64  `key:"interval"`
+	Docker             bool   `key:"dockerstats"`
+	Qemu               bool   `key:"qemustats"`
+	CPU                bool   `key:"cpustats"`
+	Processes          bool   `key:"processstats"`
+	Netstats           bool   `key:"netstats"`
+	NetIo              bool   `key:"netio"`
+	Diskstats          bool   `key:"diskstats"`
+	DiskIo             bool   `key:"diskio"`
+	WindowsServices    bool   `key:"winservices"`
+	WindowsEventLog    bool   `key:"wineventlog"`
+	SystemdServices    bool   `key:"systemdservices"`
+	Alfresco           bool   `key:"alfrescostats"`
+	CustomchecksConfig string `key:"customchecks"`
 }
 
 // Configuration with all sub configuration structs
@@ -83,7 +84,7 @@ type Configuration struct {
 	Mode            *Mode
 	WebServer       *WebServer
 	BasicAuth       *BasicAuth
-	TSL             *TLS
+	TLS             *TLS
 	Push            *Push
 	Alfresco        *Alfresco
 	WindowsEventLog *WindowsEventLog
@@ -161,7 +162,7 @@ func (c *Configuration) ReadConfig(config string) error {
 		Port:    3333,
 	}
 	c.BasicAuth = &BasicAuth{}
-	c.TSL = &TLS{
+	c.TLS = &TLS{
 		AutoSslEnabled: true,
 	}
 	c.Push = &Push{}
@@ -170,18 +171,19 @@ func (c *Configuration) ReadConfig(config string) error {
 		types: []string{"System", "Application", "Security"},
 	}
 	c.Checks = &Checks{
-		Interval:        30,
-		Docker:          false,
-		Qemu:            false,
-		CPU:             true,
-		Processes:       true,
-		Netstats:        true,
-		NetIo:           true,
-		Diskstats:       true,
-		DiskIo:          true,
-		WindowsServices: true,
-		WindowsEventLog: true,
-		SystemdServices: true,
+		Interval:           30,
+		CustomchecksConfig: "/etc/openitcockpit-agent/customchecks.cnf",
+		Docker:             false,
+		Qemu:               false,
+		CPU:                true,
+		Processes:          true,
+		Netstats:           true,
+		NetIo:              true,
+		Diskstats:          true,
+		DiskIo:             true,
+		WindowsServices:    true,
+		WindowsEventLog:    true,
+		SystemdServices:    true,
 	}
 
 	cfg, err := ini.Load([]byte(config))
@@ -190,6 +192,11 @@ func (c *Configuration) ReadConfig(config string) error {
 	}
 
 	mapConfig(c.Checks, "default", cfg)
+	mapConfig(c.WebServer, "default", cfg)
+	mapConfig(c.TLS, "default", cfg)
+	mapConfig(c.Push, "oitc", cfg)
+	mapConfig(c.Mode, "oitc", cfg)
+	mapConfig(c.Alfresco, "default", cfg)
 
 	return nil
 
