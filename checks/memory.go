@@ -16,11 +16,14 @@ func (c *CheckMem) Name() string {
 }
 
 type resultMemory struct {
-	Total     uint64
-	Available uint64
-	Percent   float64
-	Used      uint64
-	Free      uint64
+	Total     uint64  `json:"total"`
+	Available uint64  `json:"available"`
+	Percent   float64 `json:"percent"`
+	Used      uint64  `json:"used"`
+	Free      uint64  `json:"free"`
+	Active    uint64  `json:"active"`
+	Inactive  uint64  `json:"inactive"`
+	Wired     uint64  `json:"wired"`
 }
 
 // Run the actual check
@@ -39,6 +42,8 @@ func (c *CheckMem) Run(ctx context.Context) (*CheckResult, error) {
 			Percent:   v.UsedPercent,
 			Used:      v.Used,
 			Free:      v.Free,
+			Inactive:  v.Inactive,
+			Wired:     v.Wired,
 		},
 	}, nil
 }
