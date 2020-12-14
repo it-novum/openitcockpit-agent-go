@@ -8,6 +8,9 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+// AgentVersion as the name says
+const AgentVersion = "2.1.0"
+
 // Mode - Push or Pull
 type Mode struct {
 	Push bool `key:"enabled"`

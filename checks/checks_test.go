@@ -10,7 +10,8 @@ import (
 func TestChecksWithDefault(t *testing.T) {
 	checks := []Check{
 		&CheckMem{},
-		&CheckProcess{},
+		//&CheckProcess{},
+		&CheckAgent{},
 	}
 
 	for _, c := range checks {

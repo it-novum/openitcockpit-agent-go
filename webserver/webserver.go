@@ -89,6 +89,7 @@ func RunAgentWebserver(ctx context.Context, state <-chan []byte, configPush chan
 	}
 
 	go server.ListenAndServe()
+	//go server.ListenAndServeTLS(certFile string, keyFile string)
 	w.run(ctx)
 
 	sdctx, cancel := context.WithTimeout(ctx, time.Second*5)
