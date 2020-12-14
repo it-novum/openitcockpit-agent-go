@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"reflect"
 
 	"gopkg.in/ini.v1"
@@ -202,6 +203,12 @@ func (c *Configuration) ReadConfig(config string) error {
 
 }
 
-func (c *Configuration) ReadConfigFromFile(path string) error {
-	return c.ReadConfig("")
+// ReadConfigFromFile reads the content of the passed ini file to pass it to ReadConfig()
+func (c *Configuration) ReadConfigFromFile(path string) (config string, err error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }

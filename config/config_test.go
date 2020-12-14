@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -222,8 +223,11 @@ func TestAgentVersion1Config(t *testing.T) {
 
 func TestReadConfigFromFile(t *testing.T) {
 	c := &Configuration{}
-	err := c.ReadConfigFromFile("sdfdf")
+	dir, _ := os.Getwd()
+	configPath := fmt.Sprintf("%s%s../config_example.ini", dir, string(os.PathSeparator))
+	config, err := c.ReadConfigFromFile(configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println(config)
 }
