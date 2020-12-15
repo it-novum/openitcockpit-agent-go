@@ -20,7 +20,7 @@ func TestRunPingCommand(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	timeout := 5 * time.Second
-	result, err := runCommand(ctx, command, timeout)
+	result, err := RunCommand(ctx, command, timeout)
 	if err != nil {
 		t.Fatal("there was an error running ping")
 	}
@@ -40,7 +40,7 @@ func TestRunPingCommand(t *testing.T) {
 
 func TestCommandTimeout(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := runCommand(context.Background(), "sleep 10", timeout)
+	result, err := RunCommand(context.Background(), "sleep 10", timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -63,7 +63,7 @@ func TestCommandCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		runCommand(ctx, "sleep 10", timeout)
+		RunCommand(ctx, "sleep 10", timeout)
 		done <- struct{}{}
 	}()
 
@@ -77,7 +77,7 @@ func TestCommandCancel(t *testing.T) {
 
 func TestCommandNotFound(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := runCommand(context.Background(), "foobar 123", timeout)
+	result, err := RunCommand(context.Background(), "foobar 123", timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -95,7 +95,7 @@ func TestCommandNotFound(t *testing.T) {
 
 func TestCommandNotFoundFromOs(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := runCommand(context.Background(), "/foo/bar 123", timeout)
+	result, err := RunCommand(context.Background(), "/foo/bar 123", timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -118,7 +118,7 @@ func TestCommandNotExecutable(t *testing.T) {
 	}
 
 	timeout := 5 * time.Second
-	result, err := runCommand(context.Background(), filename, timeout)
+	result, err := RunCommand(context.Background(), filename, timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -130,7 +130,7 @@ func TestCommandNotExecutable(t *testing.T) {
 
 func TestCommandShlex(t *testing.T) {
 	timeout := 5 * time.Second
-	_, err := runCommand(context.Background(), `blubb "sdf`, timeout)
+	_, err := RunCommand(context.Background(), `blubb "sdf`, timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}

@@ -31,7 +31,7 @@ const (
 	NotFound      = 127
 )
 
-func runCommand(ctx context.Context, commandStr string, timeout time.Duration) (*CommandResult, error) {
+func RunCommand(ctx context.Context, commandStr string, timeout time.Duration) (*CommandResult, error) {
 	result := &CommandResult{}
 	ctxTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
