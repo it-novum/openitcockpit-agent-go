@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"testing"
 )
 
@@ -43,6 +44,10 @@ func TestChecksWithDefault(t *testing.T) {
 }
 
 func TestChecksCheckLaunchdServices(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		t.SkipNow()
+	}
+
 	checks := []Check{
 		&CheckLaunchd{},
 	}
