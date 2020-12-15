@@ -31,13 +31,9 @@ const (
 	NotFound      = 127
 )
 
-func runCommandJohannes(ctx context.Context, args []string, timeout time.Duration) {
-
-}
-
-func runCommand(commandStr string, timeout time.Duration) (*CommandResult, error) {
+func runCommand(ctx context.Context, commandStr string, timeout time.Duration) (*CommandResult, error) {
 	result := &CommandResult{}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctxTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	args, err := shlex.Split(commandStr)
@@ -52,7 +48,7 @@ func runCommand(commandStr string, timeout time.Duration) (*CommandResult, error
 	outputBuf := &bytes.Buffer{}
 	errorBuf := &bytes.Buffer{}
 
-	c := exec.CommandContext(ctx, args[0], args[1:]...)
+	c := exec.CommandContext(ctxTimeout, args[0], args[1:]...)
 	c.Stdout = outputBuf
 	c.Stderr = errorBuf
 
@@ -60,8 +56,8 @@ func runCommand(commandStr string, timeout time.Duration) (*CommandResult, error
 	// https://github.com/golang/go/issues/18874
 	// https://github.com/golang/go/issues/22610
 	go func() {
-		<-ctx.Done()
-		switch ctx.Err() {
+		<-ctxTimeout.Done()
+		switch ctxTimeout.Err() {
 		case context.DeadlineExceeded:
 			if c.Process != nil {
 				//Kill process because of timeout
@@ -76,7 +72,7 @@ func runCommand(commandStr string, timeout time.Duration) (*CommandResult, error
 	}()
 	err = c.Run()
 
-	if ctx.Err() == context.DeadlineExceeded {
+	if ctxTimeout.Err() == context.DeadlineExceeded {
 		result.Stdout = fmt.Sprintf("Custom check %s timed out after %s seconds", strings.Join(args, " "), timeout.String())
 		result.Stderr = fmt.Sprintf("Custom check %s timed out after %s seconds", strings.Join(args, " "), timeout.String())
 		result.RC = Timeout
