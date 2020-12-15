@@ -61,7 +61,7 @@ func runCommand(ctx context.Context, commandStr string, timeout time.Duration) (
 		case context.DeadlineExceeded:
 			if c.Process != nil {
 				//Kill process because of timeout
-				killProcess(c.Process)
+				c.Process.Kill()
 			}
 		case context.Canceled:
 			//Process exited gracefully
