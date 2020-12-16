@@ -42,6 +42,12 @@ func (c *CheckLaunchd) Run(ctx context.Context) (*CheckResult, error) {
 	 *    prints information about the requested job.
 	 *
 	 *    -x       This flag is no longer supported.
+	 *
+	 * user@macos ~ % sudo launchctl list
+	 * PID	Status	Label
+	 * 336	0	com.apple.CoreAuthentication.daemon
+	 * -	0	com.apple.storedownloadd.daemon
+	 * 177	0	com.apple.coreservicesd
 	 */
 	result, err := utils.RunCommand(ctx, "launchctl list", timeout)
 	cancel()
