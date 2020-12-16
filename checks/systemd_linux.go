@@ -5,7 +5,6 @@ package checks
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/coreos/go-systemd/v22/dbus"
 )
@@ -19,10 +18,12 @@ func (c *CheckSystemd) Name() string {
 	return "systemd_services"
 }
 
-type resultServices struct {
-	Load1  float64 `json:"0"`
-	Load5  float64 `json:"1"`
-	Load15 float64 `json:"2"`
+type resultSystemdServices struct {
+	ActiveState string
+	Description string
+	LoadState   string
+	Name        string
+	SubState    string
 }
 
 // Run the actual check
@@ -30,20 +31,38 @@ type resultServices struct {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckSystemd) Run(ctx context.Context) (*CheckResult, error) {
-	return nil, fmt.Errorf("kaputt")
+	systemdResults, err := c.getServiceListViaDbus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &CheckResult{Result: systemdResults}, nil
 }
 
-func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*CheckResult, error) {
+func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*resultSystemdServices, error) {
 	conn, err := dbus.New()
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
-	allUnits, err := conn.ListUnits()
-	fmt.Println(allUnits)
+	units, err := conn.ListUnits()
+	if err != nil {
+		return nil, err
+	}
 
-	systemdResults := make([]*CheckResult, 0, 1)
+	systemdResults := make([]*resultSystemdServices, 0, len(units))
+
+	for _, unit := range units {
+		result := &resultSystemdServices{
+			ActiveState: unit.ActiveState,
+			Description: unit.Description,
+			LoadState:   unit.LoadState,
+			Name:        unit.Name,
+			SubState:    unit.SubState,
+		}
+		systemdResults = append(systemdResults, result)
+	}
+
 	return systemdResults, nil
 }
 
