@@ -29,14 +29,14 @@ func TestChecksWithDefault(t *testing.T) {
 		}
 		r, err := c.Run(context.Background())
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Test of check %s failed with error: %s", c.Name(), err)
 		}
 		if r.Result == nil {
-			t.Fatal("invalid result")
+			t.Fatalf("Test of check %s returned nil", c.Name())
 		}
 		js, err := json.Marshal(r.Result)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Test of check %s returned result that can't be marshaled: %s", c.Name(), err)
 		}
 		fmt.Println(string(js))
 	}
