@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 
 	"gopkg.in/ini.v1"
 )
@@ -201,6 +202,15 @@ func (c *Configuration) ReadConfig(config string) error {
 	mapConfig(c.Push, "oitc", cfg)
 	mapConfig(c.Mode, "oitc", cfg)
 	mapConfig(c.Alfresco, "default", cfg)
+
+	if cfg.Section("default").Key("auth").String() != "" {
+		auth := cfg.Section("default").Key("auth").String()
+		authResult := strings.SplitN(auth, ":", 2)
+		if len(authResult) == 2 {
+			c.BasicAuth.Username = authResult[0]
+			c.BasicAuth.Password = authResult[1]
+		}
+	}
 
 	return nil
 
