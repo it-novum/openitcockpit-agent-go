@@ -12,7 +12,7 @@ import (
 
 func TestRunPingCommand(t *testing.T) {
 	command := "ping 127.0.0.1 -c 1"
-	expected := "PING 127.0.0.1 (127.0.0.1):"
+	expected := "PING 127.0.0.1 (127.0.0.1)"
 	if runtime.GOOS == "windows" {
 		command = "ping 127.0.0.1 -n 1"
 		expected = "127.0.0.1"
