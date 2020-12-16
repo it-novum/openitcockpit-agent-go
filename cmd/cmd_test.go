@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path"
 	"runtime"
 	"testing"
 )
@@ -18,6 +23,12 @@ func init() {
 
 func TestExecute(t *testing.T) {
 	out := &bytes.Buffer{}
+	testDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(testDir) // clean up
+	testLogPath = path.Join(testDir, "agent.log")
 
 	okTests := [][]string{
 		{"--help"},
@@ -41,6 +52,12 @@ func TestExecute(t *testing.T) {
 
 func TestExecuteFail(t *testing.T) {
 	out := &bytes.Buffer{}
+	testDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(testDir) // clean up
+	testLogPath = path.Join(testDir, "agent.log")
 
 	okTests := [][]string{
 		{"--nonexisting"},
@@ -56,6 +73,32 @@ func TestExecuteFail(t *testing.T) {
 		err := Execute()
 		if err == nil {
 			t.Errorf("test failed \"%+v\"", args)
+		}
+	}
+}
+
+func TestExecuteLogPathNotExists(t *testing.T) {
+	out := &bytes.Buffer{}
+	testDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(testDir) // clean up
+	testLogPath = path.Join(testDir, "nonexisting", "agent.log")
+
+	okTests := [][]string{
+		{"-c", testConfigPath},
+	}
+	for _, args := range okTests {
+		initCommand()
+		rootCmd.SetArgs(args)
+		rootCmd.SetOut(out)
+		rootCmd.SetErr(out)
+		err := Execute()
+		if err == nil {
+			t.Errorf("test failed \"%+v\"", args)
+		} else {
+			fmt.Println(err)
 		}
 	}
 }
