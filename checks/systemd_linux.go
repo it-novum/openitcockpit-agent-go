@@ -1,8 +1,5 @@
 package checks
 
-//  https://github.com/coreos/go-systemd/issues/302#issuecomment-599412253
-// 	""
-
 import (
 	"context"
 

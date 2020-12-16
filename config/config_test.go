@@ -72,7 +72,7 @@ autossl-ca-file = /etc/autossl/server_ca.ca
 verbose = false
 stacktrace = false
 config-update-mode = false
-auth =
+auth = username:pass:word
 customchecks = C:\Program Files\it-novum\openitcockpit-agent\customchecks.cnf
 temperature-fahrenheit = false
 dockerstats = false
@@ -215,6 +215,14 @@ func TestAgentVersion1Config(t *testing.T) {
 
 	if c.Mode.Push != true {
 		t.Error("Push Mode expect to be true")
+	}
+
+	if c.BasicAuth.Username != "username" {
+		t.Error("BasicAuth username expect to be 'username'")
+	}
+
+	if c.BasicAuth.Password != "pass:word" {
+		t.Error("BasicAuth password expect to be 'pass:word'")
 	}
 
 	js, _ := json.MarshalIndent(c, "", "    ")
