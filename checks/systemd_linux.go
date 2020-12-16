@@ -7,12 +7,12 @@ import (
 	"github.com/coreos/go-systemd/dbus"
 )
 
-// CheckServices gathers information about Systemd services
-type CheckServices struct {
+// CheckSystemd gathers information about Systemd services
+type CheckSystemd struct {
 }
 
 // Name will be used in the response as check name
-func (c *CheckServices) Name() string {
+func (c *CheckSystemd) Name() string {
 	return "systemd_services"
 }
 
@@ -26,7 +26,7 @@ type resultServices struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckServices) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckSystemd) Run(ctx context.Context) (*CheckResult, error) {
 	err := nil
 	if err != nil {
 		return nil, err
@@ -50,15 +50,28 @@ func (c *CheckServices) Run(ctx context.Context) (*CheckResult, error) {
 	}, nil
 }
 
+func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*CheckResult, error) {
+	conn, err := dbus.New()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get dbus connection: %s", err)
+	}
+	units, err := conn.ListUnits()
+	conn.Close()
+	fmt.Println(units)
+
+	systemdResults := make([]*CheckResult, 0, 1)
+	return systemdResults, nil
+}
+
 // DefaultConfiguration contains the variables for the configuration file and the default values
 // can be nil if no configuration is required
-func (c *CheckServices) DefaultConfiguration() interface{} {
+func (c *CheckSystemd) DefaultConfiguration() interface{} {
 	return nil
 }
 
 // Configure should verify the configuration and set it
 // will be run after every reload
 // if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckServices) Configure(_ interface{}) error {
+func (c *CheckSystemd) Configure(_ interface{}) error {
 	return nil
 }
