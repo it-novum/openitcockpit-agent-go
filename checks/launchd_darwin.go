@@ -31,9 +31,14 @@ type resultLaunchdServices struct {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckLaunchd) Run(ctx context.Context) (*CheckResult, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	timeout := 10 * time.Second
+	launchdResults, err := c.getServiceListViaLaunchctl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &CheckResult{Result: launchdResults}, nil
+}
 
+func (c *CheckLaunchd) getServiceListViaLaunchctl(ctx context.Context) ([]*resultLaunchdServices, error) {
 	/* From the man page of launchctl list (macOS 10.15.7):
 	 * list [-x] [label]
 	 *    With no arguments, list all of the jobs loaded into launchd in three columns. The first column displays the PID of the job if it is running.  The
@@ -49,8 +54,8 @@ func (c *CheckLaunchd) Run(ctx context.Context) (*CheckResult, error) {
 	 * -	0	com.apple.storedownloadd.daemon
 	 * 177	0	com.apple.coreservicesd
 	 */
+	timeout := 10 * time.Second
 	result, err := utils.RunCommand(ctx, "launchctl list", timeout)
-	cancel()
 	if err != nil || result.RC > 0 {
 		fmt.Println("Error while executing 'launchctl list'")
 		return nil, err
@@ -85,9 +90,7 @@ func (c *CheckLaunchd) Run(ctx context.Context) (*CheckResult, error) {
 			launchdResults = append(launchdResults, result)
 		}
 	}
-
-	return &CheckResult{Result: launchdResults}, nil
-
+	return launchdResults, nil
 }
 
 // DefaultConfiguration contains the variables for the configuration file and the default values

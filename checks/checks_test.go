@@ -44,7 +44,7 @@ func TestChecksWithDefault(t *testing.T) {
 }
 
 func TestChecksCheckLaunchdServices(t *testing.T) {
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS != "darwin" {
 		t.SkipNow()
 	}
 
