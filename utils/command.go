@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -31,6 +30,7 @@ const (
 	NotFound      = 127
 )
 
+// RunCommand in shell style with timeout on every platform
 func RunCommand(ctx context.Context, commandStr string, timeout time.Duration) (*CommandResult, error) {
 	result := &CommandResult{}
 	ctxTimeout, cancel := context.WithTimeout(ctx, timeout)
@@ -80,23 +80,19 @@ func RunCommand(ctx context.Context, commandStr string, timeout time.Duration) (
 	}
 
 	if err != nil && c.ProcessState == nil {
-		if os.IsNotExist(err) {
+		rc := handleCommandError(args[0], err)
+		switch rc {
+		case NotFound:
 			result.Stdout = fmt.Sprintf("No such file or directory: '%s'", strings.Join(args, " "))
 			result.Stderr = fmt.Sprintf("No such file or directory: '%s'", strings.Join(args, " "))
-			result.RC = NotFound
-			return result, err
-		}
-
-		if os.IsPermission(err) {
+		case NotExecutable:
 			result.Stdout = fmt.Sprintf("File not executable: '%s'", strings.Join(args, " "))
 			result.Stderr = fmt.Sprintf("File not executable: '%s'", strings.Join(args, " "))
-			result.RC = NotExecutable
-			return result, err
+		default:
+			result.Stdout = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
+			result.Stderr = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
 		}
-
-		result.Stdout = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
-		result.Stderr = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
-		result.RC = Unknown
+		result.RC = rc
 		return result, err
 	}
 

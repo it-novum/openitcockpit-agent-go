@@ -10,22 +10,36 @@ import (
 	"time"
 )
 
-func TestRunPingCommand(t *testing.T) {
-	command := "ping 127.0.0.1 -c 1"
-	expected := "PING 127.0.0.1 (127.0.0.1)"
-	if runtime.GOOS == "windows" {
-		command = "ping 127.0.0.1 -n 1"
-		expected = "127.0.0.1"
-	}
+var testCommands = struct {
+	sleep         string
+	ping          string
+	pingOutput    string
+	notExecutable string
+}{}
 
+func init() {
+	if runtime.GOOS == "windows" {
+		testCommands.sleep = `powershell.exe -windowstyle hidden -command "start-sleep 10"`
+		testCommands.ping = "ping 127.0.0.1 -n 1"
+		testCommands.pingOutput = "127.0.0.1"
+		testCommands.notExecutable = `C:\\Windows\\System32\\drivers\\etc\\hosts`
+	} else {
+		testCommands.sleep = "sleep 10"
+		testCommands.ping = "ping 127.0.0.1 -c 1"
+		testCommands.pingOutput = "PING 127.0.0.1 (127.0.0.1)"
+		testCommands.notExecutable = "/etc/hosts"
+	}
+}
+
+func TestRunPingCommand(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	timeout := 5 * time.Second
-	result, err := RunCommand(ctx, command, timeout)
+	result, err := RunCommand(ctx, testCommands.ping, timeout)
 	if err != nil {
 		t.Fatal("there was an error running ping")
 	}
 
-	if !strings.Contains(result.Stdout, expected) {
+	if !strings.Contains(result.Stdout, testCommands.pingOutput) {
 		t.Error("Unexpected output for ping...")
 	}
 
@@ -40,7 +54,7 @@ func TestRunPingCommand(t *testing.T) {
 
 func TestCommandTimeout(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), "sleep 10", timeout)
+	result, err := RunCommand(context.Background(), testCommands.sleep, timeout)
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -63,7 +77,7 @@ func TestCommandCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		RunCommand(ctx, "sleep 10", timeout)
+		RunCommand(ctx, testCommands.sleep, timeout)
 		done <- struct{}{}
 	}()
 
@@ -79,11 +93,11 @@ func TestCommandNotFound(t *testing.T) {
 	timeout := 5 * time.Second
 	result, err := RunCommand(context.Background(), "foobar 123", timeout)
 	if err == nil {
-		t.Fatal("there was no error")
+		t.Error("there was no error")
 	}
 
 	if result.Stderr[0:14] != "Unknown error:" || result.RC != 3 {
-		t.Error("Unexpected output or return code")
+		t.Errorf("Unexpected output '%s' or return code: %d", result.Stderr, result.RC)
 	}
 
 	js, err := json.Marshal(result)
@@ -97,11 +111,11 @@ func TestCommandNotFoundFromOs(t *testing.T) {
 	timeout := 5 * time.Second
 	result, err := RunCommand(context.Background(), "/foo/bar 123", timeout)
 	if err == nil {
-		t.Fatal("there was no error")
+		t.Error("there was no error")
 	}
 
-	if result.RC != 127 {
-		t.Error("Unexpected return code")
+	if result.RC != NotFound {
+		t.Errorf("Unexpected return code: %d, error: %s", result.RC, err)
 	}
 
 	js, err := json.Marshal(result)
@@ -112,19 +126,14 @@ func TestCommandNotFoundFromOs(t *testing.T) {
 }
 
 func TestCommandNotExecutable(t *testing.T) {
-	filename := "/etc/hosts"
-	if runtime.GOOS == "windows" {
-		filename = `C:\Windows\System32\drivers\etc\hosts`
-	}
-
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), filename, timeout)
+	result, err := RunCommand(context.Background(), testCommands.notExecutable, timeout)
 	if err == nil {
-		t.Fatal("there was no error")
+		t.Errorf("there was no error")
 	}
 
 	if result.RC != NotExecutable {
-		t.Fatal("return code != NotExecutable")
+		t.Errorf("return code == %d, expected NotExecutable, error: %s", result.RC, err)
 	}
 }
 
