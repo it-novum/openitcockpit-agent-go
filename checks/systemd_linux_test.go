@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGetServiceListFromLaunchctl(t *testing.T) {
+func TestGetServiceListFromDbus(t *testing.T) {
 
 	check := &CheckSystemd{}
 	config := check.DefaultConfiguration()

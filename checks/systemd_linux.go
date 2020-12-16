@@ -1,10 +1,13 @@
 package checks
 
+//  https://github.com/coreos/go-systemd/issues/302#issuecomment-599412253
+// 	""
+
 import (
 	"context"
 	"fmt"
 
-	"github.com/coreos/go-systemd/dbus"
+	"github.com/coreos/go-systemd/v22/dbus"
 )
 
 // CheckSystemd gathers information about Systemd services
@@ -27,37 +30,18 @@ type resultServices struct {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckSystemd) Run(ctx context.Context) (*CheckResult, error) {
-	err := nil
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := dbus.New()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get dbus connection: %s", err)
-	}
-	units, err := conn.ListUnits()
-	conn.Close()
-	fmt.Println(units)
-	//return units, err
-
-	return &CheckResult{
-		Result: &resultServices{
-			Load1:  1,
-			Load5:  5,
-			Load15: 15,
-		},
-	}, nil
+	return nil, fmt.Errorf("kaputt")
 }
 
 func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*CheckResult, error) {
 	conn, err := dbus.New()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get dbus connection: %s", err)
+		return nil, err
 	}
-	units, err := conn.ListUnits()
-	conn.Close()
-	fmt.Println(units)
+	defer conn.Close()
+
+	allUnits, err := conn.ListUnits()
+	fmt.Println(allUnits)
 
 	systemdResults := make([]*CheckResult, 0, 1)
 	return systemdResults, nil
