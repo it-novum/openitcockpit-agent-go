@@ -11,39 +11,42 @@ import (
 	"time"
 )
 
-func TestAgentWebserver(t *testing.T) {
-	state := make(chan []byte)
-	configPush := make(chan string)
+func TestWebserverHandler(t *testing.T) {
+	stateInput := make(chan []byte)
+	w := &handler{
+		ConfigPushRecipient: make(chan string),
+		StateInput:          stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		RunAgentWebserver(ctx, state, configPush)
+		w.Run(ctx)
 	}()
-	state <- []byte(`{"test": "tata"}`)
+	stateInput <- []byte(`{"test": "tata"}`)
 	cancel()
 	wg.Wait()
 }
 
-func TestAgentWebserverState(t *testing.T) {
-	state := make(chan []byte)
+func TestWebserverHandlerState(t *testing.T) {
+	stateInput := make(chan []byte)
 	configPush := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
 
-	w := &webserverHandler{
-		configPush: configPush,
-		stateInput: state,
+	w := &handler{
+		ConfigPushRecipient: configPush,
+		StateInput:          stateInput,
 	}
 
-	ts := httptest.NewServer(w.handler())
+	ts := httptest.NewServer(w.Handler())
 	defer ts.Close()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		w.run(ctx)
+		w.Run(ctx)
 	}()
 
 	testState := []byte(`{"test": "tata"}`)
@@ -59,7 +62,7 @@ func TestAgentWebserverState(t *testing.T) {
 		t.Fatal("body does not match")
 	}
 
-	state <- testState
+	stateInput <- testState
 
 	r, err = http.Get(ts.URL)
 	if err != nil {
@@ -82,12 +85,12 @@ func TestAgentWebserverConfig(t *testing.T) {
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 
-	w := &webserverHandler{
-		configPush: configPush,
-		stateInput: state,
+	w := &handler{
+		ConfigPushRecipient: configPush,
+		StateInput:          state,
 	}
 
-	ts := httptest.NewServer(w.handler())
+	ts := httptest.NewServer(w.Handler())
 	defer ts.Close()
 
 	result := ""
@@ -101,7 +104,7 @@ func TestAgentWebserverConfig(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		w.run(ctx)
+		w.Run(ctx)
 	}()
 
 	cfg := "someconfig"
