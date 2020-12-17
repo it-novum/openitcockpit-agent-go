@@ -84,6 +84,21 @@ type Checks struct {
 	CustomchecksConfig string `key:"customchecks"`
 }
 
+// CustomCheck are external plugins and scripts which should be executed by the Agent
+type CustomCheck struct {
+	Name     string
+	Interval int64  `key:"interval"`
+	Enabled  bool   `key:"enabled"`
+	Command  string `key:"command"`
+	Timeout  int64  `key:"timeout"`
+}
+
+// CustomChecks holds all custom checks from customchecks.ini
+type CustomChecks struct {
+	WorkerThreads int64 `key:"max_worker_threads"`
+	CustomChecks  []*CustomCheck
+}
+
 // Configuration with all sub configuration structs
 type Configuration struct {
 	Mode            *Mode
@@ -94,6 +109,7 @@ type Configuration struct {
 	Alfresco        *Alfresco
 	WindowsEventLog *WindowsEventLog
 	Checks          *Checks
+	CustomChecks    *CustomChecks
 }
 
 func iterateFieldValues(obj interface{}, f func(reflect.StructField, reflect.Value)) {
@@ -190,6 +206,9 @@ func (c *Configuration) ReadConfig(config string) error {
 		WindowsEventLog:    true,
 		SystemdServices:    true,
 	}
+	c.CustomChecks = &CustomChecks{
+		WorkerThreads: 8,
+	}
 
 	cfg, err := ini.Load([]byte(config))
 	if err != nil {
@@ -213,7 +232,6 @@ func (c *Configuration) ReadConfig(config string) error {
 	}
 
 	return nil
-
 }
 
 // ReadConfigFromFile reads the content of the passed ini file to pass it to ReadConfig()
@@ -224,4 +242,50 @@ func (c *Configuration) ReadConfigFromFile(path string) (config string, err erro
 	}
 
 	return string(content), nil
+}
+
+// ReadCustomChecksConfig reads the custom checks configuration
+func (c *Configuration) ReadCustomChecksConfig(config string) (err error) {
+	cfg, err := ini.Load([]byte(config))
+	if err != nil {
+		return err
+	}
+
+	for _, section := range cfg.Sections() {
+		sectionName := section.Name()
+		if sectionName == "default" {
+			if section.HasKey("max_worker_threads") {
+				key, _ := section.GetKey("max_worker_threads")
+				if c.CustomChecks.WorkerThreads, err = key.Int64(); err != nil {
+					c.CustomChecks.WorkerThreads = 8
+				}
+
+			}
+		}
+
+		if sectionName != "default" && sectionName != "DEFAULT" {
+			command, missingErr := section.GetKey("command")
+			if missingErr != nil || command.MustString("") == "" {
+				continue
+			}
+
+			interval, _ := section.GetKey("interval")
+			timeout, _ := section.GetKey("timeout")
+			enabled, _ := section.GetKey("enabled")
+
+			//We are a custom check
+			CustomCheck := &CustomCheck{
+				Name:     sectionName,
+				Command:  command.MustString(""),
+				Interval: interval.MustInt64(60),
+				Timeout:  timeout.MustInt64(15),
+				Enabled:  enabled.MustBool(false),
+			}
+
+			c.CustomChecks.CustomChecks = append(c.CustomChecks.CustomChecks, CustomCheck)
+		}
+	}
+
+	return nil
+
 }

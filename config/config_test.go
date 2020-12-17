@@ -107,6 +107,58 @@ proxy = proxy.example.org
 interval = 90
 `
 
+var customChecksAgentVersion1ConfigStringMaxThreads string = `[default]
+  max_worker_threads = abc
+`
+
+var customChecksAgentVersion1Config string = `[default]
+  # max_worker_threads should be increased with increasing number of custom checks
+  # but consider: each thread needs (a bit) memory
+  max_worker_threads = 10
+
+[time_1]
+  command = "C:\checks\check_time.exe"
+  interval = 60
+  timeout = 10
+  enabled = true
+
+[check_Windows_Services_Status_OSS]
+  command = powershell.exe -nologo -noprofile -File "C:\checks\check_Windows_Services_Status_OSS.ps1"
+  interval = 15
+  timeout = 10
+  enabled = false
+
+[check_ping]
+  command = /usr/lib/nagios/plugins/check_ping -H 127.0.0.1 -w 100.0,20%% -c 500.0,60%% -p 5
+  interval = 15
+  timeout = 10
+  enabled = true
+
+[check_users]
+  command = /usr/lib/nagios/plugins/check_users -w 3 -c 7
+  interval = 15
+  timeout = 10
+  enabled = true
+`
+
+var customChecksAgentVersion1ConfigEmptyCommand string = `
+[time_1]
+  command = "C:\checks\check_time.exe"
+  interval = 60
+  timeout = 10
+  enabled = true
+
+[empty_command_line]
+  command = 
+  interval = 15
+  timeout = 10
+  enabled = false
+
+  [no_command_line_at_all]
+    timeout = 10
+    enabled = true
+`
+
 func TestAgentVersion1BlankConfig(t *testing.T) {
 	c := &Configuration{}
 	err := c.ReadConfig(agentVersion1ConfigBlank)
@@ -238,4 +290,82 @@ func TestReadConfigFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(config)
+}
+
+func TestReadCustomChecksConfigStringMaxThreads(t *testing.T) {
+	//Read config.ini (required config.ini is an empty string)
+	c := &Configuration{}
+	err := c.ReadConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.ReadCustomChecksConfig(customChecksAgentVersion1ConfigStringMaxThreads)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c.CustomChecks.WorkerThreads != 8 {
+		t.Error("CustomChecks.WorkerThreads expect to be 8")
+	}
+
+	if len(c.CustomChecks.CustomChecks) > 0 {
+		t.Error("This config is expected to have no custom checks")
+	}
+}
+
+func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
+	//Read config.ini (required config.ini is an empty string)
+	c := &Configuration{}
+	err := c.ReadConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Read custom checks config
+	err = c.ReadCustomChecksConfig(customChecksAgentVersion1Config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c.CustomChecks.WorkerThreads != 10 {
+		t.Error("CustomChecks.WorkerThreads expect to be 10")
+	}
+
+	if len(c.CustomChecks.CustomChecks) != 4 {
+		t.Error("This config is expected to have 4 custom checks")
+	}
+
+	for _, customcheck := range c.CustomChecks.CustomChecks {
+		if customcheck.Name == "time_1" {
+			if customcheck.Enabled != true {
+				t.Error("Custom check time_1 is expected to be enabled")
+			}
+		}
+
+		if customcheck.Name == "check_Windows_Services_Status_OSS" {
+			if customcheck.Enabled != false {
+				t.Error("Custom check time_1 is expected to be disabled")
+			}
+		}
+	}
+}
+
+func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
+	//Read config.ini (required config.ini is an empty string)
+	c := &Configuration{}
+	err := c.ReadConfig("")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Read custom checks config
+	err = c.ReadCustomChecksConfig(customChecksAgentVersion1ConfigEmptyCommand)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(c.CustomChecks.CustomChecks)
+	if len(c.CustomChecks.CustomChecks) != 1 {
+		t.Error("This config is expected to have 1 custom check")
+	}
 }
