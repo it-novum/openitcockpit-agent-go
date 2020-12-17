@@ -4,72 +4,103 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
 
-var (
+type platformPathInterface interface {
+	Init() error
+	LogPath() string
+	ConfigPath() string
+}
+
+type RootCmd struct {
+	cmd              *cobra.Command
 	configPath       string
 	verbose          bool
 	logPath          string
-	testLogPath      string
 	disableLog       bool
 	disableLogRotate bool
-)
-
-var rootCmd *cobra.Command = nil
-
-func initCommand() {
-	rootCmd = &cobra.Command{
-		Use:   "openitcockpit-agent",
-		Short: "openitcockpit-agent collects system metrics for openitcockpit",
-		Long:  `openitcockpit-agent collects system metrics for openitcockpit`,
-		Args:  cobra.NoArgs,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if _, err := os.Stat(configPath); os.IsNotExist(err) {
-				return fmt.Errorf("--config \"%s\" does not exist", configPath)
-			}
-			if !disableLog {
-				if logPath == "" {
-					logPath = platformLogFile()
-					if logPath == "" { // windows no registry
-						return fmt.Errorf("No logfile given and no registry InstallLocation set")
-					}
-				}
-				fl, err := os.OpenFile(logPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-				if err != nil {
-					return fmt.Errorf("Could not open/create log file: %s", err)
-				}
-				fl.Close()
-				if !disableLogRotate {
-					testPath := path.Join(path.Dir(logPath), "agent.log.test")
-					fl, err := os.OpenFile(testPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-					defer func() {
-						fl.Close()
-						os.Remove(testPath)
-					}()
-					if err != nil {
-						return fmt.Errorf("Test for log file rotation was not successful: %s (please check directory permissions)", err)
-					}
-				}
-			}
-			return nil
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
-	}
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "config.ini", "Path to configuration file")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable debug output")
-	rootCmd.PersistentFlags().StringVarP(&logPath, "log", "l", "", "Set alternative path for log file output")
-	rootCmd.PersistentFlags().BoolVar(&disableLog, "disable-logfile", false, "disable log file")
-	rootCmd.PersistentFlags().BoolVar(&disableLogRotate, "disable-logrotate", false, "disable log file rotation")
+	platformPath     platformPathInterface
 }
 
-// Execute command line handling
-func Execute() error {
-	if rootCmd == nil {
-		initCommand()
+func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
+	r.platformPath.Init()
+
+	if r.configPath == "" {
+		if platformConfigPath := r.platformPath.ConfigPath(); platformConfigPath != "" {
+			r.configPath = platformConfigPath
+		} else {
+			msg := "No config.ini path given"
+			if runtime.GOOS == "windows" {
+				msg = msg + " (probably missing windows registry InstallLocation)"
+			}
+			return fmt.Errorf(msg)
+		}
 	}
-	return rootCmd.Execute()
+	if !r.disableLog && r.logPath == "" {
+		if platformLogPath := r.platformPath.LogPath(); platformLogPath != "" {
+			r.logPath = platformLogPath
+		} else {
+			msg := "No log file path given"
+			if runtime.GOOS == "windows" {
+				msg = msg + " (probably missing windows registry InstallLocation)"
+			}
+			return fmt.Errorf(msg)
+		}
+	}
+
+	if _, err := os.Stat(r.configPath); os.IsNotExist(err) {
+		return fmt.Errorf("--config \"%s\" does not exist", r.configPath)
+	}
+
+	if !r.disableLog {
+		fl, err := os.OpenFile(r.logPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			return fmt.Errorf("Could not open/create log file: %s", err)
+		}
+		fl.Close()
+		if !r.disableLogRotate {
+			testPath := path.Join(path.Dir(r.logPath), "agent.log.test")
+			fl, err := os.OpenFile(testPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			defer func() {
+				fl.Close()
+				os.Remove(testPath)
+			}()
+			if err != nil {
+				return fmt.Errorf("Test for log file rotation was not successful: %s (please check directory permissions)", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *RootCmd) run(cmd *cobra.Command, args []string) {
+
+}
+
+func New() *RootCmd {
+	r := &RootCmd{}
+	r.cmd = &cobra.Command{
+		Use:     "openitcockpit-agent",
+		Short:   "openitcockpit-agent collects system metrics for openitcockpit",
+		Long:    `openitcockpit-agent collects system metrics for openitcockpit`,
+		Args:    cobra.NoArgs,
+		PreRunE: r.preRun,
+		Run:     r.run,
+	}
+	r.cmd.PersistentFlags().StringVarP(&r.configPath, "config", "c", "", "Path to configuration file")
+	r.cmd.PersistentFlags().BoolVarP(&r.verbose, "verbose", "v", false, "Enable debug output")
+	r.cmd.PersistentFlags().StringVarP(&r.logPath, "log", "l", "", "Set alternative path for log file output")
+	r.cmd.PersistentFlags().BoolVar(&r.disableLog, "disable-logfile", false, "disable log file")
+	r.cmd.PersistentFlags().BoolVar(&r.disableLogRotate, "disable-logrotate", false, "disable log file rotation")
+
+	r.platformPath = getPlatformPath()
+
+	return r
+}
+
+func (r *RootCmd) Execute() error {
+	return r.cmd.Execute()
 }

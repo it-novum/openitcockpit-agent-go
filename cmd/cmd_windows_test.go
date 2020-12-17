@@ -6,12 +6,13 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-func TestPlatformLogFile(t *testing.T) {
-	testLogPath = ""
-	registryKey = registry.CURRENT_USER
-	registryPath = `SOFTWARE\OITCTEST`
+func TestPlatformRegistryRead(t *testing.T) {
+	wpp := getPlatformPath().(*windowsPlatformPath)
 
-	key, _, err := registry.CreateKey(registryKey, registryPath, registry.ALL_ACCESS)
+	wpp.registryKey = registry.CURRENT_USER
+	wpp.registryPath = `SOFTWARE\OITCTEST`
+
+	key, _, err := registry.CreateKey(wpp.registryKey, wpp.registryPath, registry.ALL_ACCESS)
 	if err != nil {
 		t.Fatal("Could not create test registry key: ", err)
 	}
@@ -20,12 +21,12 @@ func TestPlatformLogFile(t *testing.T) {
 		if !closed {
 			key.Close()
 		}
-		if err := registry.DeleteKey(registryKey, registryPath); err != nil {
+		if err := registry.DeleteKey(wpp.registryKey, wpp.registryPath); err != nil {
 			t.Fatal("could not delete test registry key: ", err)
 		}
 	}()
 
-	if err := key.SetStringValue(registryName, "test"); err != nil {
+	if err := key.SetStringValue(wpp.registryName, "test"); err != nil {
 		t.Fatal("could not set registry test value: ", err)
 	}
 	if err := key.Close(); err != nil {
@@ -34,7 +35,8 @@ func TestPlatformLogFile(t *testing.T) {
 	}
 	closed = true
 
-	test := platformLogFile()
+	wpp.Init()
+	test := wpp.LogPath()
 	if test != "test/agent.log" {
 		t.Error("platformLogFile did not return correct registry value: ", test)
 	}
