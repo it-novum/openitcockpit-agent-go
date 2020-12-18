@@ -1,0 +1,399 @@
+package webserver
+
+import (
+	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"fmt"
+	"io/ioutil"
+	"math/big"
+	"net"
+	"os"
+	"path"
+	"testing"
+	"time"
+
+	"github.com/it-novum/openitcockpit-agent-go/config"
+	log "github.com/sirupsen/logrus"
+)
+
+func dynamicPort() int64 {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer l.Close()
+	return int64(l.Addr().(*net.TCPAddr).Port)
+}
+
+func connectionTest(host string, port int, crt *certs) bool {
+	timeout := time.Second
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", host, port), timeout)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+	if crt != nil {
+		tlsConfig := &tls.Config{
+			ServerName: host,
+		}
+		if crt.caCertPath != "" {
+			certPool := x509.NewCertPool()
+			caPEM, err := ioutil.ReadFile(crt.caCertPath)
+			if err != nil {
+				log.Fatal("could not read ca file: ", err)
+			}
+			certPool.AppendCertsFromPEM(caPEM)
+			tlsConfig.ClientCAs = certPool
+			tlsConfig.RootCAs = certPool
+			clientCert, err := tls.LoadX509KeyPair(crt.certClientPath, crt.keyClientPath)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			tlsConfig.Certificates = []tls.Certificate{
+				clientCert,
+			}
+			tls.Client(conn, tlsConfig)
+		} else {
+			tlsConfig.InsecureSkipVerify = true
+		}
+	}
+	return true
+}
+
+func encodeAndSaveKey(dest string, key *rsa.PrivateKey) error {
+	buf := &bytes.Buffer{}
+	if err := pem.Encode(buf, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}); err != nil {
+		return fmt.Errorf("encode private key failed: %s", err)
+	}
+	if err := ioutil.WriteFile(dest, buf.Bytes(), 0666); err != nil {
+		return fmt.Errorf("write key to file failed: %s", err)
+	}
+	return nil
+}
+
+func encodeAndSaveCert(dest string, derCert []byte) error {
+	buf := &bytes.Buffer{}
+	if err := pem.Encode(buf, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: derCert,
+	}); err != nil {
+		return fmt.Errorf("encode certificate failed: %s", err)
+	}
+	if err := ioutil.WriteFile(dest, buf.Bytes(), 0666); err != nil {
+		return fmt.Errorf("write certificate to file failed: %s", err)
+	}
+	return nil
+}
+
+func generateSelfSignedCertificate(destCertFilePath, destKeyFilePath string) error {
+	bits := 4096
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return fmt.Errorf("rsa key generate failed: %s", err)
+	}
+
+	tpl := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "localhost"},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(2, 0, 0),
+		BasicConstraintsValid: true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+	}
+
+	derCert, err := x509.CreateCertificate(rand.Reader, &tpl, &tpl, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return fmt.Errorf("create x509 certificate failed: %s", err)
+	}
+
+	if err := encodeAndSaveKey(destKeyFilePath, privateKey); err != nil {
+		return err
+	}
+
+	return encodeAndSaveCert(destCertFilePath, derCert)
+}
+
+func generateCASignedCertificate(destCertFilePath, destKeyFilePath, destClientCertFilePath, destClientKeyFilePath, destCACertFilePath, destCAKeyFilePath string) error {
+	bits := 4096
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return fmt.Errorf("rsa key generate failed: %s", err)
+	}
+	privateClientKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return fmt.Errorf("rsa key generate failed: %s", err)
+	}
+	caPrivateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return fmt.Errorf("rsa key generate failed: %s", err)
+	}
+
+	ca := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "localhost"},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(2, 0, 0),
+		BasicConstraintsValid: true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+	}
+	caDer, err := x509.CreateCertificate(rand.Reader, &ca, &ca, &caPrivateKey.PublicKey, caPrivateKey)
+	if err != nil {
+		return fmt.Errorf("create x509 certificate failed: %s", err)
+	}
+
+	cert := x509.Certificate{
+		SerialNumber:          big.NewInt(456),
+		Subject:               pkix.Name{CommonName: "localhost"},
+		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(2, 0, 0),
+		BasicConstraintsValid: true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+	}
+
+	derCert, err := x509.CreateCertificate(rand.Reader, &cert, &ca, &privateKey.PublicKey, caPrivateKey)
+	if err != nil {
+		return fmt.Errorf("create x509 certificate failed: %s", err)
+	}
+
+	certClient := x509.Certificate{
+		SerialNumber:          big.NewInt(456),
+		Subject:               pkix.Name{CommonName: "localhost"},
+		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(2, 0, 0),
+		BasicConstraintsValid: true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+	}
+
+	derCertClient, err := x509.CreateCertificate(rand.Reader, &certClient, &ca, &privateClientKey.PublicKey, caPrivateKey)
+	if err != nil {
+		return fmt.Errorf("create x509 certificate failed: %s", err)
+	}
+
+	if err := encodeAndSaveCert(destCACertFilePath, caDer); err != nil {
+		return err
+	}
+
+	if err := encodeAndSaveKey(destCAKeyFilePath, caPrivateKey); err != nil {
+		return err
+	}
+
+	if err := encodeAndSaveCert(destCertFilePath, derCert); err != nil {
+		return err
+	}
+
+	if err := encodeAndSaveKey(destKeyFilePath, privateKey); err != nil {
+		return err
+	}
+
+	if err := encodeAndSaveCert(destClientCertFilePath, derCertClient); err != nil {
+		return err
+	}
+
+	if err := encodeAndSaveKey(destClientKeyFilePath, privateClientKey); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type certs struct {
+	tmpDir         string
+	certPath       string
+	keyPath        string
+	certClientPath string
+	keyClientPath  string
+	caCertPath     string
+	caKeyPath      string
+}
+
+func generateTestCertificates(autoTLS bool) (*certs, error) {
+	crt := &certs{}
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	crt.tmpDir = tmpDir
+	ok := false
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if !ok {
+			os.RemoveAll(tmpDir)
+		}
+	}()
+	crt.certPath = path.Join(tmpDir, "server.crt")
+	crt.keyPath = path.Join(tmpDir, "server.key")
+	if autoTLS {
+		crt.caCertPath = path.Join(tmpDir, "ca.crt")
+		crt.caKeyPath = path.Join(tmpDir, "ca.key")
+		crt.certClientPath = path.Join(tmpDir, "client.crt")
+		crt.keyClientPath = path.Join(tmpDir, "client.key")
+		if err := generateCASignedCertificate(crt.certPath, crt.keyPath, crt.certClientPath, crt.keyClientPath, crt.caCertPath, crt.caKeyPath); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := generateSelfSignedCertificate(crt.certPath, crt.keyPath); err != nil {
+			return nil, err
+		}
+	}
+	ok = true
+	return crt, nil
+}
+
+func TestServer(t *testing.T) {
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+	port := dynamicPort()
+	srv.Reload(&config.WebServer{
+		Address: "",
+		Port:    port,
+	}, &config.TLS{})
+	if !connectionTest("localhost", int(port), nil) {
+		t.Error("server did not start correctly")
+	}
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for Shutdown reached")
+	}
+}
+
+func TestServerCancel(t *testing.T) {
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+	port := dynamicPort()
+	srv.Reload(&config.WebServer{
+		Address: "",
+		Port:    port,
+	}, &config.TLS{})
+	if !connectionTest("localhost", int(port), nil) {
+		t.Error("server did not start correctly")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for cancel reached")
+	}
+	if connectionTest("localhost", int(port), nil) {
+		t.Error("server is still running")
+	}
+}
+
+func TestServerTLS(t *testing.T) {
+	crt, err := generateTestCertificates(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(crt.tmpDir)
+
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+
+	port := dynamicPort()
+	srv.Reload(&config.WebServer{
+		Address: "",
+		Port:    port,
+	}, &config.TLS{
+		KeyFile:         crt.keyPath,
+		CertificateFile: crt.certPath,
+	})
+	if !connectionTest("localhost", int(port), crt) {
+		t.Error("server did not start correctly")
+	}
+
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for Shutdown reached")
+	}
+}
+
+func TestServerAutoTLS(t *testing.T) {
+	crt, err := generateTestCertificates(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(crt.tmpDir)
+
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+
+	port := dynamicPort()
+	srv.Reload(&config.WebServer{
+		Address: "",
+		Port:    port,
+	}, &config.TLS{
+		KeyFile:         crt.keyPath,
+		CertificateFile: crt.certPath,
+		AutoSslEnabled:  true,
+		AutoSslFolder:   crt.tmpDir,
+		AutoSslCrtFile:  crt.certPath,
+		AutoSslKeyFile:  crt.keyPath,
+		AutoSslCaFile:   crt.caCertPath,
+	})
+	if !connectionTest("localhost", int(port), crt) {
+		t.Error("server did not start correctly")
+	}
+
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for Shutdown reached")
+	}
+}
