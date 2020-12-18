@@ -10,22 +10,7 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
-func GetChecksToExecute(cc *config.CustomChecks) []config.CustomCheck {
-	now := time.Now()
-	var checksToExecute []config.CustomCheck
-	for _, check := range cc.CustomChecks {
-		if check.Enabled != true {
-			continue
-		}
-
-		if check.NextCheck.Unix() < (now.Unix() + check.Interval) {
-			checksToExecute = append(checksToExecute, *check)
-		}
-	}
-
-	return checksToExecute
-}
-
+// CustomCheckRunner runs custom checks
 type CustomCheckRunner struct {
 	// Result channel for check results
 	// Do not close before Shutdown completes
@@ -84,18 +69,3 @@ func (c *CustomCheckRunner) Shutdown() {
 	c.shutdown <- struct{}{}
 	c.wg.Wait()
 }
-
-/*func RunCustomChecks(ctx context.Context, checks []config.CustomCheck) (err error) {
-	wg := sync.WaitGroup{}
-	for _, check := range checks {
-		go func() {
-			wg.Add(1)
-			check.Run()
-			check.LastCheck = time.Now()
-			check.NextCheck = time.Now().Add(time.Duration(check.Interval))
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-*/
