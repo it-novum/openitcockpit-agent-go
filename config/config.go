@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"strings"
+	"time"
 
 	"gopkg.in/ini.v1"
 )
@@ -86,11 +87,13 @@ type Checks struct {
 
 // CustomCheck are external plugins and scripts which should be executed by the Agent
 type CustomCheck struct {
-	Name     string
-	Interval int64  `key:"interval"`
-	Enabled  bool   `key:"enabled"`
-	Command  string `key:"command"`
-	Timeout  int64  `key:"timeout"`
+	Name      string
+	Interval  int64  `key:"interval"`
+	Enabled   bool   `key:"enabled"`
+	Command   string `key:"command"`
+	Timeout   int64  `key:"timeout"`
+	LastCheck time.Time
+	NextCheck time.Time
 }
 
 // CustomChecks holds all custom checks from customchecks.ini
