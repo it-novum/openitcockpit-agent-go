@@ -1,142 +1,180 @@
 package webserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
 
-type reloadConfig struct {
-	web        *config.WebServer
-	tls        *config.TLS
+// ReloadConfig for the webserver
+type ReloadConfig struct {
+	WebServer *config.WebServer
+	TLS       *config.TLS
+	BasicAuth *config.BasicAuth
+	// reloadDone will be set by the reload func
 	reloadDone chan struct{}
 }
 
-// Server handling for http
+// Server handling for http, should be created by New
 type Server struct {
-	server   *http.Server
-	reload   chan *reloadConfig
+	reload   chan *ReloadConfig
 	shutdown chan struct{}
-	handler  *handler
-	wg       sync.WaitGroup
+
+	stateInput          <-chan []byte
+	configPushRecipient chan<- string
+
+	server  *http.Server
+	handler *handler
+
+	wg sync.WaitGroup
 }
 
-func (s *Server) doReload(cfg *reloadConfig) {
+func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
+	log.Infoln("Webserver: Reload")
+	newHandler := &handler{
+		StateInput:          s.stateInput,
+		ConfigPushRecipient: s.configPushRecipient,
+		TLS:                 cfg.TLS,
+		BasicAuthConfig:     cfg.BasicAuth,
+	}
+	newHandler.prepare()
+	go newHandler.Run(ctx) // will be stopped by close()
+	serverAddr := fmt.Sprintf("%s:%d", cfg.WebServer.Address, cfg.WebServer.Port)
+	log.Debugln("Webserver: Listening to ", serverAddr)
 	newServer := &http.Server{
-		Addr:           fmt.Sprintf("%s:%d", cfg.web.Address, cfg.web.Port),
-		Handler:        s.handler.Handler(),
+		Addr:           serverAddr,
+		Handler:        newHandler.Handler(),
 		ReadTimeout:    time.Second * 30,
 		WriteTimeout:   time.Second * 30,
 		IdleTimeout:    time.Second * 30,
 		MaxHeaderBytes: 256 * 1024,
 	}
 
-	if cfg.tls.AutoSslEnabled || (cfg.tls.KeyFile != "" && cfg.tls.CertificateFile != "") {
+	if cfg.TLS.AutoSslEnabled || (cfg.TLS.KeyFile != "" && cfg.TLS.CertificateFile != "") {
+		log.Debugln("Webserver: TLS enabled")
 		tlsConfig := &tls.Config{
 			MinVersion: tls.VersionTLS12,
 		}
-		certFilePath := cfg.tls.CertificateFile
-		keyFilePath := cfg.tls.KeyFile
+		certFilePath := cfg.TLS.CertificateFile
+		keyFilePath := cfg.TLS.KeyFile
 		caFilePath := ""
-		if cfg.tls.AutoSslEnabled {
-			certFilePath = cfg.tls.AutoSslCrtFile
-			keyFilePath = cfg.tls.AutoSslKeyFile
-			caFilePath = cfg.tls.AutoSslCaFile
+		if cfg.TLS.AutoSslEnabled {
+			log.Debugln("Webserver: Using AutoSSL certificates")
+
+			certFilePath = cfg.TLS.AutoSslCrtFile
+			keyFilePath = cfg.TLS.AutoSslKeyFile
+			caFilePath = cfg.TLS.AutoSslCaFile
+
 			tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 		}
-		cert, err := tls.LoadX509KeyPair(certFilePath, keyFilePath)
+		pem := bytes.Buffer{}
+
+		certPem, err := ioutil.ReadFile(certFilePath)
 		if err != nil {
-			log.Fatal("Could not load tls certificate: ", err)
+			log.Fatalln("Webserver: Could not read server certificate: ", err)
 		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
+		pem.Write(certPem)
+		pem.WriteByte('\n')
+		keyPem, err := ioutil.ReadFile(keyFilePath)
+		if err != nil {
+			log.Fatalln("Webserver: Could not read server key: ", err)
+		}
+
 		if caFilePath != "" {
-			pool := x509.NewCertPool()
-			caBytes, err := ioutil.ReadFile(caFilePath)
+			pool, caPem, err := utils.CertPoolFromFiles(caFilePath)
 			if err != nil {
-				log.Fatal("Could not load tls ca certificate: ", err)
-			}
-			if !pool.AppendCertsFromPEM(caBytes) {
-				log.Fatal("Could not parse ca certificate, probably not a valid PEM file")
+				log.Fatalln("Webserver: ", err)
 			}
 			tlsConfig.ClientCAs = pool
-			tlsConfig.RootCAs = pool
+			log.Debugln("Webserver: Loaded ca certificate")
+			pem.Write(caPem)
 		}
-		tlsConfig.BuildNameToCertificate()
+
+		cert, err := tls.X509KeyPair(pem.Bytes(), keyPem)
+		if err != nil {
+			log.Fatal("Webserver: Could not load tls certificate: ", err)
+		}
+		log.Debugln("Webserver: Loaded server cerificate")
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+
 		newServer.TLSConfig = tlsConfig
 		newServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0)
 	}
 
 	s.close()
+	s.handler = newHandler
 
 	s.wg.Add(1)
 	go func() {
+		log.Infoln("Webserver: Starting http server")
 		err := listenServe(newServer)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal("Webserver error: ", err)
+			log.Fatal("Webserver: ", err)
 		}
+		log.Debugln("Webserver: http listener stopped")
 		s.wg.Done()
 	}()
 
 	s.server = newServer
+	log.Debugln("Webserver: Reload complete")
 	cfg.reloadDone <- struct{}{}
 }
 
 func (s *Server) close() {
 	if s.server != nil {
+		log.Debugln("Webserver: Stopping http server")
 		s.server.Close()
 		s.wg.Wait()
 		s.server = nil
+		log.Infoln("Webserver: Server stopped")
+	}
+	if s.handler != nil {
+		log.Debugln("Webserver: Stopping handler")
+		s.handler.Shutdown()
+		s.handler = nil
+		log.Debugln("Webserver: Handler stopped")
 	}
 }
 
 func listenServe(server *http.Server) error {
-	listener, err := net.Listen("tcp", server.Addr)
-	if err != nil {
-		return err
-	}
 	if server.TLSConfig != nil {
-		listener = tls.NewListener(listener, server.TLSConfig)
+		return server.ListenAndServeTLS("", "")
 	}
-	defer listener.Close()
-	return server.Serve(listener)
+	return server.ListenAndServe()
 }
 
 // Reload webserver configuration
-func (s *Server) Reload(webConfig *config.WebServer, tlsConfig *config.TLS) {
+func (s *Server) Reload(reloadConfig *ReloadConfig) {
 	done := make(chan struct{})
-	s.reload <- &reloadConfig{
-		web:        webConfig,
-		tls:        tlsConfig,
-		reloadDone: done,
-	}
+	reloadConfig.reloadDone = done
+	s.reload <- reloadConfig
 	<-done
 }
 
 // Shutdown webserver
 func (s *Server) Shutdown() {
-	s.shutdown <- struct{}{}
+	close(s.shutdown)
 	s.wg.Wait()
 }
 
 // New http server handler
 func New(stateInput <-chan []byte, configPushRecipient chan<- string) *Server {
 	return &Server{
-		reload:   make(chan *reloadConfig),
-		shutdown: make(chan struct{}),
-		handler: &handler{
-			StateInput:          stateInput,
-			ConfigPushRecipient: configPushRecipient,
-		},
+		reload:              make(chan *ReloadConfig),
+		shutdown:            make(chan struct{}),
+		stateInput:          stateInput,
+		configPushRecipient: configPushRecipient,
 	}
 }
 
@@ -148,10 +186,12 @@ func (s *Server) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.shutdown:
-			return
+		case _, more := <-s.shutdown:
+			if !more {
+				return
+			}
 		case newConfig := <-s.reload:
-			s.doReload(newConfig)
+			s.doReload(ctx, newConfig)
 		}
 	}
 }
