@@ -33,26 +33,28 @@ func (c *CustomCheckRunner) Run(parentCtx context.Context) {
 
 		checkPipe := make(chan *config.CustomCheck)
 		for _, loopCheck := range c.Checks {
-			c.wg.Add(1)
-			go func() {
-				check := <-checkPipe
-				defer c.wg.Done()
-				ticker := time.NewTicker(time.Duration(check.Interval) * time.Second)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-ctx.Done():
-						return
-					case <-ticker.C:
-						//ausführen
-						result, err := utils.RunCommand(ctx, check.Command, time.Duration(check.Timeout)*time.Second)
-						if err != nil {
-							log.Println(err)
+			if loopCheck.Enabled == true {
+				c.wg.Add(1)
+				go func() {
+					check := <-checkPipe
+					defer c.wg.Done()
+					ticker := time.NewTicker(time.Duration(check.Interval) * time.Second)
+					defer ticker.Stop()
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						case <-ticker.C:
+							//ausführen
+							result, err := utils.RunCommand(ctx, check.Command, time.Duration(check.Timeout)*time.Second)
+							if err != nil {
+								log.Println(err)
+							}
+							c.Result <- result
 						}
-						c.Result <- result
 					}
-				}
-			}()
+				}()
+			}
 			checkPipe <- loopCheck
 		}
 
