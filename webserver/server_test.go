@@ -13,14 +13,257 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"testing"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
+func TestServer(t *testing.T) {
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+	port := dynamicPort()
+	srv.Reload(&ReloadConfig{
+		WebServer: &config.WebServer{
+			Address: "",
+			Port:    port,
+		},
+		TLS:       &config.TLS{},
+		BasicAuth: &config.BasicAuth{},
+	})
+	if !connectionTest("localhost", int(port), nil) {
+		t.Error("server did not start correctly")
+	}
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 5):
+		t.Error("timeout for Shutdown reached")
+	}
+}
+
+func TestServerCancel(t *testing.T) {
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+	port := dynamicPort()
+	srv.Reload(&ReloadConfig{
+		WebServer: &config.WebServer{
+			Address: "",
+			Port:    port,
+		},
+		TLS:       &config.TLS{},
+		BasicAuth: &config.BasicAuth{},
+	})
+	if !connectionTest("localhost", int(port), nil) {
+		t.Error("server did not start correctly")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 5):
+		t.Error("timeout for cancel reached")
+	}
+	if connectionTest("localhost", int(port), nil) {
+		t.Error("server is still running")
+	}
+}
+
+func TestServerTLS(t *testing.T) {
+	crt, err := generateTestCertificates(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(crt.tmpDir)
+
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+
+	port := dynamicPort()
+	srv.Reload(&ReloadConfig{
+		WebServer: &config.WebServer{
+			Address: "",
+			Port:    port,
+		},
+		TLS: &config.TLS{
+			KeyFile:         crt.keyPath,
+			CertificateFile: crt.certPath,
+		},
+		BasicAuth: &config.BasicAuth{},
+	})
+	if !connectionTest("localhost", int(port), crt) {
+		t.Error("server did not start correctly")
+	}
+
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for Shutdown reached")
+	}
+}
+
+func TestServerAutoTLS(t *testing.T) {
+	crt, err := generateTestCertificates(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(crt.tmpDir)
+
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+
+	port := dynamicPort()
+	srv.Reload(&ReloadConfig{
+		WebServer: &config.WebServer{
+			Address: "",
+			Port:    port,
+		},
+		TLS: &config.TLS{
+			KeyFile:         crt.keyPath,
+			CertificateFile: crt.certPath,
+			AutoSslEnabled:  true,
+			AutoSslFolder:   crt.tmpDir,
+			AutoSslCrtFile:  crt.certPath,
+			AutoSslKeyFile:  crt.keyPath,
+			AutoSslCaFile:   crt.caCertPath,
+		},
+		BasicAuth: &config.BasicAuth{},
+	})
+	if !connectionTest("localhost", int(port), crt) {
+		t.Error("server did not start correctly")
+	}
+
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 5):
+		t.Error("timeout for Shutdown reached")
+	}
+}
+
+func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
+	crt, err := generateTestCertificates(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(crt.tmpDir)
+
+	stateInput := make(chan []byte)
+	configPush := make(chan string)
+
+	srv := New(stateInput, configPush)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		srv.Run(ctx)
+		done <- struct{}{}
+	}()
+
+	port := dynamicPort()
+	srv.Reload(&ReloadConfig{
+		WebServer: &config.WebServer{
+			Address: "",
+			Port:    port,
+		},
+		TLS: &config.TLS{
+			KeyFile:         crt.keyPath,
+			CertificateFile: crt.certPath,
+			AutoSslEnabled:  true,
+			AutoSslFolder:   crt.tmpDir,
+			AutoSslCrtFile:  crt.certPath,
+			AutoSslKeyFile:  crt.keyPath,
+			AutoSslCaFile:   crt.caCertPath,
+		},
+		BasicAuth: testBasicAuth,
+	})
+	stateInput <- []byte(`{"test": "tata"}`)
+
+	caPool, _, err := utils.CertPoolFromFiles(crt.caCertPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cert, err := tls.LoadX509KeyPair(crt.certClientPath, crt.keyClientPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:      caPool,
+			Certificates: []tls.Certificate{cert},
+		},
+	}
+	c := http.Client{
+		Transport: transport,
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://localhost:%d", port), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.SetBasicAuth(testBasicAuth.Username, testBasicAuth.Password)
+	if res, err := c.Do(req); err != nil {
+		t.Error(err)
+	} else {
+		if body, err := ioutil.ReadAll(res.Body); err != nil {
+			t.Error(body)
+		} else {
+			sbody := string(body)
+			if sbody != `{"test": "tata"}` {
+				t.Error("unexpected body: ", sbody)
+			}
+		}
+	}
+
+	srv.Shutdown()
+	select {
+	case <-done:
+	case <-time.After(time.Second * 2):
+		t.Error("timeout for Shutdown reached")
+	}
+}
 
 func dynamicPort() int64 {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
@@ -54,7 +297,6 @@ func connectionTest(host string, port int, crt *certs) bool {
 				log.Fatal("could not read ca file: ", err)
 			}
 			certPool.AppendCertsFromPEM(caPEM)
-			tlsConfig.ClientCAs = certPool
 			tlsConfig.RootCAs = certPool
 			clientCert, err := tls.LoadX509KeyPair(crt.certClientPath, crt.keyClientPath)
 			if err != nil {
@@ -64,7 +306,11 @@ func connectionTest(host string, port int, crt *certs) bool {
 			tlsConfig.Certificates = []tls.Certificate{
 				clientCert,
 			}
-			tls.Client(conn, tlsConfig)
+			tlsConn := tls.Client(conn, tlsConfig)
+			if err := tlsConn.Handshake(); err != nil {
+				log.Println(err)
+				return false
+			}
 		} else {
 			tlsConfig.InsecureSkipVerify = true
 		}
@@ -146,12 +392,13 @@ func generateCASignedCertificate(destCertFilePath, destKeyFilePath, destClientCe
 
 	ca := x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "localhost"},
+		Subject:               pkix.Name{CommonName: "CA Name"},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(2, 0, 0),
 		BasicConstraintsValid: true,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		IsCA:                  true,
 	}
 	caDer, err := x509.CreateCertificate(rand.Reader, &ca, &ca, &caPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
@@ -161,6 +408,7 @@ func generateCASignedCertificate(destCertFilePath, destKeyFilePath, destClientCe
 	cert := x509.Certificate{
 		SerialNumber:          big.NewInt(456),
 		Subject:               pkix.Name{CommonName: "localhost"},
+		DNSNames:              []string{"localhost"},
 		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(2, 0, 0),
@@ -175,9 +423,8 @@ func generateCASignedCertificate(destCertFilePath, destKeyFilePath, destClientCe
 	}
 
 	certClient := x509.Certificate{
-		SerialNumber:          big.NewInt(456),
-		Subject:               pkix.Name{CommonName: "localhost"},
-		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		SerialNumber:          big.NewInt(457),
+		Subject:               pkix.Name{CommonName: "test client"},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(2, 0, 0),
 		BasicConstraintsValid: true,
@@ -257,143 +504,4 @@ func generateTestCertificates(autoTLS bool) (*certs, error) {
 	}
 	ok = true
 	return crt, nil
-}
-
-func TestServer(t *testing.T) {
-	stateInput := make(chan []byte)
-	configPush := make(chan string)
-	srv := New(stateInput, configPush)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
-	port := dynamicPort()
-	srv.Reload(&config.WebServer{
-		Address: "",
-		Port:    port,
-	}, &config.TLS{})
-	if !connectionTest("localhost", int(port), nil) {
-		t.Error("server did not start correctly")
-	}
-	srv.Shutdown()
-	select {
-	case <-done:
-	case <-time.After(time.Second * 2):
-		t.Error("timeout for Shutdown reached")
-	}
-}
-
-func TestServerCancel(t *testing.T) {
-	stateInput := make(chan []byte)
-	configPush := make(chan string)
-	srv := New(stateInput, configPush)
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
-	port := dynamicPort()
-	srv.Reload(&config.WebServer{
-		Address: "",
-		Port:    port,
-	}, &config.TLS{})
-	if !connectionTest("localhost", int(port), nil) {
-		t.Error("server did not start correctly")
-	}
-	cancel()
-	select {
-	case <-done:
-	case <-time.After(time.Second * 2):
-		t.Error("timeout for cancel reached")
-	}
-	if connectionTest("localhost", int(port), nil) {
-		t.Error("server is still running")
-	}
-}
-
-func TestServerTLS(t *testing.T) {
-	crt, err := generateTestCertificates(false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(crt.tmpDir)
-
-	stateInput := make(chan []byte)
-	configPush := make(chan string)
-
-	srv := New(stateInput, configPush)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
-
-	port := dynamicPort()
-	srv.Reload(&config.WebServer{
-		Address: "",
-		Port:    port,
-	}, &config.TLS{
-		KeyFile:         crt.keyPath,
-		CertificateFile: crt.certPath,
-	})
-	if !connectionTest("localhost", int(port), crt) {
-		t.Error("server did not start correctly")
-	}
-
-	srv.Shutdown()
-	select {
-	case <-done:
-	case <-time.After(time.Second * 2):
-		t.Error("timeout for Shutdown reached")
-	}
-}
-
-func TestServerAutoTLS(t *testing.T) {
-	crt, err := generateTestCertificates(true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(crt.tmpDir)
-
-	stateInput := make(chan []byte)
-	configPush := make(chan string)
-
-	srv := New(stateInput, configPush)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
-
-	port := dynamicPort()
-	srv.Reload(&config.WebServer{
-		Address: "",
-		Port:    port,
-	}, &config.TLS{
-		KeyFile:         crt.keyPath,
-		CertificateFile: crt.certPath,
-		AutoSslEnabled:  true,
-		AutoSslFolder:   crt.tmpDir,
-		AutoSslCrtFile:  crt.certPath,
-		AutoSslKeyFile:  crt.keyPath,
-		AutoSslCaFile:   crt.caCertPath,
-	})
-	if !connectionTest("localhost", int(port), crt) {
-		t.Error("server did not start correctly")
-	}
-
-	srv.Shutdown()
-	select {
-	case <-done:
-	case <-time.After(time.Second * 2):
-		t.Error("timeout for Shutdown reached")
-	}
 }
