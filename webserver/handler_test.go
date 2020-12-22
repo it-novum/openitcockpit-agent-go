@@ -48,7 +48,9 @@ func TestWebserverHandlerState(t *testing.T) {
 	w := &handler{
 		ConfigPushRecipient: configPush,
 		StateInput:          stateInput,
-		BasicAuthConfig:     testBasicAuth,
+		Configuration: &config.Configuration{
+			BasicAuth: testBasicAuth,
+		},
 	}
 	w.prepare()
 
@@ -100,7 +102,9 @@ func TestWebserverHandlerAuthFailed(t *testing.T) {
 	w := &handler{
 		ConfigPushRecipient: configPush,
 		StateInput:          stateInput,
-		BasicAuthConfig:     testBasicAuth,
+		Configuration: &config.Configuration{
+			BasicAuth: testBasicAuth,
+		},
 	}
 	w.prepare()
 	go w.Run(ctx)
@@ -145,6 +149,7 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	w := &handler{
 		ConfigPushRecipient: configPush,
 		StateInput:          state,
+		Configuration:       &config.Configuration{},
 	}
 	w.prepare()
 

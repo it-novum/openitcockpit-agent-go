@@ -18,9 +18,7 @@ import (
 
 // ReloadConfig for the webserver
 type ReloadConfig struct {
-	WebServer *config.WebServer
-	TLS       *config.TLS
-	BasicAuth *config.BasicAuth
+	Configuration *config.Configuration
 	// reloadDone will be set by the reload func
 	reloadDone chan struct{}
 }
@@ -44,12 +42,11 @@ func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 	newHandler := &handler{
 		StateInput:          s.stateInput,
 		ConfigPushRecipient: s.configPushRecipient,
-		TLS:                 cfg.TLS,
-		BasicAuthConfig:     cfg.BasicAuth,
+		Configuration:       cfg.Configuration,
 	}
 	newHandler.prepare()
 	go newHandler.Run(ctx) // will be stopped by close()
-	serverAddr := fmt.Sprintf("%s:%d", cfg.WebServer.Address, cfg.WebServer.Port)
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.WebServer.Address, cfg.Configuration.WebServer.Port)
 	log.Debugln("Webserver: Listening to ", serverAddr)
 	newServer := &http.Server{
 		Addr:           serverAddr,
@@ -60,20 +57,20 @@ func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 		MaxHeaderBytes: 256 * 1024,
 	}
 
-	if cfg.TLS.AutoSslEnabled || (cfg.TLS.KeyFile != "" && cfg.TLS.CertificateFile != "") {
+	if cfg.Configuration.TLS.AutoSslEnabled || (cfg.Configuration.TLS.KeyFile != "" && cfg.Configuration.TLS.CertificateFile != "") {
 		log.Debugln("Webserver: TLS enabled")
 		tlsConfig := &tls.Config{
 			MinVersion: tls.VersionTLS12,
 		}
-		certFilePath := cfg.TLS.CertificateFile
-		keyFilePath := cfg.TLS.KeyFile
+		certFilePath := cfg.Configuration.TLS.CertificateFile
+		keyFilePath := cfg.Configuration.TLS.KeyFile
 		caFilePath := ""
-		if cfg.TLS.AutoSslEnabled {
+		if cfg.Configuration.TLS.AutoSslEnabled {
 			log.Debugln("Webserver: Using AutoSSL certificates")
 
-			certFilePath = cfg.TLS.AutoSslCrtFile
-			keyFilePath = cfg.TLS.AutoSslKeyFile
-			caFilePath = cfg.TLS.AutoSslCaFile
+			certFilePath = cfg.Configuration.TLS.AutoSslCrtFile
+			keyFilePath = cfg.Configuration.TLS.AutoSslKeyFile
+			caFilePath = cfg.Configuration.TLS.AutoSslCaFile
 
 			tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 		}

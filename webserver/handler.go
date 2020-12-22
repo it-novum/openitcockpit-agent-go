@@ -2,13 +2,14 @@ package webserver
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,8 +48,7 @@ type handler struct {
 	StateInput          <-chan []byte
 	ConfigPushRecipient chan<- string
 
-	BasicAuthConfig *config.BasicAuth
-	TLS             *config.TLS
+	Configuration *config.Configuration
 
 	mtx      sync.RWMutex
 	shutdown chan struct{}
@@ -75,22 +75,71 @@ func (w *handler) setState(newState []byte) {
 	w.state = newState
 }
 
+func sendInternalServerError(response http.ResponseWriter, text string) {
+	if text == "" {
+		text = "internal server error"
+	}
+	response.Write([]byte(text))
+	response.WriteHeader(500)
+}
+
 func (w *handler) handleStatus(response http.ResponseWriter, request *http.Request) {
 	response.Write(w.getState())
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(200)
 }
 
-func (w *handler) handleConfig(response http.ResponseWriter, request *http.Request) {
+func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
+}
+
+func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
+
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		fmt.Println(err)
-		response.WriteHeader(500)
-		response.Write([]byte("could not read body"))
+		log.Errorln("Webserver: Could not read body: ", err)
+		sendInternalServerError(response, "could not read body")
 		return
 	}
 	w.ConfigPushRecipient <- string(body)
+}
+
+func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request) {
+	utils.GeneratePrivateKeyIfNotExists(w.Configuration.TLS.AutoSslKeyFile)
+	csr, err := utils.CSRFromKeyFile(w.Configuration.TLS.AutoSslKeyFile, request.URL.Query().Get("domain"))
+	if err != nil {
+		log.Errorln("Webserver: could not generate csr: ", err)
+		sendInternalServerError(response, "")
+		return
+	}
+	if err := ioutil.WriteFile(w.Configuration.TLS.AutoSslCsrFile, csr, 0666); err != nil {
+		log.Infoln("Webserver: could not store csr: ", err)
+	}
+	js, err := json.Marshal(struct{ Csr string }{string(csr)})
+	if err != nil {
+		log.Errorln("Webserver: Could not create json for csr: ", err)
+		sendInternalServerError(response, "")
+		return
+	}
+	response.Write(js)
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(200)
+}
+
+func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.Request) {
+	defer request.Body.Close()
+
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		log.Errorln("Webserver: Could not read body: ", err)
+		sendInternalServerError(response, "could not read body")
+		return
+	}
+	if err := ioutil.WriteFile(w.Configuration.TLS.AutoSslCrtFile, body, 0666); err != nil {
+		log.Errorln("Webserver: Could not write certificate file: ", err)
+		sendInternalServerError(response, "")
+		return
+	}
 }
 
 // Handler can be used by http.Server to handle http connections
@@ -99,19 +148,23 @@ func (w *handler) Handler() *mux.Router {
 	defer w.mtx.Unlock()
 	if w.router == nil {
 		routes := mux.NewRouter()
-		if w.TLS != nil && w.TLS.AutoSslEnabled {
+		if w.Configuration.TLS != nil && w.Configuration.TLS.AutoSslEnabled {
 			log.Infoln("Webserver: Activate TLS authentication")
 			routes.Use(tlsAuthMiddleware)
 		}
-		if w.BasicAuthConfig != nil && w.BasicAuthConfig.Username != "" {
+		if w.Configuration.BasicAuth != nil && w.Configuration.BasicAuth.Username != "" {
 			log.Infoln("Webserver: Activate Basic authentication")
 			w.basicAuthMiddleware = &basicAuthMiddleware{
-				BasicAuthConfig: w.BasicAuthConfig,
+				BasicAuthConfig: w.Configuration.BasicAuth,
 			}
 			routes.Use(w.basicAuthMiddleware.Middleware)
 		}
-		routes.HandleFunc("/", w.handleStatus)
-		routes.HandleFunc("/config", w.handleConfig)
+		routes.Path("/").Methods("GET").HandlerFunc(w.handleStatus)
+		routes.Path("/config").Methods("GET").HandlerFunc(w.handleConfigRead)
+		// TODO disable if not need
+		routes.Path("/config").Methods("POST").HandlerFunc(w.handleConfigPush)
+		routes.Path("/getCsr").Methods("GET").HandlerFunc(w.handlerCsr)
+		routes.Path("/updateCrt").Methods("POST").HandlerFunc(w.handlerUpdateCert)
 		w.router = routes
 	}
 	return w.router
