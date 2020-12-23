@@ -1,4 +1,4 @@
-package cmd
+package platformpaths
 
 import (
 	"path"
@@ -33,10 +33,10 @@ func (p *windowsPlatformPath) LogPath() string {
 }
 
 func (p *windowsPlatformPath) ConfigPath() string {
-	return path.Join(p.basePath, "config.ini")
+	return p.basePath
 }
 
-func getPlatformPath() platformPathInterface {
+func getPlatformPath() PlatformPath {
 	return &windowsPlatformPath{
 		registryKey:  registry.LOCAL_MACHINE,
 		registryPath: `SOFTWARE\it-novum\InstalledProducts\openitcockpit-agent`,

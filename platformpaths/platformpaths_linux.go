@@ -1,4 +1,4 @@
-package cmd
+package platformpaths
 
 type linuxPlatformPath struct {
 }
@@ -12,9 +12,9 @@ func (p *linuxPlatformPath) LogPath() string {
 }
 
 func (p *linuxPlatformPath) ConfigPath() string {
-	return "/etc/openitcockpit-agent/config.ini"
+	return "/etc/openitcockpit-agent/"
 }
 
-func getPlatformPath() platformPathInterface {
+func getPlatformPath() PlatformPath {
 	return &linuxPlatformPath{}
 }

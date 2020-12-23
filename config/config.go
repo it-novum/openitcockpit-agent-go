@@ -1,249 +1,171 @@
 package config
 
 import (
-	"fmt"
-	"io/ioutil"
-	"reflect"
-	"strings"
+	"path"
 
-	"gopkg.in/ini.v1"
+	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
+	"github.com/spf13/viper"
 )
 
 // AgentVersion as the name says
 const AgentVersion = "2.1.0"
 
-// Mode - Push or Pull
-type Mode struct {
-	Push bool `key:"enabled"`
-}
-
-// WebServer will hold the configuration options for the WebServer
-type WebServer struct {
-	Address string `key:"address"`
-	Port    int64  `key:"port"`
-}
-
-// BasicAuth configuration options for the WebServer
-type BasicAuth struct {
-	Username string
-	Password string
-}
-
-// TLS will hold the configuration options for the SSL
-type TLS struct {
-	AutoSslEnabled  bool   `key:"try-autossl"`
-	CertificateFile string `key:"certfile"`
-	KeyFile         string `key:"keyfile"`
-	AutoSslFolder   string `key:"autossl-folder"`
-	AutoSslCsrFile  string `key:"autossl-csr-file"`
-	AutoSslCrtFile  string `key:"autossl-crt-file"`
-	AutoSslKeyFile  string `key:"autossl-key-file"`
-	AutoSslCaFile   string `key:"autossl-ca-file"`
-}
-
-// Push configuration of the Agent is running in push mode
-type Push struct {
-	HostUUID string `key:"hostuuid"`
-	URL      string `key:"url"`
-	Apikey   string `key:"apikey"`
-	Proxy    string `key:"proxy"`
-	Interval int64  `key:"interval"`
-}
-
-// Alfresco configuration
-type Alfresco struct {
-	JmxUser     string `key:"alfresco-jmxuser"`
-	JmxPassword string `key:"alfresco-jmxpassword"`
-	JmxAddress  string `key:"alfresco-jmxaddress"`
-	JmxPort     int64  `key:"alfresco-jmxport"`
-	JmxPath     string `key:"alfresco-jmxpath"`
-	JmxQuery    string `key:"alfresco-jmxquery"`
-	JavaPath    string `key:"alfresco-javapath"`
-}
-
-// WindowsEventLog with all event log types to monitor
-type WindowsEventLog struct {
-	types []string `key:"wineventlog-logtypes"`
-}
-
-// Checks which should be enabled and executed by the Agent
-type Checks struct {
-	Interval           int64  `key:"interval"`
-	Docker             bool   `key:"dockerstats"`
-	Qemu               bool   `key:"qemustats"`
-	CPU                bool   `key:"cpustats"`
-	Processes          bool   `key:"processstats"`
-	Netstats           bool   `key:"netstats"`
-	NetIo              bool   `key:"netio"`
-	Diskstats          bool   `key:"diskstats"`
-	DiskIo             bool   `key:"diskio"`
-	WindowsServices    bool   `key:"winservices"`
-	WindowsEventLog    bool   `key:"wineventlog"`
-	SystemdServices    bool   `key:"systemdservices"`
-	Alfresco           bool   `key:"alfrescostats"`
-	CustomchecksConfig string `key:"customchecks"`
-}
-
 // CustomCheck are external plugins and scripts which should be executed by the Agent
 type CustomCheck struct {
 	Name     string
-	Interval int64  `key:"interval"`
-	Enabled  bool   `key:"enabled"`
-	Command  string `key:"command"`
-	Timeout  int64  `key:"timeout"`
-}
-
-// CustomChecks holds all custom checks from customchecks.ini
-type CustomChecks struct {
-	WorkerThreads int64 `key:"max_worker_threads"`
-	CustomChecks  []*CustomCheck
+	Interval int64  `mapstructure:"interval"`
+	Enabled  bool   `mapstructure:"enabled"`
+	Command  string `mapstructure:"command"`
+	Timeout  int64  `mapstructure:"timeout"`
 }
 
 // Configuration with all sub configuration structs
 type Configuration struct {
-	Mode            *Mode
-	WebServer       *WebServer
-	BasicAuth       *BasicAuth
-	TLS             *TLS
-	Push            *Push
-	Alfresco        *Alfresco
-	WindowsEventLog *WindowsEventLog
-	Checks          *Checks
-	CustomChecks    *CustomChecks
+
+	// TLS
+
+	AutoSslEnabled  bool   `mapstructure:"try-autossl"`
+	CertificateFile string `mapstructure:"certfile"`
+	KeyFile         string `mapstructure:"keyfile"`
+	AutoSslFolder   string `mapstructure:"autossl-folder"`
+	AutoSslCsrFile  string `mapstructure:"autossl-csr-file"`
+	AutoSslCrtFile  string `mapstructure:"autossl-crt-file"`
+	AutoSslKeyFile  string `mapstructure:"autossl-key-file"`
+	AutoSslCaFile   string `mapstructure:"autossl-ca-file"`
+
+	// Webserver
+	Address   string `mapstructure:"address"`
+	Port      int64  `mapstructure:"port"`
+	BasicAuth string `mapstructure:"auth"`
+
+	// Config Misc
+
+	Verbose            bool   `mapstructure:"verbose"`
+	Debug              bool   `mapstructure:"debug"`
+	ConfigUpdate       bool   `mapstructure:"config-update-mode"`
+	CustomchecksConfig string `mapstructure:"customchecks"`
+
+	// Default Checks
+
+	CheckInterval   int64 `mapstructure:"interval"`
+	Docker          bool  `mapstructure:"dockerstats"`
+	Qemu            bool  `mapstructure:"qemustats"`
+	CPU             bool  `mapstructure:"cpustats"`
+	Processes       bool  `mapstructure:"processstats"`
+	Netstats        bool  `mapstructure:"netstats"`
+	NetIo           bool  `mapstructure:"netio"`
+	Diskstats       bool  `mapstructure:"diskstats"`
+	DiskIo          bool  `mapstructure:"diskio"`
+	WindowsServices bool  `mapstructure:"winservices"`
+	WindowsEventLog bool  `mapstructure:"wineventlog"`
+	SystemdServices bool  `mapstructure:"systemdservices"`
+	Alfresco        bool  `mapstructure:"alfrescostats"`
+
+	// Alfresco
+
+	JmxUser     string `mapstructure:"alfresco-jmxuser"`
+	JmxPassword string `mapstructure:"alfresco-jmxpassword"`
+	JmxAddress  string `mapstructure:"alfresco-jmxaddress"`
+	JmxPort     int64  `mapstructure:"alfresco-jmxport"`
+	JmxPath     string `mapstructure:"alfresco-jmxpath"`
+	JmxQuery    string `mapstructure:"alfresco-jmxquery"`
+	JavaPath    string `mapstructure:"alfresco-javapath"`
+
+	// WindowsEventLog with all event log types to monitor
+
+	WindowsEventLogTypes []string `mapstructure:"wineventlog-logtypes"`
+
+	// Push Mode
+
+	OITC struct {
+		Push         bool   `mapstructure:"enabled"`
+		HostUUID     string `mapstructure:"hostuuid"`
+		URL          string `mapstructure:"url"`
+		Apikey       string `mapstructure:"apikey"`
+		Proxy        string `mapstructure:"proxy"`
+		PushInterval int64  `mapstructure:"interval"`
+	} `mapstructure:"oitc"`
+
+	// Default is the namespace workaround we need for the configuration file format
+	Default *Configuration
 }
 
-func iterateFieldValues(obj interface{}, f func(reflect.StructField, reflect.Value)) {
-	fields := reflect.TypeOf(obj)
-	values := reflect.ValueOf(obj)
-	if fields.Kind() == reflect.Ptr {
-		fields = fields.Elem()
-		values = values.Elem()
+var defaultValue = map[string]interface{}{
+	"port":                 3333,
+	"interval":             30,
+	"qemustats":            true,
+	"cpustats":             true,
+	"processstats":         true,
+	"netstats":             true,
+	"netio":                true,
+	"diskstats":            true,
+	"diskio":               true,
+	"winservices":          true,
+	"wineventlog":          true,
+	"systemdservices":      true,
+	"alfrescostats":        true,
+	"wineventlog-logtypes": "System,Application,Security",
+	"customchecks":         path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
+	"certfile":             path.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
+	"keyfile":              path.Join(platformpaths.Get().ConfigPath(), "agent.key"),
+	"autossl-folder":       platformpaths.Get().ConfigPath(),
+	"autossl-csr-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
+	"autossl-crt-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
+	"autossl-key-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.key"),
+	"autossl-ca-file":      path.Join(platformpaths.Get().ConfigPath(), "server_ca.crt"),
+}
+
+var oitcDefaultvalue = map[string]interface{}{
+	"interval": 60,
+}
+
+func setConfigurationDefaults(v *viper.Viper) {
+	for key, value := range defaultValue {
+		v.SetDefault("default."+key, value)
 	}
 
-	num := fields.NumField()
-	for i := 0; i < num; i++ {
-		field := fields.Field(i)
-		value := values.Field(i)
-
-		f(field, value)
+	for key, value := range oitcDefaultvalue {
+		v.SetDefault("oitc."+key, value)
 	}
 }
 
-func mapConfig(obj interface{}, sectionName string, cfg *ini.File) {
-	section := cfg.Section(sectionName)
-	if section == nil {
-		//log
-		return
-	}
+// LoadConfigHint for Load func
+type LoadConfigHint struct {
+	SearchPath string
+	ConfigFile string
+}
 
-	iterateFieldValues(obj, func(f reflect.StructField, v reflect.Value) {
-		keyName := f.Tag.Get("key")
-		if keyName == "" {
-			return
+// Load configuration from default paths or configPath
+func Load(configHint *LoadConfigHint) (*Configuration, error) {
+	platformpath := platformpaths.Get()
+	v := viper.New()
+	setConfigurationDefaults(v)
+	if configHint != nil {
+		if configHint.ConfigFile != "" {
+			v.SetConfigFile(configHint.ConfigFile)
+		} else {
+			v.AddConfigPath(configHint.SearchPath)
 		}
+	} else {
+		v.AddConfigPath(platformpath.ConfigPath())
+		v.AddConfigPath(".")
+		v.SetConfigName("config.ini")
+	}
+	v.SetConfigType("ini")
 
-		key := section.Key(keyName)
-		if key == nil {
-			return
-		}
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+	cfg := &Configuration{}
+	cfg.Default = cfg
+	if err := v.Unmarshal(cfg); err != nil {
+		return nil, err
+	}
 
-		switch v.Kind() {
-		case reflect.Int64:
-			newValue, err := key.Int64()
-			if err != nil {
-				// log
-			} else {
-				v.SetInt(newValue)
-			}
-		case reflect.Float32, reflect.Float64:
-		case reflect.String:
-			newValue := key.String()
-			v.SetString(newValue)
-		case reflect.Bool:
-			newValue, err := key.Bool()
-			if err != nil {
-				// log
-			} else {
-				v.SetBool(newValue)
-			}
-		default:
-			panic(fmt.Errorf("can't assign value to a non-number type"))
-		}
-	})
+	return cfg, nil
 }
 
-// ReadConfig parse the given configuration string into the Configuration struct
-func (c *Configuration) ReadConfig(config string) error {
-	// Create all structs and set the default values
-	c.Mode = &Mode{
-		Push: false,
-	}
-	c.WebServer = &WebServer{
-		Address: "0.0.0.0",
-		Port:    3333,
-	}
-	c.BasicAuth = &BasicAuth{}
-	c.TLS = &TLS{
-		AutoSslEnabled: true,
-	}
-	c.Push = &Push{}
-	c.Alfresco = &Alfresco{}
-	c.WindowsEventLog = &WindowsEventLog{
-		types: []string{"System", "Application", "Security"},
-	}
-	c.Checks = &Checks{
-		Interval:           30,
-		CustomchecksConfig: "/etc/openitcockpit-agent/customchecks.cnf",
-		Docker:             false,
-		Qemu:               false,
-		CPU:                true,
-		Processes:          true,
-		Netstats:           true,
-		NetIo:              true,
-		Diskstats:          true,
-		DiskIo:             true,
-		WindowsServices:    true,
-		WindowsEventLog:    true,
-		SystemdServices:    true,
-	}
-	c.CustomChecks = &CustomChecks{
-		WorkerThreads: 8,
-	}
-
-	cfg, err := ini.Load([]byte(config))
-	if err != nil {
-		return err
-	}
-
-	mapConfig(c.Checks, "default", cfg)
-	mapConfig(c.WebServer, "default", cfg)
-	mapConfig(c.TLS, "default", cfg)
-	mapConfig(c.Push, "oitc", cfg)
-	mapConfig(c.Mode, "oitc", cfg)
-	mapConfig(c.Alfresco, "default", cfg)
-
-	if cfg.Section("default").Key("auth").String() != "" {
-		auth := cfg.Section("default").Key("auth").String()
-		authResult := strings.SplitN(auth, ":", 2)
-		if len(authResult) == 2 {
-			c.BasicAuth.Username = authResult[0]
-			c.BasicAuth.Password = authResult[1]
-		}
-	}
-
-	return nil
-}
-
-// ReadConfigFromFile reads the content of the passed ini file to pass it to ReadConfig()
-func (c *Configuration) ReadConfigFromFile(path string) (config string, err error) {
-	content, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
-}
-
+/*
 // ReadCustomChecksConfig reads the custom checks configuration
 func (c *Configuration) ReadCustomChecksConfig(config string) (err error) {
 	cfg, err := ini.Load([]byte(config))
@@ -289,3 +211,4 @@ func (c *Configuration) ReadCustomChecksConfig(config string) (err error) {
 	return nil
 
 }
+*/

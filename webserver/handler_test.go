@@ -13,11 +13,10 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
-var (
-	testBasicAuth = &config.BasicAuth{
-		Username: "test",
-		Password: "test",
-	}
+const (
+	testBasicAuthUser     = "user"
+	testBasicAuthPassword = "test"
+	testBasicAuth         = "user:test"
 )
 
 func TestWebserverHandler(t *testing.T) {
@@ -49,7 +48,7 @@ func TestWebserverHandlerState(t *testing.T) {
 		ConfigPushRecipient: configPush,
 		StateInput:          stateInput,
 		Configuration: &config.Configuration{
-			BasicAuth: testBasicAuth,
+			BasicAuth: "",
 		},
 	}
 	w.prepare()
@@ -62,7 +61,7 @@ func TestWebserverHandlerState(t *testing.T) {
 	testState := []byte(`{"test": "tata"}`)
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", ts.URL, nil)
-	req.SetBasicAuth(testBasicAuth.Username, testBasicAuth.Password)
+	req.SetBasicAuth(testBasicAuthUser, testBasicAuthPassword)
 
 	r, err := client.Do(req)
 	if err != nil {

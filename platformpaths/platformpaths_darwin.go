@@ -1,4 +1,4 @@
-package cmd
+package platformpaths
 
 import "path"
 
@@ -16,9 +16,9 @@ func (p *darwinPlatformPath) LogPath() string {
 }
 
 func (p *darwinPlatformPath) ConfigPath() string {
-	return path.Join(p.basePath, "config.ini")
+	return p.basePath
 }
 
-func getPlatformPath() platformPathInterface {
+func getPlatformPath() PlatformPath {
 	return &darwinPlatformPath{}
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestChecksCheckWmiServices(t *testing.T) {
+func TestChecksCheckDiskIO(t *testing.T) {
 
 	check := &CheckDiskIo{}
 	config := check.DefaultConfiguration()

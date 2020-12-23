@@ -6,14 +6,9 @@ import (
 	"path"
 	"runtime"
 
+	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 	"github.com/spf13/cobra"
 )
-
-type platformPathInterface interface {
-	Init() error
-	LogPath() string
-	ConfigPath() string
-}
 
 type RootCmd struct {
 	cmd              *cobra.Command
@@ -22,12 +17,10 @@ type RootCmd struct {
 	logPath          string
 	disableLog       bool
 	disableLogRotate bool
-	platformPath     platformPathInterface
+	platformPath     platformpaths.PlatformPath
 }
 
 func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
-	r.platformPath.Init()
-
 	if r.configPath == "" {
 		if platformConfigPath := r.platformPath.ConfigPath(); platformConfigPath != "" {
 			r.configPath = platformConfigPath
@@ -96,7 +89,7 @@ func New() *RootCmd {
 	r.cmd.PersistentFlags().BoolVar(&r.disableLog, "disable-logfile", false, "disable log file")
 	r.cmd.PersistentFlags().BoolVar(&r.disableLogRotate, "disable-logrotate", false, "disable log file rotation")
 
-	r.platformPath = getPlatformPath()
+	r.platformPath = platformpaths.Get()
 
 	return r
 }

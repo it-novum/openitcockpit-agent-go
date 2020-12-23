@@ -46,7 +46,7 @@ func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 	}
 	newHandler.prepare()
 	go newHandler.Run(ctx) // will be stopped by close()
-	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.WebServer.Address, cfg.Configuration.WebServer.Port)
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)
 	log.Debugln("Webserver: Listening to ", serverAddr)
 	newServer := &http.Server{
 		Addr:           serverAddr,
@@ -57,20 +57,20 @@ func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 		MaxHeaderBytes: 256 * 1024,
 	}
 
-	if cfg.Configuration.TLS.AutoSslEnabled || (cfg.Configuration.TLS.KeyFile != "" && cfg.Configuration.TLS.CertificateFile != "") {
+	if cfg.Configuration.AutoSslEnabled || (cfg.Configuration.KeyFile != "" && cfg.Configuration.CertificateFile != "") {
 		log.Debugln("Webserver: TLS enabled")
 		tlsConfig := &tls.Config{
 			MinVersion: tls.VersionTLS12,
 		}
-		certFilePath := cfg.Configuration.TLS.CertificateFile
-		keyFilePath := cfg.Configuration.TLS.KeyFile
+		certFilePath := cfg.Configuration.CertificateFile
+		keyFilePath := cfg.Configuration.KeyFile
 		caFilePath := ""
-		if cfg.Configuration.TLS.AutoSslEnabled {
+		if cfg.Configuration.AutoSslEnabled {
 			log.Debugln("Webserver: Using AutoSSL certificates")
 
-			certFilePath = cfg.Configuration.TLS.AutoSslCrtFile
-			keyFilePath = cfg.Configuration.TLS.AutoSslKeyFile
-			caFilePath = cfg.Configuration.TLS.AutoSslCaFile
+			certFilePath = cfg.Configuration.AutoSslCrtFile
+			keyFilePath = cfg.Configuration.AutoSslKeyFile
+			caFilePath = cfg.Configuration.AutoSslCaFile
 
 			tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 		}

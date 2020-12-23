@@ -42,12 +42,7 @@ func TestServer(t *testing.T) {
 	port := dynamicPort()
 	srv.Reload(&ReloadConfig{
 		Configuration: &config.Configuration{
-			WebServer: &config.WebServer{
-				Address: "",
-				Port:    port,
-			},
-			TLS:       &config.TLS{},
-			BasicAuth: &config.BasicAuth{},
+			Port: port,
 		},
 	})
 	if !connectionTest("localhost", int(port), nil) {
@@ -74,12 +69,7 @@ func TestServerCancel(t *testing.T) {
 	port := dynamicPort()
 	srv.Reload(&ReloadConfig{
 		Configuration: &config.Configuration{
-			WebServer: &config.WebServer{
-				Address: "",
-				Port:    port,
-			},
-			TLS:       &config.TLS{},
-			BasicAuth: &config.BasicAuth{},
+			Port: port,
 		},
 	})
 	if !connectionTest("localhost", int(port), nil) {
@@ -118,15 +108,9 @@ func TestServerTLS(t *testing.T) {
 	port := dynamicPort()
 	srv.Reload(&ReloadConfig{
 		Configuration: &config.Configuration{
-			WebServer: &config.WebServer{
-				Address: "",
-				Port:    port,
-			},
-			TLS: &config.TLS{
-				KeyFile:         crt.keyPath,
-				CertificateFile: crt.certPath,
-			},
-			BasicAuth: &config.BasicAuth{},
+			Port:            port,
+			KeyFile:         crt.keyPath,
+			CertificateFile: crt.certPath,
 		},
 	})
 	if !connectionTest("localhost", int(port), crt) {
@@ -163,21 +147,12 @@ func TestServerAutoTLS(t *testing.T) {
 	port := dynamicPort()
 	srv.Reload(&ReloadConfig{
 		Configuration: &config.Configuration{
-			WebServer: &config.WebServer{
-				Address: "",
-				Port:    port,
-			},
-			TLS: &config.TLS{
-				KeyFile:         crt.keyPath,
-				CertificateFile: crt.certPath,
-				AutoSslEnabled:  true,
-				AutoSslFolder:   crt.tmpDir,
-				AutoSslCrtFile:  crt.certPath,
-				AutoSslKeyFile:  crt.keyPath,
-				AutoSslCaFile:   crt.caCertPath,
-			},
-
-			BasicAuth: &config.BasicAuth{},
+			Port:           port,
+			AutoSslEnabled: true,
+			AutoSslFolder:  crt.tmpDir,
+			AutoSslCrtFile: crt.certPath,
+			AutoSslKeyFile: crt.keyPath,
+			AutoSslCaFile:  crt.caCertPath,
 		},
 	})
 	if !connectionTest("localhost", int(port), crt) {
@@ -214,20 +189,13 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	port := dynamicPort()
 	srv.Reload(&ReloadConfig{
 		Configuration: &config.Configuration{
-			WebServer: &config.WebServer{
-				Address: "",
-				Port:    port,
-			},
-			TLS: &config.TLS{
-				KeyFile:         crt.keyPath,
-				CertificateFile: crt.certPath,
-				AutoSslEnabled:  true,
-				AutoSslFolder:   crt.tmpDir,
-				AutoSslCrtFile:  crt.certPath,
-				AutoSslKeyFile:  crt.keyPath,
-				AutoSslCaFile:   crt.caCertPath,
-			},
-			BasicAuth: testBasicAuth,
+			Port:           port,
+			AutoSslEnabled: true,
+			AutoSslFolder:  crt.tmpDir,
+			AutoSslCrtFile: crt.certPath,
+			AutoSslKeyFile: crt.keyPath,
+			AutoSslCaFile:  crt.caCertPath,
+			BasicAuth:      testBasicAuth,
 		},
 	})
 	stateInput <- []byte(`{"test": "tata"}`)
@@ -254,7 +222,7 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.SetBasicAuth(testBasicAuth.Username, testBasicAuth.Password)
+	req.SetBasicAuth(testBasicAuthUser, testBasicAuthPassword)
 	if res, err := c.Do(req); err != nil {
 		t.Error(err)
 	} else {

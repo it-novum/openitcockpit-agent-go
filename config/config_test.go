@@ -3,8 +3,12 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"testing"
+
+	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 )
 
 var agentVersion1ConfigBlank string = `[default]
@@ -23,7 +27,7 @@ verbose = false
 stacktrace = false
 config-update-mode = false
 auth =
-customchecks = /etc/openitcockpit-agent/customchecks.cnf
+customchecks = /etc/openitcockpit-agent/customcnf
 temperature-fahrenheit = false
 dockerstats = false
 qemustats = false
@@ -73,7 +77,7 @@ verbose = false
 stacktrace = false
 config-update-mode = false
 auth = username:pass:word
-customchecks = C:\Program Files\it-novum\openitcockpit-agent\customchecks.cnf
+customchecks = C:\Program Files\it-novum\openitcockpit-agent\customcnf
 temperature-fahrenheit = false
 dockerstats = false
 qemustats = false
@@ -106,6 +110,8 @@ apikey = aaaaabbbbbcccccdddddeeeeefffff
 proxy = proxy.example.org
 interval = 90
 `
+
+var agentVersion1ConfigEmpty = ""
 
 var customChecksAgentVersion1ConfigStringMaxThreads string = `[default]
   max_worker_threads = abc
@@ -159,34 +165,84 @@ var customChecksAgentVersion1ConfigEmptyCommand string = `
     enabled = true
 `
 
+func saveTempConfig(config string) string {
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		panic(err)
+	}
+	if err := ioutil.WriteFile(path.Join(tmpDir, "config.ini"), []byte(config), 0666); err != nil {
+		panic(err)
+	}
+	return tmpDir
+}
+
 func TestAgentVersion1BlankConfig(t *testing.T) {
-	c := &Configuration{}
-	err := c.ReadConfig(agentVersion1ConfigBlank)
+	cfgdir := saveTempConfig(agentVersion1ConfigBlank)
+	defer os.RemoveAll(cfgdir)
+
+	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if c.Checks.Interval != 30 {
+	if c.CheckInterval != 30 {
 		t.Error("Check interval expect to be 30")
 	}
 
-	if c.WebServer.Port != 3333 {
+	if c.Port != 3333 {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.Checks.CustomchecksConfig != "/etc/openitcockpit-agent/customchecks.cnf" {
-		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customchecks.cnf")
+	if c.CustomchecksConfig != "/etc/openitcockpit-agent/customcnf" {
+		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customcnf")
 	}
 
-	if c.Checks.CPU != true {
+	if c.CPU != true {
 		t.Error("Checks CPU expect to be true")
 	}
 
-	if c.Alfresco.JmxUser != "monitorRole" {
+	if c.JmxUser != "monitorRole" {
 		t.Error("Alfresco JmxUser expect to be monitorRole")
 	}
 
-	if c.Mode.Push != false {
+	if c.OITC.Push != false {
+		t.Error("Push Mode expect to be false")
+	}
+
+	js, _ := json.MarshalIndent(c, "", "    ")
+	fmt.Println(string(js))
+}
+
+func TestAgentVersion1EmptyConfig(t *testing.T) {
+	cfgdir := saveTempConfig(agentVersion1ConfigEmpty)
+	defer os.RemoveAll(cfgdir)
+
+	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c.CheckInterval != 30 {
+		t.Error("Check interval expect to be 30")
+	}
+
+	if c.Port != 3333 {
+		t.Error("WebServer port expect to be 3333")
+	}
+
+	if c.CustomchecksConfig != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
+		t.Error("WebServer port expect to be: ", path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
+	}
+
+	if c.CPU != true {
+		t.Error("Checks CPU expect to be true")
+	}
+
+	if c.JmxUser != "" {
+		t.Error("Alfresco JmxUser expect to be monitorRole")
+	}
+
+	if c.OITC.Push != false {
 		t.Error("Push Mode expect to be false")
 	}
 
@@ -195,86 +251,84 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 }
 
 func TestAgentVersion1Config(t *testing.T) {
-	c := &Configuration{}
-	err := c.ReadConfig(agentVersion1Config)
+	cfgdir := saveTempConfig(agentVersion1Config)
+	defer os.RemoveAll(cfgdir)
+
+	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if c.Checks.Interval != 60 {
+	if c.CheckInterval != 60 {
 		t.Error("Check interval expect to be 60")
 	}
 
-	if c.WebServer.Port != 33333 {
+	if c.Port != 33333 {
 		t.Error("WebServer port expect to be 33333")
 	}
 
-	if c.TLS.CertificateFile != "/foo/bar.cert" {
+	if c.CertificateFile != "/foo/bar.cert" {
 		t.Error("TLS CertificateFile expect to be /foo/bar.cert")
 	}
 
-	if c.TLS.KeyFile != "/foo/bar.key" {
+	if c.KeyFile != "/foo/bar.key" {
 		t.Error("TLS KeyFile expect to be /foo/bar.key")
 	}
 
-	if c.TLS.AutoSslCsrFile != "/etc/autossl/csr.csr" {
+	if c.AutoSslCsrFile != "/etc/autossl/csr.csr" {
 		t.Error("TLS AutoSslCsrFile expect to be /etc/autossl/csr.csr")
 	}
 
-	if c.TLS.AutoSslCrtFile != "/etc/autossl/crt.crt" {
+	if c.AutoSslCrtFile != "/etc/autossl/crt.crt" {
 		t.Error("TLS AutoSslCrtFile expect to be /etc/autossl/crt.crt")
 	}
 
-	if c.TLS.AutoSslKeyFile != "/etc/autossl/key.key" {
+	if c.AutoSslKeyFile != "/etc/autossl/key.key" {
 		t.Error("TLS AutoSslKeyFile expect to be /etc/autossl/key.key")
 	}
 
-	if c.TLS.AutoSslCaFile != "/etc/autossl/server_ca.ca" {
+	if c.AutoSslCaFile != "/etc/autossl/server_ca.ca" {
 		t.Error("TLS AutoSslCaFile expect to be /etc/autossl/server_ca.ca")
 	}
 
-	if c.Checks.CustomchecksConfig != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customchecks.cnf" {
-		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customchecks.cnf")
+	if c.CustomchecksConfig != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
+		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf")
 	}
 
-	if c.Checks.CPU != false {
+	if c.CPU != false {
 		t.Error("Checks CPU expect to be false")
 	}
 
-	if c.Alfresco.JmxUser != "oitc-agent" {
+	if c.JmxUser != "oitc-agent" {
 		t.Error("Alfresco JmxUser expect to be oitc-agent")
 	}
 
-	if c.Push.HostUUID != "3a2d91e5-03f7-4d2c-b719-05bd69b312ee" {
+	if c.OITC.HostUUID != "3a2d91e5-03f7-4d2c-b719-05bd69b312ee" {
 		t.Error("Push HostUUID expect to be 3a2d91e5-03f7-4d2c-b719-05bd69b312ee")
 	}
 
-	if c.Push.URL != "https://demo.openitcockpit.io" {
+	if c.OITC.URL != "https://demo.openitcockpit.io" {
 		t.Error("Push url expect to be https://demo.openitcockpit.io")
 	}
 
-	if c.Push.Apikey != "aaaaabbbbbcccccdddddeeeeefffff" {
+	if c.OITC.Apikey != "aaaaabbbbbcccccdddddeeeeefffff" {
 		t.Error("Push Apikey expect to be aaaaabbbbbcccccdddddeeeeefffff")
 	}
 
-	if c.Push.Proxy != "proxy.example.org" {
+	if c.OITC.Proxy != "proxy.example.org" {
 		t.Error("Push HostUUID expect to be proxy.example.org")
 	}
 
-	if c.Push.Interval != 90 {
+	if c.OITC.PushInterval != 90 {
 		t.Error("Push Interval expect to be 90")
 	}
 
-	if c.Mode.Push != true {
+	if c.OITC.Push != true {
 		t.Error("Push Mode expect to be true")
 	}
 
-	if c.BasicAuth.Username != "username" {
+	if c.BasicAuth != "username:pass:word" {
 		t.Error("BasicAuth username expect to be 'username'")
-	}
-
-	if c.BasicAuth.Password != "pass:word" {
-		t.Error("BasicAuth password expect to be 'pass:word'")
 	}
 
 	js, _ := json.MarshalIndent(c, "", "    ")
@@ -282,41 +336,19 @@ func TestAgentVersion1Config(t *testing.T) {
 }
 
 func TestReadConfigFromFile(t *testing.T) {
-	c := &Configuration{}
 	dir, _ := os.Getwd()
 	configPath := fmt.Sprintf("%s%s../config_example.ini", dir, string(os.PathSeparator))
-	config, err := c.ReadConfigFromFile(configPath)
+	config, err := Load(&LoadConfigHint{ConfigFile: configPath})
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(config)
 }
 
-func TestReadCustomChecksConfigStringMaxThreads(t *testing.T) {
-	//Read config.ini (required config.ini is an empty string)
-	c := &Configuration{}
-	err := c.ReadConfig("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = c.ReadCustomChecksConfig(customChecksAgentVersion1ConfigStringMaxThreads)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if c.CustomChecks.WorkerThreads != 8 {
-		t.Error("CustomChecks.WorkerThreads expect to be 8")
-	}
-
-	if len(c.CustomChecks.CustomChecks) > 0 {
-		t.Error("This config is expected to have no custom checks")
-	}
-}
-
+/*
 func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 	//Read config.ini (required config.ini is an empty string)
-	c := &Configuration{}
-	err := c.ReadConfig("")
+	c, err := Read("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,15 +359,15 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if c.CustomChecks.WorkerThreads != 10 {
-		t.Error("CustomChecks.WorkerThreads expect to be 10")
+	if c.CustomWorkerThreads != 10 {
+		t.Error("CustomWorkerThreads expect to be 10")
 	}
 
-	if len(c.CustomChecks.CustomChecks) != 4 {
+	if len(c.CustomCustomChecks) != 4 {
 		t.Error("This config is expected to have 4 custom checks")
 	}
 
-	for _, customcheck := range c.CustomChecks.CustomChecks {
+	for _, customcheck := range c.CustomCustomChecks {
 		if customcheck.Name == "time_1" {
 			if customcheck.Enabled != true {
 				t.Error("Custom check time_1 is expected to be enabled")
@@ -364,8 +396,9 @@ func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(c.CustomChecks.CustomChecks)
-	if len(c.CustomChecks.CustomChecks) != 1 {
+	fmt.Println(c.CustomCustomChecks)
+	if len(c.CustomCustomChecks) != 1 {
 		t.Error("This config is expected to have 1 custom check")
 	}
 }
+*/

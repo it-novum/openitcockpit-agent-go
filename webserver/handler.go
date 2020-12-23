@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -18,13 +19,14 @@ type contextKey string
 const authenticatedKey contextKey = "Authenticated"
 
 type basicAuthMiddleware struct {
-	BasicAuthConfig *config.BasicAuth
+	Username string
+	Password string
 }
 
 func (b *basicAuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, password, ok := r.BasicAuth()
-		if !ok || user != b.BasicAuthConfig.Username || password != b.BasicAuthConfig.Password {
+		if !ok || user != b.Username || password != b.Password {
 			log.Infoln("Webserver: Invalid username or password from client: ", r.RemoteAddr)
 			http.Error(w, "Forbidden", http.StatusForbidden)
 		} else {
@@ -105,14 +107,14 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 }
 
 func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request) {
-	utils.GeneratePrivateKeyIfNotExists(w.Configuration.TLS.AutoSslKeyFile)
-	csr, err := utils.CSRFromKeyFile(w.Configuration.TLS.AutoSslKeyFile, request.URL.Query().Get("domain"))
+	utils.GeneratePrivateKeyIfNotExists(w.Configuration.AutoSslKeyFile)
+	csr, err := utils.CSRFromKeyFile(w.Configuration.AutoSslKeyFile, request.URL.Query().Get("domain"))
 	if err != nil {
 		log.Errorln("Webserver: could not generate csr: ", err)
 		sendInternalServerError(response, "")
 		return
 	}
-	if err := ioutil.WriteFile(w.Configuration.TLS.AutoSslCsrFile, csr, 0666); err != nil {
+	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0666); err != nil {
 		log.Infoln("Webserver: could not store csr: ", err)
 	}
 	js, err := json.Marshal(struct{ Csr string }{string(csr)})
@@ -135,7 +137,7 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 		sendInternalServerError(response, "could not read body")
 		return
 	}
-	if err := ioutil.WriteFile(w.Configuration.TLS.AutoSslCrtFile, body, 0666); err != nil {
+	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, body, 0666); err != nil {
 		log.Errorln("Webserver: Could not write certificate file: ", err)
 		sendInternalServerError(response, "")
 		return
@@ -148,14 +150,19 @@ func (w *handler) Handler() *mux.Router {
 	defer w.mtx.Unlock()
 	if w.router == nil {
 		routes := mux.NewRouter()
-		if w.Configuration.TLS != nil && w.Configuration.TLS.AutoSslEnabled {
+		if w.Configuration.AutoSslEnabled {
 			log.Infoln("Webserver: Activate TLS authentication")
 			routes.Use(tlsAuthMiddleware)
 		}
-		if w.Configuration.BasicAuth != nil && w.Configuration.BasicAuth.Username != "" {
+		if w.Configuration.BasicAuth != "" {
 			log.Infoln("Webserver: Activate Basic authentication")
+			cred := strings.SplitN(w.Configuration.BasicAuth, ":", 1)
+			if len(cred) != 2 {
+				log.Fatalln("Webserver: Invalid basic auth configuration")
+			}
 			w.basicAuthMiddleware = &basicAuthMiddleware{
-				BasicAuthConfig: w.Configuration.BasicAuth,
+				Username: cred[0],
+				Password: cred[1],
 			}
 			routes.Use(w.basicAuthMiddleware.Middleware)
 		}
