@@ -77,18 +77,9 @@ func (w *handler) setState(newState []byte) {
 	w.state = newState
 }
 
-func sendInternalServerError(response http.ResponseWriter, text string) {
-	if text == "" {
-		text = "internal server error"
-	}
-	response.Write([]byte(text))
-	response.WriteHeader(500)
-}
-
 func (w *handler) handleStatus(response http.ResponseWriter, request *http.Request) {
-	response.Write(w.getState())
 	response.Header().Add("Content-Type", "application/json")
-	response.WriteHeader(200)
+	response.Write(w.getState())
 }
 
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
@@ -100,7 +91,7 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.Errorln("Webserver: Could not read body: ", err)
-		sendInternalServerError(response, "could not read body")
+		http.Error(response, "could not read body", http.StatusInternalServerError)
 		return
 	}
 	w.ConfigPushRecipient <- string(body)
@@ -111,7 +102,7 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 	csr, err := utils.CSRFromKeyFile(w.Configuration.AutoSslKeyFile, request.URL.Query().Get("domain"))
 	if err != nil {
 		log.Errorln("Webserver: could not generate csr: ", err)
-		sendInternalServerError(response, "")
+		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0666); err != nil {
@@ -120,7 +111,7 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 	js, err := json.Marshal(struct{ Csr string }{string(csr)})
 	if err != nil {
 		log.Errorln("Webserver: Could not create json for csr: ", err)
-		sendInternalServerError(response, "")
+		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	response.Write(js)
@@ -134,12 +125,12 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.Errorln("Webserver: Could not read body: ", err)
-		sendInternalServerError(response, "could not read body")
+		http.Error(response, "could not read body", http.StatusInternalServerError)
 		return
 	}
 	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, body, 0666); err != nil {
 		log.Errorln("Webserver: Could not write certificate file: ", err)
-		sendInternalServerError(response, "")
+		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -156,7 +147,7 @@ func (w *handler) Handler() *mux.Router {
 		}
 		if w.Configuration.BasicAuth != "" {
 			log.Infoln("Webserver: Activate Basic authentication")
-			cred := strings.SplitN(w.Configuration.BasicAuth, ":", 1)
+			cred := strings.SplitN(w.Configuration.BasicAuth, ":", 2)
 			if len(cred) != 2 {
 				log.Fatalln("Webserver: Invalid basic auth configuration")
 			}
