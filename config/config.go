@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"path"
+	"strings"
 
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 	"github.com/spf13/viper"
@@ -165,50 +167,38 @@ func Load(configHint *LoadConfigHint) (*Configuration, error) {
 	return cfg, nil
 }
 
-/*
-// ReadCustomChecksConfig reads the custom checks configuration
-func (c *Configuration) ReadCustomChecksConfig(config string) (err error) {
-	cfg, err := ini.Load([]byte(config))
-	if err != nil {
-		return err
+// LoadCustomChecks from specified config file
+func LoadCustomChecks(configPath string) ([]*CustomCheck, error) {
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	v.SetConfigType("ini")
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
 	}
 
-	for _, section := range cfg.Sections() {
-		sectionName := section.Name()
-		if sectionName == "default" {
-			if section.HasKey("max_worker_threads") {
-				key, _ := section.GetKey("max_worker_threads")
-				if c.CustomChecks.WorkerThreads, err = key.Int64(); err != nil {
-					c.CustomChecks.WorkerThreads = 8
-				}
+	cfg := map[string]*CustomCheck{}
 
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+
+	checks := make([]*CustomCheck, 0)
+	for name, check := range cfg {
+		if name != "default" {
+			check.Name = name
+			if check.Interval <= 0 {
+				check.Interval = 60
 			}
-		}
-
-		if sectionName != "default" && sectionName != "DEFAULT" {
-			command, missingErr := section.GetKey("command")
-			if missingErr != nil || command.MustString("") == "" {
-				continue
+			if check.Timeout <= 0 {
+				check.Timeout = 15
 			}
-
-			interval, _ := section.GetKey("interval")
-			timeout, _ := section.GetKey("timeout")
-			enabled, _ := section.GetKey("enabled")
-
-			//We are a custom check
-			CustomCheck := &CustomCheck{
-				Name:     sectionName,
-				Command:  command.MustString(""),
-				Interval: interval.MustInt64(60),
-				Timeout:  timeout.MustInt64(15),
-				Enabled:  enabled.MustBool(false),
+			if strings.TrimSpace(check.Command) == "" {
+				return nil, fmt.Errorf("missing command in custom check: %s", check.Name)
 			}
-
-			c.CustomChecks.CustomChecks = append(c.CustomChecks.CustomChecks, CustomCheck)
+			checks = append(checks, check)
 		}
 	}
 
-	return nil
-
+	return checks, nil
 }
-*/

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
@@ -159,25 +160,37 @@ var customChecksAgentVersion1ConfigEmptyCommand string = `
   interval = 15
   timeout = 10
   enabled = false
-
-  [no_command_line_at_all]
-    timeout = 10
-    enabled = true
 `
 
-func saveTempConfig(config string) string {
+var customChecksAgentVersion1ConfigMissingCommand string = `
+[time_1]
+  command = "C:\checks\check_time.exe"
+  interval = 60
+  timeout = 10
+  enabled = true
+
+[no_command_line_at_all]
+timeout = 10
+enabled = true
+`
+
+func saveTempConfig(config string, customchecks bool) string {
+	filename := "config.ini"
+	if customchecks {
+		filename = "customchecks.ini"
+	}
 	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(path.Join(tmpDir, "config.ini"), []byte(config), 0666); err != nil {
+	if err := ioutil.WriteFile(path.Join(tmpDir, filename), []byte(config), 0666); err != nil {
 		panic(err)
 	}
 	return tmpDir
 }
 
 func TestAgentVersion1BlankConfig(t *testing.T) {
-	cfgdir := saveTempConfig(agentVersion1ConfigBlank)
+	cfgdir := saveTempConfig(agentVersion1ConfigBlank, false)
 	defer os.RemoveAll(cfgdir)
 
 	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
@@ -214,7 +227,7 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 }
 
 func TestAgentVersion1EmptyConfig(t *testing.T) {
-	cfgdir := saveTempConfig(agentVersion1ConfigEmpty)
+	cfgdir := saveTempConfig(agentVersion1ConfigEmpty, false)
 	defer os.RemoveAll(cfgdir)
 
 	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
@@ -251,7 +264,7 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 }
 
 func TestAgentVersion1Config(t *testing.T) {
-	cfgdir := saveTempConfig(agentVersion1Config)
+	cfgdir := saveTempConfig(agentVersion1Config, false)
 	defer os.RemoveAll(cfgdir)
 
 	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
@@ -345,29 +358,21 @@ func TestReadConfigFromFile(t *testing.T) {
 	fmt.Println(config)
 }
 
-/*
 func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
-	//Read config.ini (required config.ini is an empty string)
-	c, err := Read("")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Read custom checks config
-	err = c.ReadCustomChecksConfig(customChecksAgentVersion1Config)
+	cfgdir := saveTempConfig(customChecksAgentVersion1Config, true)
+	defer os.RemoveAll(cfgdir)
+
+	checks, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if c.CustomWorkerThreads != 10 {
-		t.Error("CustomWorkerThreads expect to be 10")
-	}
-
-	if len(c.CustomCustomChecks) != 4 {
+	if len(checks) != 4 {
 		t.Error("This config is expected to have 4 custom checks")
 	}
 
-	for _, customcheck := range c.CustomCustomChecks {
+	for _, customcheck := range checks {
 		if customcheck.Name == "time_1" {
 			if customcheck.Enabled != true {
 				t.Error("Custom check time_1 is expected to be enabled")
@@ -383,22 +388,29 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 }
 
 func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
-	//Read config.ini (required config.ini is an empty string)
-	c := &Configuration{}
-	err := c.ReadConfig("")
-	if err != nil {
-		t.Fatal(err)
+	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigEmptyCommand, true)
+	defer os.RemoveAll(cfgdir)
+
+	_, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
+	if err == nil {
+		t.Fatal("expected error")
 	}
 
-	// Read custom checks config
-	err = c.ReadCustomChecksConfig(customChecksAgentVersion1ConfigEmptyCommand)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fmt.Println(c.CustomCustomChecks)
-	if len(c.CustomCustomChecks) != 1 {
-		t.Error("This config is expected to have 1 custom check")
+	if !strings.Contains(err.Error(), "missing command") {
+		t.Fatal("unxpected error: ", err)
 	}
 }
-*/
+
+func TestReadCustomChecksConfigAgentVersion1MissingCommandline(t *testing.T) {
+	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigMissingCommand, true)
+	defer os.RemoveAll(cfgdir)
+
+	_, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	if !strings.Contains(err.Error(), "missing command") {
+		t.Fatal("unxpected error: ", err)
+	}
+}
