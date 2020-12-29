@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 	"github.com/spf13/viper"
 )
@@ -21,8 +23,18 @@ type CustomCheck struct {
 	Timeout  int64  `mapstructure:"timeout"`
 }
 
+// CustomCheckConfiguration stores only custom check commands
+type CustomCheckConfiguration struct {
+	ConfigurationPath string
+	viper             *viper.Viper
+
+	Checks []*CustomCheck
+}
+
 // Configuration with all sub configuration structs
 type Configuration struct {
+	ConfigurationPath string
+	viper             *viper.Viper
 
 	// TLS
 
@@ -131,14 +143,32 @@ func setConfigurationDefaults(v *viper.Viper) {
 	}
 }
 
+// ReloadFunc will be called after the configuration has been loaded or changed
+type ReloadFunc func(*Configuration, error)
+
+// ReloadCustomCheckFunc will be called after the custom check configuration has been loaded or changed
+type ReloadCustomCheckFunc func(*CustomCheckConfiguration, error)
+
 // LoadConfigHint for Load func
 type LoadConfigHint struct {
 	SearchPath string
 	ConfigFile string
 }
 
-// Load configuration from default paths or configPath
-func Load(configHint *LoadConfigHint) (*Configuration, error) {
+func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
+	cfg := &Configuration{}
+	cfg.Default = cfg
+	if err := v.Unmarshal(cfg); err != nil {
+		return nil, err
+	}
+
+	cfg.ConfigurationPath = v.ConfigFileUsed()
+	cfg.viper = v
+	return cfg, nil
+}
+
+// Load configuration from default paths or configPath. The reload func must be short lived or start a go routine.
+func Load(reload ReloadFunc, configHint *LoadConfigHint) {
 	platformpath := platformpaths.Get()
 	v := viper.New()
 	setConfigurationDefaults(v)
@@ -156,27 +186,23 @@ func Load(configHint *LoadConfigHint) (*Configuration, error) {
 	v.SetConfigType("ini")
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, err
-	}
-	cfg := &Configuration{}
-	cfg.Default = cfg
-	if err := v.Unmarshal(cfg); err != nil {
-		return nil, err
+		reload(nil, err)
+		return
 	}
 
-	return cfg, nil
+	v.OnConfigChange(func(in fsnotify.Event) {
+		cfg, err := unmarshalConfiguration(v)
+		reload(cfg, err)
+	})
+
+	cfg, err := unmarshalConfiguration(v)
+	reload(cfg, err)
+	if err == nil {
+		go v.WatchConfig()
+	}
 }
 
-// LoadCustomChecks from specified config file
-func LoadCustomChecks(configPath string) ([]*CustomCheck, error) {
-	v := viper.New()
-	v.SetConfigFile(configPath)
-	v.SetConfigType("ini")
-
-	if err := v.ReadInConfig(); err != nil {
-		return nil, err
-	}
-
+func unmarshalCustomChecks(v *viper.Viper) (*CustomCheckConfiguration, error) {
 	cfg := map[string]*CustomCheck{}
 
 	if err := v.Unmarshal(&cfg); err != nil {
@@ -200,5 +226,42 @@ func LoadCustomChecks(configPath string) ([]*CustomCheck, error) {
 		}
 	}
 
-	return checks, nil
+	return &CustomCheckConfiguration{
+		ConfigurationPath: v.ConfigFileUsed(),
+		viper:             v,
+		Checks:            checks,
+	}, nil
+}
+
+// LoadCustomChecks from specified config file. The reload func must be short lived or start a go routine.
+func LoadCustomChecks(configPath string, reload ReloadCustomCheckFunc) {
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	v.SetConfigType("ini")
+
+	if err := v.ReadInConfig(); err != nil {
+		reload(nil, err)
+		return
+	}
+
+	v.OnConfigChange(func(in fsnotify.Event) {
+		ccConfig, err := unmarshalCustomChecks(v)
+		reload(ccConfig, err)
+	})
+
+	ccConfig, err := unmarshalCustomChecks(v)
+	reload(ccConfig, err)
+	if err == nil {
+		go v.WatchConfig()
+	}
+}
+
+// SaveConfiguration to disk
+func SaveConfiguration(oldConfiguration *Configuration, config []byte) error {
+	if err := ioutil.WriteFile(oldConfiguration.ConfigurationPath, config, 0666); err != nil {
+		return err
+	}
+	// reload will be done automatically by WatchConfig
+
+	return nil
 }

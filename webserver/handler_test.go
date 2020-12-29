@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"strings"
 	"sync"
 	"testing"
@@ -22,8 +24,7 @@ const (
 func TestWebserverHandler(t *testing.T) {
 	stateInput := make(chan []byte)
 	w := &handler{
-		ConfigPushRecipient: make(chan string),
-		StateInput:          stateInput,
+		StateInput: stateInput,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	w.prepare()
@@ -40,13 +41,11 @@ func TestWebserverHandler(t *testing.T) {
 
 func TestWebserverHandlerState(t *testing.T) {
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	w := &handler{
-		ConfigPushRecipient: configPush,
-		StateInput:          stateInput,
+		StateInput: stateInput,
 		Configuration: &config.Configuration{
 			BasicAuth: "",
 		},
@@ -94,13 +93,11 @@ func TestWebserverHandlerState(t *testing.T) {
 
 func TestWebserverHandlerAuthFailed(t *testing.T) {
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	w := &handler{
-		ConfigPushRecipient: configPush,
-		StateInput:          stateInput,
+		StateInput: stateInput,
 		Configuration: &config.Configuration{
 			BasicAuth: testBasicAuth,
 		},
@@ -141,14 +138,21 @@ func TestWebserverHandlerAuthFailed(t *testing.T) {
 
 func TestWebserverHandlerConfig(t *testing.T) {
 	state := make(chan []byte)
-	configPush := make(chan string)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	tmpdir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+	cfgPath := path.Join(tmpdir, "config.ini")
+
 	w := &handler{
-		ConfigPushRecipient: configPush,
-		StateInput:          state,
-		Configuration:       &config.Configuration{},
+		StateInput: state,
+		Configuration: &config.Configuration{
+			ConfigurationPath: cfgPath,
+		},
 	}
 	w.prepare()
 
@@ -159,7 +163,6 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	done := make(chan struct{})
 
 	go func() {
-		result = <-configPush
 		done <- struct{}{}
 	}()
 
@@ -176,6 +179,12 @@ func TestWebserverHandlerConfig(t *testing.T) {
 
 	select {
 	case <-done:
+		d, err := ioutil.ReadFile(cfgPath)
+		if err != nil {
+			t.Error(err)
+			break
+		}
+		result = string(d)
 		if result != cfg {
 			t.Error("unexpected result")
 		}

@@ -40,9 +40,8 @@ type Server struct {
 func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 	log.Infoln("Webserver: Reload")
 	newHandler := &handler{
-		StateInput:          s.stateInput,
-		ConfigPushRecipient: s.configPushRecipient,
-		Configuration:       cfg.Configuration,
+		StateInput:    s.stateInput,
+		Configuration: cfg.Configuration,
 	}
 	newHandler.prepare()
 	go newHandler.Run(ctx) // will be stopped by close()

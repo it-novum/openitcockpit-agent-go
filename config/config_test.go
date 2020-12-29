@@ -148,6 +148,8 @@ var customChecksAgentVersion1Config string = `[default]
   enabled = true
 `
 
+var customChecksAgentEmptyConfig string = ``
+
 var customChecksAgentVersion1ConfigEmptyCommand string = `
 [time_1]
   command = "C:\checks\check_time.exe"
@@ -193,169 +195,172 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigBlank, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
-	if err != nil {
-		t.Fatal(err)
-	}
+	Load(func(c *Configuration, err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if c.CheckInterval != 30 {
-		t.Error("Check interval expect to be 30")
-	}
+		if c.CheckInterval != 30 {
+			t.Error("Check interval expect to be 30")
+		}
 
-	if c.Port != 3333 {
-		t.Error("WebServer port expect to be 3333")
-	}
+		if c.Port != 3333 {
+			t.Error("WebServer port expect to be 3333")
+		}
 
-	if c.CustomchecksConfig != "/etc/openitcockpit-agent/customcnf" {
-		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customcnf")
-	}
+		if c.CustomchecksConfig != "/etc/openitcockpit-agent/customcnf" {
+			t.Error("WebServer port expect to be /etc/openitcockpit-agent/customcnf")
+		}
 
-	if c.CPU != true {
-		t.Error("Checks CPU expect to be true")
-	}
+		if c.CPU != true {
+			t.Error("Checks CPU expect to be true")
+		}
 
-	if c.JmxUser != "monitorRole" {
-		t.Error("Alfresco JmxUser expect to be monitorRole")
-	}
+		if c.JmxUser != "monitorRole" {
+			t.Error("Alfresco JmxUser expect to be monitorRole")
+		}
 
-	if c.OITC.Push != false {
-		t.Error("Push Mode expect to be false")
-	}
+		if c.OITC.Push != false {
+			t.Error("Push Mode expect to be false")
+		}
 
-	js, _ := json.MarshalIndent(c, "", "    ")
-	fmt.Println(string(js))
+		js, _ := json.MarshalIndent(c, "", "    ")
+		fmt.Println(string(js))
+	}, &LoadConfigHint{SearchPath: cfgdir})
 }
 
 func TestAgentVersion1EmptyConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigEmpty, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
-	if err != nil {
-		t.Fatal(err)
-	}
+	Load(func(c *Configuration, err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if c.CheckInterval != 30 {
-		t.Error("Check interval expect to be 30")
-	}
+		if c.CheckInterval != 30 {
+			t.Error("Check interval expect to be 30")
+		}
 
-	if c.Port != 3333 {
-		t.Error("WebServer port expect to be 3333")
-	}
+		if c.Port != 3333 {
+			t.Error("WebServer port expect to be 3333")
+		}
 
-	if c.CustomchecksConfig != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
-		t.Error("WebServer port expect to be: ", path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
-	}
+		if c.CustomchecksConfig != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
+			t.Error("WebServer port expect to be: ", path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
+		}
 
-	if c.CPU != true {
-		t.Error("Checks CPU expect to be true")
-	}
+		if c.CPU != true {
+			t.Error("Checks CPU expect to be true")
+		}
 
-	if c.JmxUser != "" {
-		t.Error("Alfresco JmxUser expect to be monitorRole")
-	}
+		if c.JmxUser != "" {
+			t.Error("Alfresco JmxUser expect to be monitorRole")
+		}
 
-	if c.OITC.Push != false {
-		t.Error("Push Mode expect to be false")
-	}
+		if c.OITC.Push != false {
+			t.Error("Push Mode expect to be false")
+		}
 
-	js, _ := json.MarshalIndent(c, "", "    ")
-	fmt.Println(string(js))
+		js, _ := json.MarshalIndent(c, "", "    ")
+		fmt.Println(string(js))
+	}, &LoadConfigHint{SearchPath: cfgdir})
 }
 
 func TestAgentVersion1Config(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1Config, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(&LoadConfigHint{SearchPath: cfgdir})
-	if err != nil {
-		t.Fatal(err)
-	}
+	Load(func(c *Configuration, err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if c.CheckInterval != 60 {
-		t.Error("Check interval expect to be 60")
-	}
+		if c.CheckInterval != 60 {
+			t.Error("Check interval expect to be 60")
+		}
 
-	if c.Port != 33333 {
-		t.Error("WebServer port expect to be 33333")
-	}
+		if c.Port != 33333 {
+			t.Error("WebServer port expect to be 33333")
+		}
 
-	if c.CertificateFile != "/foo/bar.cert" {
-		t.Error("TLS CertificateFile expect to be /foo/bar.cert")
-	}
+		if c.CertificateFile != "/foo/bar.cert" {
+			t.Error("TLS CertificateFile expect to be /foo/bar.cert")
+		}
 
-	if c.KeyFile != "/foo/bar.key" {
-		t.Error("TLS KeyFile expect to be /foo/bar.key")
-	}
+		if c.KeyFile != "/foo/bar.key" {
+			t.Error("TLS KeyFile expect to be /foo/bar.key")
+		}
 
-	if c.AutoSslCsrFile != "/etc/autossl/csr.csr" {
-		t.Error("TLS AutoSslCsrFile expect to be /etc/autossl/csr.csr")
-	}
+		if c.AutoSslCsrFile != "/etc/autossl/csr.csr" {
+			t.Error("TLS AutoSslCsrFile expect to be /etc/autossl/csr.csr")
+		}
 
-	if c.AutoSslCrtFile != "/etc/autossl/crt.crt" {
-		t.Error("TLS AutoSslCrtFile expect to be /etc/autossl/crt.crt")
-	}
+		if c.AutoSslCrtFile != "/etc/autossl/crt.crt" {
+			t.Error("TLS AutoSslCrtFile expect to be /etc/autossl/crt.crt")
+		}
 
-	if c.AutoSslKeyFile != "/etc/autossl/key.key" {
-		t.Error("TLS AutoSslKeyFile expect to be /etc/autossl/key.key")
-	}
+		if c.AutoSslKeyFile != "/etc/autossl/key.key" {
+			t.Error("TLS AutoSslKeyFile expect to be /etc/autossl/key.key")
+		}
 
-	if c.AutoSslCaFile != "/etc/autossl/server_ca.ca" {
-		t.Error("TLS AutoSslCaFile expect to be /etc/autossl/server_ca.ca")
-	}
+		if c.AutoSslCaFile != "/etc/autossl/server_ca.ca" {
+			t.Error("TLS AutoSslCaFile expect to be /etc/autossl/server_ca.ca")
+		}
 
-	if c.CustomchecksConfig != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
-		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf")
-	}
+		if c.CustomchecksConfig != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
+			t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf")
+		}
 
-	if c.CPU != false {
-		t.Error("Checks CPU expect to be false")
-	}
+		if c.CPU != false {
+			t.Error("Checks CPU expect to be false")
+		}
 
-	if c.JmxUser != "oitc-agent" {
-		t.Error("Alfresco JmxUser expect to be oitc-agent")
-	}
+		if c.JmxUser != "oitc-agent" {
+			t.Error("Alfresco JmxUser expect to be oitc-agent")
+		}
 
-	if c.OITC.HostUUID != "3a2d91e5-03f7-4d2c-b719-05bd69b312ee" {
-		t.Error("Push HostUUID expect to be 3a2d91e5-03f7-4d2c-b719-05bd69b312ee")
-	}
+		if c.OITC.HostUUID != "3a2d91e5-03f7-4d2c-b719-05bd69b312ee" {
+			t.Error("Push HostUUID expect to be 3a2d91e5-03f7-4d2c-b719-05bd69b312ee")
+		}
 
-	if c.OITC.URL != "https://demo.openitcockpit.io" {
-		t.Error("Push url expect to be https://demo.openitcockpit.io")
-	}
+		if c.OITC.URL != "https://demo.openitcockpit.io" {
+			t.Error("Push url expect to be https://demo.openitcockpit.io")
+		}
 
-	if c.OITC.Apikey != "aaaaabbbbbcccccdddddeeeeefffff" {
-		t.Error("Push Apikey expect to be aaaaabbbbbcccccdddddeeeeefffff")
-	}
+		if c.OITC.Apikey != "aaaaabbbbbcccccdddddeeeeefffff" {
+			t.Error("Push Apikey expect to be aaaaabbbbbcccccdddddeeeeefffff")
+		}
 
-	if c.OITC.Proxy != "proxy.example.org" {
-		t.Error("Push HostUUID expect to be proxy.example.org")
-	}
+		if c.OITC.Proxy != "proxy.example.org" {
+			t.Error("Push HostUUID expect to be proxy.example.org")
+		}
 
-	if c.OITC.PushInterval != 90 {
-		t.Error("Push Interval expect to be 90")
-	}
+		if c.OITC.PushInterval != 90 {
+			t.Error("Push Interval expect to be 90")
+		}
 
-	if c.OITC.Push != true {
-		t.Error("Push Mode expect to be true")
-	}
+		if c.OITC.Push != true {
+			t.Error("Push Mode expect to be true")
+		}
 
-	if c.BasicAuth != "username:pass:word" {
-		t.Error("BasicAuth username expect to be 'username'")
-	}
+		if c.BasicAuth != "username:pass:word" {
+			t.Error("BasicAuth username expect to be 'username'")
+		}
 
-	js, _ := json.MarshalIndent(c, "", "    ")
-	fmt.Println(string(js))
+		js, _ := json.MarshalIndent(c, "", "    ")
+		fmt.Println(string(js))
+	}, &LoadConfigHint{SearchPath: cfgdir})
 }
 
 func TestReadConfigFromFile(t *testing.T) {
 	dir, _ := os.Getwd()
 	configPath := fmt.Sprintf("%s%s../config_example.ini", dir, string(os.PathSeparator))
-	config, err := Load(&LoadConfigHint{ConfigFile: configPath})
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(config)
+	Load(func(c *Configuration, err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}, &LoadConfigHint{ConfigFile: configPath})
 }
 
 func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
@@ -363,54 +368,159 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1Config, true)
 	defer os.RemoveAll(cfgdir)
 
-	checks, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(checks) != 4 {
-		t.Error("This config is expected to have 4 custom checks")
-	}
-
-	for _, customcheck := range checks {
-		if customcheck.Name == "time_1" {
-			if customcheck.Enabled != true {
-				t.Error("Custom check time_1 is expected to be enabled")
-			}
+	LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"), func(ccc *CustomCheckConfiguration, err error) {
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		if customcheck.Name == "check_Windows_Services_Status_OSS" {
-			if customcheck.Enabled != false {
-				t.Error("Custom check time_1 is expected to be disabled")
+		if len(ccc.Checks) != 4 {
+			t.Error("This config is expected to have 4 custom checks")
+		}
+
+		for _, customcheck := range ccc.Checks {
+			if customcheck.Name == "time_1" {
+				if customcheck.Enabled != true {
+					t.Error("Custom check time_1 is expected to be enabled")
+				}
+			}
+
+			if customcheck.Name == "check_Windows_Services_Status_OSS" {
+				if customcheck.Enabled != false {
+					t.Error("Custom check time_1 is expected to be disabled")
+				}
 			}
 		}
-	}
+	})
 }
 
 func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigEmptyCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"), func(ccc *CustomCheckConfiguration, err error) {
+		if err == nil {
+			t.Fatal("expected error")
+		}
 
-	if !strings.Contains(err.Error(), "missing command") {
-		t.Fatal("unxpected error: ", err)
-	}
+		if !strings.Contains(err.Error(), "missing command") {
+			t.Fatal("unxpected error: ", err)
+		}
+	})
 }
 
 func TestReadCustomChecksConfigAgentVersion1MissingCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigMissingCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"))
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"), func(ccc *CustomCheckConfiguration, err error) {
+		if err == nil {
+			t.Fatal("expected error")
+		}
 
-	if !strings.Contains(err.Error(), "missing command") {
-		t.Fatal("unxpected error: ", err)
+		if !strings.Contains(err.Error(), "missing command") {
+			t.Fatal("unxpected error: ", err)
+		}
+	})
+}
+
+func TestConfigurationReload(t *testing.T) {
+	cfgdir := saveTempConfig(agentVersion1Config, false)
+	defer os.RemoveAll(cfgdir)
+
+	rl := make(chan *Configuration)
+	result := make(chan int)
+
+	go func() {
+		counter := 0
+		for {
+			select {
+			case cfg, ok := <-rl:
+				if !ok {
+					result <- counter
+					return
+				}
+				counter++
+				switch counter {
+				case 1:
+					if err := SaveConfiguration(cfg, []byte(agentVersion1ConfigEmpty)); err != nil {
+						t.Error(err)
+					}
+					break
+				case 2:
+					if err := SaveConfiguration(cfg, []byte(agentVersion1Config)); err != nil {
+						t.Error(err)
+					}
+					break
+				case 3:
+					close(rl)
+				}
+			}
+		}
+	}()
+
+	Load(func(cfg *Configuration, err error) {
+		// kein mutex notwendig, da der channel sync ist
+		if err != nil {
+			t.Error(err)
+		}
+		rl <- cfg
+	}, &LoadConfigHint{
+		SearchPath: cfgdir,
+	})
+
+	ct := <-result
+
+	if ct != 3 {
+		t.Error("unexpected number of reloads: ", ct)
+	}
+}
+
+func TestCustomCheckConfigurationReload(t *testing.T) {
+	cfgdir := saveTempConfig(customChecksAgentVersion1Config, true)
+	defer os.RemoveAll(cfgdir)
+
+	rl := make(chan *CustomCheckConfiguration)
+	result := make(chan int)
+
+	go func() {
+		counter := 0
+		for {
+			select {
+			case ccc, ok := <-rl:
+				if !ok {
+					result <- counter
+					return
+				}
+				counter++
+				switch counter {
+				case 1:
+					if err := ioutil.WriteFile(ccc.ConfigurationPath, []byte(customChecksAgentEmptyConfig), 0666); err != nil {
+						t.Error(err)
+					}
+					break
+				case 2:
+					if err := ioutil.WriteFile(ccc.ConfigurationPath, []byte(customChecksAgentVersion1Config), 0666); err != nil {
+						t.Error(err)
+					}
+					break
+				case 3:
+					close(rl)
+				}
+			}
+		}
+	}()
+
+	LoadCustomChecks(path.Join(cfgdir, "customchecks.ini"), func(ccc *CustomCheckConfiguration, err error) {
+		// kein mutex notwendig, da der channel sync ist
+		if err != nil {
+			t.Error(err)
+		}
+		rl <- ccc
+	})
+
+	ct := <-result
+
+	if ct != 3 {
+		t.Error("unexpected number of reloads: ", ct)
 	}
 }

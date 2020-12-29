@@ -47,8 +47,7 @@ func tlsAuthMiddleware(next http.Handler) http.Handler {
 }
 
 type handler struct {
-	StateInput          <-chan []byte
-	ConfigPushRecipient chan<- string
+	StateInput <-chan []byte
 
 	Configuration *config.Configuration
 
@@ -94,11 +93,18 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		http.Error(response, "could not read body", http.StatusInternalServerError)
 		return
 	}
-	w.ConfigPushRecipient <- string(body)
+
+	if err := config.SaveConfiguration(w.Configuration, body); err != nil {
+		log.Errorln("Webserver: ", err)
+	}
 }
 
 func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request) {
-	utils.GeneratePrivateKeyIfNotExists(w.Configuration.AutoSslKeyFile)
+	if err := utils.GeneratePrivateKeyIfNotExists(w.Configuration.AutoSslKeyFile); err != nil {
+		log.Errorln("Webserver: ", err)
+		http.Error(response, "internal server error", http.StatusInternalServerError)
+		return
+	}
 	csr, err := utils.CSRFromKeyFile(w.Configuration.AutoSslKeyFile, request.URL.Query().Get("domain"))
 	if err != nil {
 		log.Errorln("Webserver: could not generate csr: ", err)
@@ -114,9 +120,8 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	response.Write(js)
 	response.Header().Add("Content-Type", "application/json")
-	response.WriteHeader(200)
+	response.Write(js)
 }
 
 func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.Request) {
