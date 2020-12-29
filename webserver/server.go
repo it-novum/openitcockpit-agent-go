@@ -105,7 +105,7 @@ func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
 		tlsConfig.Certificates = []tls.Certificate{cert}
 
 		newServer.TLSConfig = tlsConfig
-		newServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0)
+		newServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 	}
 
 	s.close()
