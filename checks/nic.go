@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/shirou/gopsutil/v3/net"
 )
 
@@ -59,15 +60,7 @@ func (c *CheckNic) Run(ctx context.Context) (*CheckResult, error) {
 	return &CheckResult{Result: nicResults}, nil
 }
 
-// DefaultConfiguration contains the variables for the configuration file and the default values
-// can be nil if no configuration is required
-func (c *CheckNic) DefaultConfiguration() interface{} {
-	return nil
-}
-
-// Configure should verify the configuration and set it
-// will be run after every reload
-// if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckNic) Configure(_ interface{}) error {
-	return nil
+// Configure the command or return false if the command was disabled
+func (c *CheckNic) Configure(config *config.Configuration) (bool, error) {
+	return true, nil
 }

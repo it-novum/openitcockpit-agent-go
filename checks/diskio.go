@@ -1,5 +1,6 @@
 package checks
 
+/*
 import (
 	"context"
 	"fmt"
@@ -101,6 +102,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 
 				tot_ios := diskIODiff['read_count'] + diskIODiff['write_count']
 				total_avg_wait := read_time + write_time / tot_ios*/
+/*
 
 			fmt.Println(device)
 			fmt.Println(iostats)
@@ -148,3 +150,4 @@ func (c *CheckDiskIo) Wrapdiff(last, curr float64) (float64, error) {
 
 	return math.Pow(2, currBoundary) - last + curr, nil
 }
+*/

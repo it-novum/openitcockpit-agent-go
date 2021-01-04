@@ -1,5 +1,6 @@
 package checks
 
+/*
 import (
 	"context"
 	"fmt"
@@ -17,3 +18,4 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	fmt.Println(err)
 
 }
+*/

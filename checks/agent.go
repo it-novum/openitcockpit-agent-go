@@ -58,15 +58,7 @@ func (c *CheckAgent) Run(ctx context.Context) (*CheckResult, error) {
 	}, nil
 }
 
-// DefaultConfiguration contains the variables for the configuration file and the default values
-// can be nil if no configuration is required
-func (c *CheckAgent) DefaultConfiguration() interface{} {
-	return nil
-}
-
-// Configure should verify the configuration and set it
-// will be run after every reload
-// if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckAgent) Configure(_ interface{}) error {
-	return nil
+// Configure the command or return false if the command was disabled
+func (c *CheckAgent) Configure(config *config.Configuration) (bool, error) {
+	return true, nil
 }

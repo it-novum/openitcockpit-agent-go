@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/StackExchange/wmi"
+	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
 // Win32_Service from https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-service
@@ -93,15 +94,7 @@ func (c *CheckWinService) getServiceListViaWmi(ctx context.Context) ([]*resultWi
 	return wmiResults, nil
 }
 
-// DefaultConfiguration contains the variables for the configuration file and the default values
-// can be nil if no configuration is required
-func (c *CheckWinService) DefaultConfiguration() interface{} {
-	return nil
-}
-
-// Configure should verify the configuration and set it
-// will be run after every reload
-// if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckWinService) Configure(_ interface{}) error {
-	return nil
+// Configure the command or return false if the command was disabled
+func (c *CheckWinService) Configure(config *config.Configuration) (bool, error) {
+	return true, nil
 }

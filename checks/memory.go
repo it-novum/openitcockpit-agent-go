@@ -3,6 +3,7 @@ package checks
 import (
 	"context"
 
+	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
@@ -48,15 +49,7 @@ func (c *CheckMem) Run(ctx context.Context) (*CheckResult, error) {
 	}, nil
 }
 
-// DefaultConfiguration contains the variables for the configuration file and the default values
-// can be nil if no configuration is required
-func (c *CheckMem) DefaultConfiguration() interface{} {
-	return nil
-}
-
-// Configure should verify the configuration and set it
-// will be run after every reload
-// if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckMem) Configure(_ interface{}) error {
-	return nil
+// Configure the command or return false if the command was disabled
+func (c *CheckMem) Configure(config *config.Configuration) (bool, error) {
+	return true, nil
 }

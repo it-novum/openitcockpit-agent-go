@@ -73,6 +73,7 @@ type Configuration struct {
 	WindowsServices bool  `mapstructure:"winservices"`
 	WindowsEventLog bool  `mapstructure:"wineventlog"`
 	SystemdServices bool  `mapstructure:"systemdservices"`
+	LaunchdServices bool  `mapstructure:"launchdservices"`
 	Alfresco        bool  `mapstructure:"alfrescostats"`
 
 	// Alfresco

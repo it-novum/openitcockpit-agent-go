@@ -13,8 +13,6 @@ func TestChecksCheckSystemdServices(t *testing.T) {
 	}
 
 	for _, c := range checks {
-		config := c.DefaultConfiguration()
-		c.Configure(config)
 		if c.Name() == "" {
 			t.Error("Invalid name")
 		}

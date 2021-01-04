@@ -8,22 +8,9 @@ import (
 )
 
 func TestChecksWithDefault(t *testing.T) {
-	checks := []Check{
-		&CheckMem{},
-		//&CheckProcess{},
-		&CheckAgent{},
-		&CheckSwap{},
-		&CheckUser{},
-		&CheckDisk{},
-		//&CheckDiskIo{}, //Check that all calcs are done right
-		&CheckLoad{},
-		&CheckNic{},
-		&CheckSensor{},
-	}
+	checks := getPlatformChecks()
 
 	for _, c := range checks {
-		config := c.DefaultConfiguration()
-		c.Configure(config)
 		if c.Name() == "" {
 			t.Error("Invalid name")
 		}

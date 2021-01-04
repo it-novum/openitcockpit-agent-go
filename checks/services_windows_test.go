@@ -13,8 +13,6 @@ func TestChecksCheckWmiServices(t *testing.T) {
 	}
 
 	for _, c := range checks {
-		config := c.DefaultConfiguration()
-		c.Configure(config)
 		if c.Name() == "" {
 			t.Error("Invalid name")
 		}
@@ -35,8 +33,6 @@ func TestChecksCheckWmiServices(t *testing.T) {
 
 func TestGetServiceListFromWmi(t *testing.T) {
 	check := &CheckWinService{}
-	config := check.DefaultConfiguration()
-	check.Configure(config)
 	results, err := check.getServiceListViaWmi(context.Background())
 	if err != nil {
 		t.Fatal(err)

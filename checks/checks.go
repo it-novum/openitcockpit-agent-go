@@ -1,6 +1,10 @@
 package checks
 
-import "context"
+import (
+	"context"
+
+	"github.com/it-novum/openitcockpit-agent-go/config"
+)
 
 // CheckResult will be sent to oitc
 type CheckResult struct {
@@ -19,12 +23,21 @@ type Check interface {
 	// CheckResult will be serialized after the return and should not change until the next call to Run
 	Run(ctx context.Context) (*CheckResult, error)
 
-	// DefaultConfiguration contains the variables for the configuration file and the default values
-	// can be nil if no configuration is required
-	DefaultConfiguration() interface{}
+	// Configure the command or return false if the command was disabled
+	Configure(config *config.Configuration) (bool, error)
+}
 
-	// Configure should verify the configuration and set it
-	// will be run after every reload
-	// if DefaultConfiguration returns nil, the parameter will also be nil
-	Configure(interface{}) error
+func ChecksForConfiguration(config *config.Configuration) ([]Check, error) {
+	res := []Check{}
+	checks := getPlatformChecks()
+	for _, check := range checks {
+		ok, err := check.Configure(config)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			res = append(res, check)
+		}
+	}
+	return res, nil
 }

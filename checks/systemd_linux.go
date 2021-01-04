@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/coreos/go-systemd/v22/dbus"
+	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
 // CheckSystemd gathers information about Systemd services
@@ -63,15 +64,7 @@ func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*resultSyst
 	return systemdResults, nil
 }
 
-// DefaultConfiguration contains the variables for the configuration file and the default values
-// can be nil if no configuration is required
-func (c *CheckSystemd) DefaultConfiguration() interface{} {
-	return nil
-}
-
-// Configure should verify the configuration and set it
-// will be run after every reload
-// if DefaultConfiguration returns nil, the parameter will also be nil
-func (c *CheckSystemd) Configure(_ interface{}) error {
-	return nil
+// Configure the command or return false if the command was disabled
+func (c *CheckSystemd) Configure(config *config.Configuration) (bool, error) {
+	return config.SystemdServices, nil
 }
