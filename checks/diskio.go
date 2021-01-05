@@ -65,10 +65,11 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 
 	for device, iostats := range disks {
 
-		oldResults := &resultDiskIo{}
+		var oldResults *resultDiskIo
 		for _, oldResult := range c.lastResult {
 			if oldResult.Device == device {
 				oldResults = oldResult
+				break
 			}
 		}
 
@@ -82,14 +83,14 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 		// in php wäre das praktisch ein !isset($oldChecks[$device]), aber da bin ich gerade zu Braindead für um das in go zu bauen.
 		if oldResults != nil {
 			//Wenn er die alten Werte zum vergleichen hat, kann er alles rechnen und returnen
-			ReadCount := c.Wrapdiff(float64(oldResults.ReadCount), float64(iostats.ReadCount))
-			WriteCount := c.Wrapdiff(float64(oldResults.WriteCount), float64(iostats.WriteCount))
-			IoTime := c.Wrapdiff(float64(oldResults.IoTime), float64(iostats.IoTime))
-			ReadTime := c.Wrapdiff(float64(oldResults.ReadTime), float64(iostats.ReadTime))
-			WriteTime := c.Wrapdiff(float64(oldResults.WriteTime), float64(iostats.WriteTime))
-			ReadBytes := c.Wrapdiff(float64(oldResults.ReadBytes), float64(iostats.ReadBytes))
-			WriteBytes := c.Wrapdiff(float64(oldResults.WriteBytes), float64(iostats.WriteBytes))
-			Timestamp := c.Wrapdiff(float64(oldResults.Timestamp), float64(diskstats.Timestamp))
+			ReadCount, _ := c.Wrapdiff(float64(oldResults.ReadCount), float64(iostats.ReadCount))
+			WriteCount, _ := c.Wrapdiff(float64(oldResults.WriteCount), float64(iostats.WriteCount))
+			IoTime, _ := c.Wrapdiff(float64(oldResults.IoTime), float64(iostats.IoTime))
+			ReadTime, _ := c.Wrapdiff(float64(oldResults.ReadTime), float64(iostats.ReadTime))
+			WriteTime, _ := c.Wrapdiff(float64(oldResults.WriteTime), float64(iostats.WriteTime))
+			ReadBytes, _ := c.Wrapdiff(float64(oldResults.ReadBytes), float64(iostats.ReadBytes))
+			WriteBytes, _ := c.Wrapdiff(float64(oldResults.WriteBytes), float64(iostats.WriteBytes))
+			Timestamp, _ := c.Wrapdiff(float64(oldResults.Timestamp), float64(diskstats.Timestamp))
 
 			/*
 				load_percent = IoTime / (timestamp*1000) * 100
@@ -103,7 +104,6 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 				tot_ios := diskIODiff['read_count'] + diskIODiff['write_count']
 				total_avg_wait := read_time + write_time / tot_ios*/
 /*
-
 			fmt.Println(device)
 			fmt.Println(iostats)
 		}
