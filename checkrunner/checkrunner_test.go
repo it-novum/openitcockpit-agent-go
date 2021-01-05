@@ -66,10 +66,22 @@ func TestCheckRunnerCancel(t *testing.T) {
 
 	select {
 	case <-done:
-		return
+		// ok
 	case <-c.Result:
 		t.Fatal("did not expect any result")
-	case <-time.After(time.Second * 30):
+	case <-time.After(time.Second * 10):
 		t.Fatal("timeout waiting for results")
+	}
+
+	// test if another shutdown works
+	go func() {
+		c.Shutdown()
+		done <- struct{}{}
+	}()
+	select {
+	case <-done:
+		// ok
+	case <-time.After(time.Second * 10):
+		t.Fatal("timeout waiting for shutdown")
 	}
 }
