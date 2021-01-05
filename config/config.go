@@ -121,8 +121,6 @@ var defaultValue = map[string]interface{}{
 	"alfrescostats":        true,
 	"wineventlog-logtypes": "System,Application,Security",
 	"customchecks":         path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
-	"certfile":             path.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
-	"keyfile":              path.Join(platformpaths.Get().ConfigPath(), "agent.key"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
 	"autossl-crt-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.crt"),

@@ -1,35 +1,30 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path"
 	"runtime"
-	"sync"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/agentrt"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
-	"github.com/it-novum/openitcockpit-agent-go/webserver"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-type agentInstance struct {
-	webserver *webserver.Server
-}
-
 type RootCmd struct {
-	cmd              *cobra.Command
+	cmd     *cobra.Command
+	agentRt *agentrt.AgentInstance
+
+	// options
 	configPath       string
 	verbose          bool
 	logPath          string
 	disableLog       bool
 	disableLogRotate bool
-	platformPath     platformpaths.PlatformPath
-	initDone         bool
-	initCCCDone      bool
 
-	mtx sync.Mutex
+	platformPath platformpaths.PlatformPath
 }
 
 func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
@@ -81,54 +76,18 @@ func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// TODO find a better place
-func (r *RootCmd) reloadCCConfiguration(ccc *config.CustomCheckConfiguration, err error) {
-	go func() {
-		r.mtx.Lock()
-		defer r.mtx.Unlock()
-
-		if err != nil {
-			log.Errorln(err)
-			if !r.initCCCDone {
-				// on the initial load we want to exit the program if there is an error
-				os.Exit(1)
-			}
-			return
-		}
-		r.initCCCDone = true
-		// do reload for custom checks
-	}()
-}
-
-func (r *RootCmd) reloadConfiguration(cfg *config.Configuration, err error) {
-	go func() {
-		r.mtx.Lock()
-		defer r.mtx.Unlock()
-
-		firstLoad := !r.initDone
-
-		if err != nil {
-			log.Errorln(err)
-			if firstLoad {
-				// on the initial load we want to exit the program if there is an error
-				os.Exit(1)
-			}
-			return
-		}
-		if firstLoad && cfg.CustomchecksConfig != "" {
-			config.LoadCustomChecks(cfg.CustomchecksConfig, r.reloadCCConfiguration)
-		}
-		r.initDone = true
-		// do reload for everything else
-		// TODO
-	}()
-}
-
 func (r *RootCmd) run(cmd *cobra.Command, args []string) {
-	// TODO configure logging
-	config.Load(r.reloadConfiguration, &config.LoadConfigHint{
-		SearchPath: r.configPath,
-	})
+	r.agentRt = &agentrt.AgentInstance{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r.agentRt.Start(ctx, r.configPath)
+	defer r.agentRt.Shutdown()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+
+	<-sig
 }
 
 func New() *RootCmd {

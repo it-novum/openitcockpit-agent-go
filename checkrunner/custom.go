@@ -1,4 +1,4 @@
-package checks
+package checkrunner
 
 import (
 	"context"
@@ -10,18 +10,23 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
+type CustomCheckResult struct {
+	Name   string
+	Result *utils.CommandResult
+}
+
 // CustomCheckRunner runs custom checks
 type CustomCheckRunner struct {
 	// Result channel for check results
 	// Do not close before Shutdown completes
-	Result   chan interface{}
+	Result   chan *CustomCheckResult
 	Checks   []*config.CustomCheck
 	shutdown chan struct{}
 	wg       sync.WaitGroup
 }
 
 // Run the custom checks in background (DO NOT RUN IN GO ROUTINE)
-func (c *CustomCheckRunner) Run(parentCtx context.Context) {
+func (c *CustomCheckRunner) Start(parentCtx context.Context) {
 	c.wg.Add(1)
 	c.shutdown = make(chan struct{})
 
@@ -36,10 +41,13 @@ func (c *CustomCheckRunner) Run(parentCtx context.Context) {
 			if loopCheck.Enabled == true {
 				c.wg.Add(1)
 				go func() {
-					check := <-checkPipe
 					defer c.wg.Done()
+
+					check := <-checkPipe
+
 					ticker := time.NewTicker(time.Duration(check.Interval) * time.Second)
 					defer ticker.Stop()
+
 					for {
 						select {
 						case <-ctx.Done():
@@ -50,7 +58,10 @@ func (c *CustomCheckRunner) Run(parentCtx context.Context) {
 							if err != nil {
 								log.Println(err)
 							}
-							c.Result <- result
+							c.Result <- &CustomCheckResult{
+								Name:   check.Name,
+								Result: result,
+							}
 						}
 					}
 				}()
@@ -68,6 +79,6 @@ func (c *CustomCheckRunner) Run(parentCtx context.Context) {
 
 // Shutdown custom check runner, waits for completion
 func (c *CustomCheckRunner) Shutdown() {
-	c.shutdown <- struct{}{}
+	close(c.shutdown)
 	c.wg.Wait()
 }

@@ -1,4 +1,4 @@
-package checks
+package checkrunner
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func getCommandLine() string {
 
 func TestRun(t *testing.T) {
 	cc := &CustomCheckRunner{
-		Result: make(chan interface{}),
+		Result: make(chan *CustomCheckResult),
 		Checks: []*config.CustomCheck{
 			{
 				Name:     "check_1",
@@ -32,7 +32,7 @@ func TestRun(t *testing.T) {
 			},
 		},
 	}
-	cc.Run(context.Background())
+	cc.Start(context.Background())
 
 	timeout := time.After(time.Second * 3)
 	results := []*utils.CommandResult{}
@@ -51,7 +51,7 @@ outerfor:
 				break outerfor
 			}
 			//fmt.Println(res)
-			results = append(results, res.(*utils.CommandResult))
+			results = append(results, res.Result)
 
 		}
 	}
