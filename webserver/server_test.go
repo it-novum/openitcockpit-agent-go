@@ -30,25 +30,25 @@ func init() {
 
 func TestServer(t *testing.T) {
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
-	srv := New(stateInput, configPush)
+	srv := &Server{
+		StateInput: stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
+	srv.Start(ctx)
 	port := dynamicPort()
-	srv.Reload(&ReloadConfig{
-		Configuration: &config.Configuration{
-			Port: port,
-		},
+	srv.Reload(&config.Configuration{
+		Port: port,
 	})
 	if !connectionTest("localhost", int(port), nil) {
 		t.Error("server did not start correctly")
 	}
-	srv.Shutdown()
+	done := make(chan struct{})
+	go func() {
+		srv.Shutdown()
+		done <- struct{}{}
+	}()
+
 	select {
 	case <-done:
 	case <-time.After(time.Second * 5):
@@ -58,24 +58,25 @@ func TestServer(t *testing.T) {
 
 func TestServerCancel(t *testing.T) {
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
-	srv := New(stateInput, configPush)
+	srv := &Server{
+		StateInput: stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
+	srv.Start(ctx)
 	port := dynamicPort()
-	srv.Reload(&ReloadConfig{
-		Configuration: &config.Configuration{
-			Port: port,
-		},
+	srv.Reload(&config.Configuration{
+		Port: port,
 	})
 	if !connectionTest("localhost", int(port), nil) {
 		t.Error("server did not start correctly")
 	}
 	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		srv.wg.Wait()
+		done <- struct{}{}
+	}()
 	select {
 	case <-done:
 	case <-time.After(time.Second * 5):
@@ -94,30 +95,30 @@ func TestServerTLS(t *testing.T) {
 	defer os.RemoveAll(crt.tmpDir)
 
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
 
-	srv := New(stateInput, configPush)
+	srv := &Server{
+		StateInput: stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
+	srv.Start(ctx)
 
 	port := dynamicPort()
-	srv.Reload(&ReloadConfig{
-		Configuration: &config.Configuration{
-			Port:            port,
-			KeyFile:         crt.keyPath,
-			CertificateFile: crt.certPath,
-		},
+	srv.Reload(&config.Configuration{
+		Port:            port,
+		KeyFile:         crt.keyPath,
+		CertificateFile: crt.certPath,
 	})
 	if !connectionTest("localhost", int(port), crt) {
 		t.Error("server did not start correctly")
 	}
 
-	srv.Shutdown()
+	done := make(chan struct{})
+	go func() {
+		srv.Shutdown()
+		done <- struct{}{}
+	}()
+
 	select {
 	case <-done:
 	case <-time.After(time.Second * 2):
@@ -133,33 +134,32 @@ func TestServerAutoTLS(t *testing.T) {
 	defer os.RemoveAll(crt.tmpDir)
 
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
 
-	srv := New(stateInput, configPush)
+	srv := &Server{
+		StateInput: stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
+	srv.Start(ctx)
 
 	port := dynamicPort()
-	srv.Reload(&ReloadConfig{
-		Configuration: &config.Configuration{
-			Port:           port,
-			AutoSslEnabled: true,
-			AutoSslFolder:  crt.tmpDir,
-			AutoSslCrtFile: crt.certPath,
-			AutoSslKeyFile: crt.keyPath,
-			AutoSslCaFile:  crt.caCertPath,
-		},
+	srv.Reload(&config.Configuration{
+		Port:           port,
+		AutoSslEnabled: true,
+		AutoSslFolder:  crt.tmpDir,
+		AutoSslCrtFile: crt.certPath,
+		AutoSslKeyFile: crt.keyPath,
+		AutoSslCaFile:  crt.caCertPath,
 	})
 	if !connectionTest("localhost", int(port), crt) {
 		t.Error("server did not start correctly")
 	}
 
-	srv.Shutdown()
+	done := make(chan struct{})
+	go func() {
+		srv.Shutdown()
+		done <- struct{}{}
+	}()
 	select {
 	case <-done:
 	case <-time.After(time.Second * 5):
@@ -175,28 +175,24 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	defer os.RemoveAll(crt.tmpDir)
 
 	stateInput := make(chan []byte)
-	configPush := make(chan string)
 
-	srv := New(stateInput, configPush)
+	srv := &Server{
+		StateInput: stateInput,
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	done := make(chan struct{})
-	go func() {
-		srv.Run(ctx)
-		done <- struct{}{}
-	}()
+
+	srv.Start(ctx)
 
 	port := dynamicPort()
-	srv.Reload(&ReloadConfig{
-		Configuration: &config.Configuration{
-			Port:           port,
-			AutoSslEnabled: true,
-			AutoSslFolder:  crt.tmpDir,
-			AutoSslCrtFile: crt.certPath,
-			AutoSslKeyFile: crt.keyPath,
-			AutoSslCaFile:  crt.caCertPath,
-			BasicAuth:      testBasicAuth,
-		},
+	srv.Reload(&config.Configuration{
+		Port:           port,
+		AutoSslEnabled: true,
+		AutoSslFolder:  crt.tmpDir,
+		AutoSslCrtFile: crt.certPath,
+		AutoSslKeyFile: crt.keyPath,
+		AutoSslCaFile:  crt.caCertPath,
+		BasicAuth:      testBasicAuth,
 	})
 	stateInput <- []byte(`{"test": "tata"}`)
 
@@ -236,7 +232,11 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 		}
 	}
 
-	srv.Shutdown()
+	done := make(chan struct{})
+	go func() {
+		srv.Shutdown()
+		done <- struct{}{}
+	}()
 	select {
 	case <-done:
 	case <-time.After(time.Second * 2):

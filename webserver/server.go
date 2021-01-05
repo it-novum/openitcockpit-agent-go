@@ -16,8 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ReloadConfig for the webserver
-type ReloadConfig struct {
+type reloadConfig struct {
 	Configuration *config.Configuration
 	// reloadDone will be set by the reload func
 	reloadDone chan struct{}
@@ -25,11 +24,10 @@ type ReloadConfig struct {
 
 // Server handling for http, should be created by New
 type Server struct {
-	reload   chan *ReloadConfig
-	shutdown chan struct{}
+	StateInput <-chan []byte
 
-	stateInput          <-chan []byte
-	configPushRecipient chan<- string
+	reload   chan *reloadConfig
+	shutdown chan struct{}
 
 	server  *http.Server
 	handler *handler
@@ -37,10 +35,10 @@ type Server struct {
 	wg sync.WaitGroup
 }
 
-func (s *Server) doReload(ctx context.Context, cfg *ReloadConfig) {
+func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	log.Infoln("Webserver: Reload")
 	newHandler := &handler{
-		StateInput:    s.stateInput,
+		StateInput:    s.StateInput,
 		Configuration: cfg.Configuration,
 	}
 	newHandler.prepare()
@@ -151,10 +149,12 @@ func listenServe(server *http.Server) error {
 }
 
 // Reload webserver configuration
-func (s *Server) Reload(reloadConfig *ReloadConfig) {
+func (s *Server) Reload(cfg *config.Configuration) {
 	done := make(chan struct{})
-	reloadConfig.reloadDone = done
-	s.reload <- reloadConfig
+	s.reload <- &reloadConfig{
+		Configuration: cfg,
+		reloadDone:    done,
+	}
 	<-done
 }
 
@@ -164,30 +164,28 @@ func (s *Server) Shutdown() {
 	s.wg.Wait()
 }
 
-// New http server handler
-func New(stateInput <-chan []byte, configPushRecipient chan<- string) *Server {
-	return &Server{
-		reload:              make(chan *ReloadConfig),
-		shutdown:            make(chan struct{}),
-		stateInput:          stateInput,
-		configPushRecipient: configPushRecipient,
-	}
-}
-
-// Run the server routine (should be run as go routine)
+// Run the server routine (should NOT be run in a go routine)
 // You have to call Reload at least once to really start the webserver
-func (s *Server) Run(ctx context.Context) {
-	defer s.close()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case _, more := <-s.shutdown:
-			if !more {
+func (s *Server) Start(ctx context.Context) {
+	s.shutdown = make(chan struct{})
+	s.reload = make(chan *reloadConfig)
+
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+
+		defer s.close()
+		for {
+			select {
+			case <-ctx.Done():
 				return
+			case _, more := <-s.shutdown:
+				if !more {
+					return
+				}
+			case newConfig := <-s.reload:
+				s.doReload(ctx, newConfig)
 			}
-		case newConfig := <-s.reload:
-			s.doReload(ctx, newConfig)
 		}
-	}
+	}()
 }
