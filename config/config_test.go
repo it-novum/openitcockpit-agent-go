@@ -114,10 +114,6 @@ interval = 90
 
 var agentVersion1ConfigEmpty = ""
 
-var customChecksAgentVersion1ConfigStringMaxThreads string = `[default]
-  max_worker_threads = abc
-`
-
 var customChecksAgentVersion1Config string = `[default]
   # max_worker_threads should be increased with increasing number of custom checks
   # but consider: each thread needs (a bit) memory
