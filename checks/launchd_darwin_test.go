@@ -34,8 +34,6 @@ func TestChecksCheckLaunchdServices(t *testing.T) {
 func TestGetServiceListFromLaunchctl(t *testing.T) {
 
 	check := &CheckLaunchd{}
-	config := check.DefaultConfiguration()
-	check.Configure(config)
 	results, err := check.getServiceListViaLaunchctl(context.Background())
 	if err != nil {
 		t.Fatal(err)
