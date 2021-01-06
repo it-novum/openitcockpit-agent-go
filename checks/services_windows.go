@@ -62,12 +62,8 @@ type resultWindowsServices struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckWinService) Run(ctx context.Context) (*CheckResult, error) {
-	systemdResults, err := c.getServiceListViaWmi(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &CheckResult{Result: systemdResults}, nil
+func (c *CheckWinService) Run(ctx context.Context) (interface{}, error) {
+	return c.getServiceListViaWmi(ctx)
 }
 
 func (c *CheckWinService) getServiceListViaWmi(ctx context.Context) ([]*resultWindowsServices, error) {

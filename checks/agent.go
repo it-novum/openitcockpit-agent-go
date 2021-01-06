@@ -33,7 +33,7 @@ type resultAgent struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckAgent) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 	uptime, err := host.UptimeWithContext(ctx)
 	if err != nil {
 		uptime = 0
@@ -43,18 +43,16 @@ func (c *CheckAgent) Run(ctx context.Context) (*CheckResult, error) {
 	platfrom, family, pver, _ := host.PlatformInformationWithContext(ctx)
 
 	now := time.Now()
-	return &CheckResult{
-		Result: &resultAgent{
-			LastUpdated:          now.String(),
-			LastUpdatedTimestamp: now.Unix(),
-			System:               platfrom,
-			SystemUptime:         uptime,
-			KernelVersion:        kernel,
-			MacVersion:           pver,
-			Family:               family,
-			AgentVersion:         config.AgentVersion,
-			TemperatureUnit:      "C",
-		},
+	return &resultAgent{
+		LastUpdated:          now.String(),
+		LastUpdatedTimestamp: now.Unix(),
+		System:               platfrom,
+		SystemUptime:         uptime,
+		KernelVersion:        kernel,
+		MacVersion:           pver,
+		Family:               family,
+		AgentVersion:         config.AgentVersion,
+		TemperatureUnit:      "C",
 	}, nil
 }
 
