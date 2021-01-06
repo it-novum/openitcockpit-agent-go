@@ -54,8 +54,6 @@ type Configuration struct {
 
 	// Config Misc
 
-	Verbose            bool   `mapstructure:"verbose"`
-	Debug              bool   `mapstructure:"debug"`
 	ConfigUpdate       bool   `mapstructure:"config-update-mode"`
 	CustomchecksConfig string `mapstructure:"customchecks"`
 

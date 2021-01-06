@@ -9,14 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
 	log "github.com/sirupsen/logrus"
 )
-
-type reloadConfig struct {
-	Configuration *config.Configuration
-	reloadDone    chan struct{}
-}
 
 // LogHandler cares about files and rotation
 type LogHandler struct {
@@ -26,21 +20,12 @@ type LogHandler struct {
 	LogRotate int
 	// usually os.Stderr
 	DefaultWriter io.Writer
+	Verbose       bool
+	Debug         bool
 
 	wg       sync.WaitGroup
 	logFile  *os.File
 	shutdown chan struct{}
-	reload   chan *reloadConfig
-}
-
-// Reload triggers an async reload of the log file (reopen)
-func (h *LogHandler) Reload(cfg *config.Configuration) {
-	done := make(chan struct{})
-	h.reload <- &reloadConfig{
-		Configuration: cfg,
-		reloadDone:    done,
-	}
-	<-done
 }
 
 func (h *LogHandler) openLogFile() {
@@ -64,19 +49,6 @@ func (h *LogHandler) closeLogFile() {
 			log.Errorln("LogHandler: could not close log file: ", err)
 		}
 		h.logFile = nil
-	}
-}
-
-func (h *LogHandler) doReload(cfg *config.Configuration) {
-	if cfg.Debug {
-		log.SetLevel(log.DebugLevel)
-	} else if cfg.Verbose {
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(log.WarnLevel)
-	}
-	if h.LogPath != "" && h.logFile == nil {
-		h.openLogFile()
 	}
 }
 
@@ -118,13 +90,23 @@ var midnight = func() time.Duration {
 // Start the log handling (should NOT be run in a go routine). Reload must be called at least once
 func (h *LogHandler) Start(parent context.Context) {
 	h.shutdown = make(chan struct{})
-	h.reload = make(chan *reloadConfig)
 
 	if h.DefaultWriter == nil {
 		log.Fatalln("internal error: require default log writer")
 	}
 
 	log.SetOutput(h.DefaultWriter)
+
+	if h.Debug {
+		log.SetLevel(log.DebugLevel)
+	} else if h.Verbose {
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(log.WarnLevel)
+	}
+	if h.LogPath != "" && h.logFile == nil {
+		h.openLogFile()
+	}
 
 	h.wg.Add(1)
 	go func() {
@@ -138,7 +120,9 @@ func (h *LogHandler) Start(parent context.Context) {
 			// this is a function, because the pointer would be resolved statically
 			// this way the pointer is resolved at the time the function will be called
 			// we set a new timer after each day
-			t.Stop()
+			if !t.Stop() {
+				<-t.C
+			}
 		}()
 
 		defer h.closeLogFile()
@@ -151,11 +135,9 @@ func (h *LogHandler) Start(parent context.Context) {
 				if !ok {
 					return
 				}
-			case cfg := <-h.reload:
-				h.doReload(cfg.Configuration)
-				cfg.reloadDone <- struct{}{}
 			case <-t.C:
 				h.doRotate()
+				t.Stop()
 				t = time.NewTimer(midnight())
 			}
 		}

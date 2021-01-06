@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,27 +27,14 @@ func TestLogHandler(t *testing.T) {
 
 	lh := &LogHandler{
 		LogPath:       path.Join(tempDir, "agent.log"),
+		Debug:         true,
+		Verbose:       true,
 		LogRotate:     2,
 		DefaultWriter: &stderr,
 	}
 	lh.Start(ctx)
 
 	done := make(chan struct{})
-	go func() {
-		lh.Reload(&config.Configuration{
-			Debug:   true,
-			Verbose: true,
-		})
-		done <- struct{}{}
-	}()
-
-	select {
-	case <-done:
-		// ok
-	case <-time.After(time.Second * 5):
-		t.Fatal("timeout for reload of loghandler")
-	}
-
 	go func() {
 		lh.Shutdown()
 		done <- struct{}{}
@@ -76,6 +62,8 @@ func TestLogHandlerRotate(t *testing.T) {
 
 	lh := &LogHandler{
 		LogPath:       path.Join(tempDir, "agent.log"),
+		Debug:         true,
+		Verbose:       true,
 		LogRotate:     2,
 		DefaultWriter: &stderr,
 	}
@@ -85,21 +73,6 @@ func TestLogHandlerRotate(t *testing.T) {
 	lh.Start(ctx)
 
 	done := make(chan struct{})
-	go func() {
-		lh.Reload(&config.Configuration{
-			Debug:   true,
-			Verbose: true,
-		})
-		done <- struct{}{}
-	}()
-
-	select {
-	case <-done:
-		// ok
-	case <-time.After(time.Second * 5):
-		t.Fatal("timeout for reload of loghandler")
-	}
-
 	ticker := time.Tick(time.Second / 8)
 	timeout := time.After(time.Second * 2)
 
@@ -147,6 +120,8 @@ func TestLogHandlerCancel(t *testing.T) {
 	stderr := bytes.Buffer{}
 
 	lh := &LogHandler{
+		Debug:         true,
+		Verbose:       true,
 		LogPath:       path.Join(tempDir, "agent.log"),
 		LogRotate:     2,
 		DefaultWriter: &stderr,
@@ -154,21 +129,6 @@ func TestLogHandlerCancel(t *testing.T) {
 	lh.Start(ctx)
 
 	done := make(chan struct{})
-	go func() {
-		lh.Reload(&config.Configuration{
-			Debug:   true,
-			Verbose: true,
-		})
-		done <- struct{}{}
-	}()
-
-	select {
-	case <-done:
-		// ok
-	case <-time.After(time.Second * 5):
-		t.Fatal("timeout for reload of loghandler")
-	}
-
 	go func() {
 		ticker := time.NewTicker(time.Second / 8)
 		timeout := time.After(time.Second * 2)

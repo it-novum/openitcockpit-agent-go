@@ -20,6 +20,7 @@ type RootCmd struct {
 	// options
 	configPath       string
 	verbose          bool
+	debug            bool
 	logPath          string
 	disableLog       bool
 	disableLogRotate bool
@@ -90,6 +91,8 @@ func (r *RootCmd) run(cmd *cobra.Command, args []string) {
 		ConfigurationPath: r.configPath,
 		LogPath:           r.logPath,
 		LogRotate:         rotate,
+		Verbose:           r.verbose,
+		Debug:             r.debug,
 	}
 
 	r.agentRt.Start(ctx)
@@ -112,7 +115,8 @@ func New() *RootCmd {
 		Run:     r.run,
 	}
 	r.cmd.PersistentFlags().StringVarP(&r.configPath, "config", "c", "", "Path to configuration file")
-	r.cmd.PersistentFlags().BoolVarP(&r.verbose, "verbose", "v", false, "Enable debug output")
+	r.cmd.PersistentFlags().BoolVarP(&r.verbose, "verbose", "v", false, "Enable info output")
+	r.cmd.PersistentFlags().BoolVarP(&r.debug, "debug", "d", false, "Enable debug output")
 	r.cmd.PersistentFlags().StringVarP(&r.logPath, "log", "l", "", "Set alternative path for log file output")
 	r.cmd.PersistentFlags().BoolVar(&r.disableLog, "disable-logfile", false, "disable log file")
 	r.cmd.PersistentFlags().BoolVar(&r.disableLogRotate, "disable-logrotate", false, "disable log file rotation")

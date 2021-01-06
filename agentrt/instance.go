@@ -24,6 +24,8 @@ type AgentInstance struct {
 	ConfigurationPath string
 	LogPath           string
 	LogRotate         int
+	Verbose           bool
+	Debug             bool
 
 	wg           sync.WaitGroup
 	shutdown     chan struct{}
@@ -69,8 +71,6 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 }
 
 func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
-	a.logHandler.Reload(cfg.Configuration)
-
 	if !a.configLoaded {
 		// first load
 		if cfg.Configuration.CustomchecksConfig != "" {
@@ -166,6 +166,8 @@ func (a *AgentInstance) Start(parent context.Context) {
 	a.shutdown = make(chan struct{})
 	a.reload = make(chan *reloadConfig)
 	a.logHandler = &loghandler.LogHandler{
+		Verbose:       a.Verbose,
+		Debug:         a.Debug,
 		LogPath:       a.LogPath,
 		LogRotate:     a.LogRotate,
 		DefaultWriter: os.Stderr,
