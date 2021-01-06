@@ -2,44 +2,10 @@ package checks
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"time"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/shirou/gopsutil/v3/disk"
 )
-
-// CheckDiskIo gathers information about system disks IO
-type CheckDiskIo struct {
-	lastResults []*resultDiskIo
-}
-
-// Name will be used in the response as check name
-func (c *CheckDiskIo) Name() string {
-	return "disk_io"
-}
-
-type resultDiskIo struct {
-	ReadBytes    uint64
-	WriteBytes   uint64
-	ReadIops     uint64
-	WriteIops    uint64
-	TotalIops    uint64
-	ReadCount    uint64
-	WriteCount   uint64
-	IoTime       uint64
-	ReadAvgWait  float64
-	ReadTime     uint64
-	ReadAvgSize  float64
-	WriteAvgWait float64
-	WriteAvgSize float64
-	WriteTime    uint64
-	TotalAvgWait float64
-	LoadPercent  int64
-	Timestamp    int64
-	Device       string
-}
 
 // Run the actual check
 // if error != nil the check result will be nil
@@ -73,18 +39,18 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 			WriteBytes, _ := c.Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteBytes))
 			Timestamp, _ := c.Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
 
-			load_percent := IoTime / (Timestamp * 1000) * 100
+			loadPercent := IoTime / (Timestamp * 1000) * 100
 
-			read_avg_wait := ReadTime / ReadCount
-			read_avg_size := ReadBytes / ReadCount
+			readAvgWait := ReadTime / ReadCount
+			readAvgSize := ReadBytes / ReadCount
 
-			write_avg_wait := WriteTime / WriteCount
-			write_avg_size := WriteBytes / WriteCount
+			writeAvgWait := WriteTime / WriteCount
+			writeAvgSize := WriteBytes / WriteCount
 
-			tot_ios := ReadCount + WriteCount
-			total_avg_wait := (ReadTime + WriteTime) / tot_ios
+			totIos := ReadCount + WriteCount
+			totalAvgWait := (ReadTime + WriteTime) / totIos
 
-			if load_percent <= 101 {
+			if loadPercent <= 101 {
 				// Just in case this this has the same bug as Python psutil has^^
 				diskstats := &resultDiskIo{
 					Timestamp:    time.Now().Unix(),
@@ -92,18 +58,18 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 					WriteBytes:   uint64(WriteBytes),
 					ReadIops:     uint64(ReadCount),
 					WriteIops:    uint64(WriteCount),
-					TotalIops:    uint64(tot_ios),
+					TotalIops:    uint64(totIos),
 					ReadCount:    uint64(ReadCount),
 					WriteCount:   uint64(WriteCount),
 					IoTime:       uint64(IoTime),
-					ReadAvgWait:  read_avg_wait,
+					ReadAvgWait:  readAvgWait,
 					ReadTime:     uint64(ReadTime),
-					ReadAvgSize:  read_avg_size,
-					WriteAvgWait: write_avg_wait,
-					WriteAvgSize: write_avg_size,
+					ReadAvgSize:  readAvgSize,
+					WriteAvgWait: writeAvgWait,
+					WriteAvgSize: writeAvgSize,
 					WriteTime:    uint64(WriteTime),
-					TotalAvgWait: total_avg_wait,
-					LoadPercent:  int64(load_percent),
+					TotalAvgWait: totalAvgWait,
+					LoadPercent:  int64(loadPercent),
 					Device:       device,
 				}
 
@@ -132,32 +98,4 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 
 	c.lastResults = diskResults
 	return &CheckResult{Result: diskResults}, nil
-}
-
-//Wrapdiff calculate the difference between last and curr
-//If last > curr, try to guess the boundary at which the value must have wrapped
-//by trying the maximum values of 64, 32 and 16 bit signed and unsigned ints.
-func (c *CheckDiskIo) Wrapdiff(last, curr float64) (float64, error) {
-	if last <= curr {
-		return curr - last, nil
-	}
-
-	boundaries := []float64{64, 63, 32, 31, 16, 15}
-	var currBoundary float64
-	for _, boundary := range boundaries {
-		if last > math.Pow(2, boundary) {
-			currBoundary = boundary
-		}
-	}
-
-	if currBoundary == 0 {
-		return 0, fmt.Errorf("Couldn't determine boundary")
-	}
-
-	return math.Pow(2, currBoundary) - last + curr, nil
-}
-
-// Configure the command or return false if the command was disabled
-func (c *CheckDiskIo) Configure(config *config.Configuration) (bool, error) {
-	return config.DiskIo, nil
 }

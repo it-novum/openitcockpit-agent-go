@@ -34,8 +34,6 @@ func TestChecksCheckSystemdServices(t *testing.T) {
 func TestGetServiceListFromDbus(t *testing.T) {
 
 	check := &CheckSystemd{}
-	config := check.DefaultConfiguration()
-	check.Configure(config)
 	results, err := check.getServiceListViaDbus(context.Background())
 	if err != nil {
 		t.Fatal(err)
