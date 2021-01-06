@@ -26,18 +26,16 @@ type resultLoad struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckLoad) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckLoad) Run(ctx context.Context) (interface{}, error) {
 	l, err := load.AvgWithContext(ctx)
 
 	if err != nil {
 		return nil, err
 	}
-	return &CheckResult{
-		Result: &resultLoad{
-			Load1:  l.Load1,
-			Load5:  l.Load5,
-			Load15: l.Load15,
-		},
+	return &resultLoad{
+		Load1:  l.Load1,
+		Load5:  l.Load5,
+		Load15: l.Load15,
 	}, nil
 }
 

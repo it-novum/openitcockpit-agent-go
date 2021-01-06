@@ -20,10 +20,10 @@ func TestChecksCheckLaunchdServices(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if r.Result == nil {
+		if r == nil {
 			t.Fatal("invalid result")
 		}
-		js, err := json.Marshal(r.Result)
+		js, err := json.Marshal(r)
 		if err != nil {
 			t.Fatal(err)
 		}

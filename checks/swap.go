@@ -29,20 +29,18 @@ type resultSwap struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckSwap) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckSwap) Run(ctx context.Context) (interface{}, error) {
 	s, err := mem.SwapMemoryWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &CheckResult{
-		Result: &resultSwap{
-			Total:   s.Total,
-			Percent: s.UsedPercent,
-			Used:    s.Used,
-			Free:    s.Free,
-			Sin:     s.Sin,
-			Sout:    s.Sout,
-		},
+	return &resultSwap{
+		Total:   s.Total,
+		Percent: s.UsedPercent,
+		Used:    s.Used,
+		Free:    s.Free,
+		Sin:     s.Sin,
+		Sout:    s.Sout,
 	}, nil
 }
 

@@ -40,7 +40,7 @@ type batterySensor struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckSensor) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckSensor) Run(ctx context.Context) (interface{}, error) {
 	sensors, err := host.SensorsTemperaturesWithContext(ctx)
 	sensorResults := make([]*temperatureSensor, 0, len(sensors))
 
@@ -75,7 +75,7 @@ func (c *CheckSensor) Run(ctx context.Context) (*CheckResult, error) {
 		Temperatures: sensorResults,
 		Batteries:    batteriesResults,
 	}
-	return &CheckResult{Result: result}, nil
+	return result, nil
 }
 
 // Configure the command or return false if the command was disabled

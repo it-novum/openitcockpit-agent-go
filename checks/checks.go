@@ -6,12 +6,6 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
-// CheckResult will be sent to oitc
-type CheckResult struct {
-	// Result will be serialized to json
-	Result interface{}
-}
-
 // Check should gather the required information
 type Check interface {
 	// Name will be used in the response as check name
@@ -21,7 +15,7 @@ type Check interface {
 	// if error != nil the check result will be nil
 	// ctx can be canceled and runs the timeout
 	// CheckResult will be serialized after the return and should not change until the next call to Run
-	Run(ctx context.Context) (*CheckResult, error)
+	Run(ctx context.Context) (interface{}, error)
 
 	// Configure the command or return false if the command was disabled
 	Configure(config *config.Configuration) (bool, error)

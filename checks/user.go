@@ -27,7 +27,7 @@ type resultUser struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckUser) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckUser) Run(ctx context.Context) (interface{}, error) {
 	users, err := host.UsersWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (c *CheckUser) Run(ctx context.Context) (*CheckResult, error) {
 		}
 		userResults = append(userResults, result)
 	}
-	return &CheckResult{Result: userResults}, nil
+	return userResults, nil
 }
 
 // Configure the command or return false if the command was disabled

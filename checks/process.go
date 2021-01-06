@@ -43,7 +43,7 @@ func (c *CheckProcess) Name() string {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckProcess) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 	var err error
 
 	pids, err := process.PidsWithContext(ctx)
@@ -87,7 +87,7 @@ func (c *CheckProcess) Run(ctx context.Context) (*CheckResult, error) {
 
 		processResults = append(processResults, result)
 	}
-	return &CheckResult{Result: processResults}, nil
+	return processResults, nil
 }
 
 // Configure the command or return false if the command was disabled

@@ -35,7 +35,7 @@ type resultDisk struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDisk) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 
 	disks, err := disk.PartitionsWithContext(ctx, true)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *CheckDisk) Run(ctx context.Context) (*CheckResult, error) {
 		diskResults = append(diskResults, result)
 	}
 
-	return &CheckResult{Result: diskResults}, nil
+	return diskResults, nil
 }
 
 // Configure the command or return false if the command was disabled

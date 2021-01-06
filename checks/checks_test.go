@@ -19,11 +19,11 @@ func TestChecksWithDefault(t *testing.T) {
 			t.Errorf("Test of check %s failed with error: %s", c.Name(), err)
 			continue
 		}
-		if r.Result == nil {
+		if r == nil {
 			t.Errorf("Test of check %s returned nil", c.Name())
 			continue
 		}
-		js, err := json.Marshal(r.Result)
+		js, err := json.Marshal(r)
 		if err != nil {
 			t.Errorf("Test of check %s returned result that can't be marshaled: %s", c.Name(), err)
 			continue
