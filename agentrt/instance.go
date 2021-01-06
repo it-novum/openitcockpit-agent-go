@@ -3,11 +3,13 @@ package agentrt
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/checkrunner"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/loghandler"
 	"github.com/it-novum/openitcockpit-agent-go/webserver"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,6 +21,10 @@ type reloadConfig struct {
 }
 
 type AgentInstance struct {
+	ConfigurationPath string
+	LogPath           string
+	LogRotate         int
+
 	wg           sync.WaitGroup
 	shutdown     chan struct{}
 	reload       chan *reloadConfig
@@ -31,6 +37,7 @@ type AgentInstance struct {
 
 	customCheckResults map[string]interface{}
 
+	logHandler        *loghandler.LogHandler
 	webserver         *webserver.Server
 	checkRunner       *checkrunner.CheckRunner
 	customCheckRunner *checkrunner.CustomCheckRunner
@@ -62,6 +69,8 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 }
 
 func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
+	a.logHandler.Reload(cfg.Configuration)
+
 	if !a.configLoaded {
 		// first load
 		if cfg.Configuration.CustomchecksConfig != "" {
@@ -119,6 +128,10 @@ func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.C
 }
 
 func (a *AgentInstance) stop() {
+	if a.logHandler != nil {
+		a.logHandler.Shutdown()
+		a.logHandler = nil
+	}
 	if a.webserver != nil {
 		a.webserver.Shutdown()
 		a.webserver = nil
@@ -145,13 +158,18 @@ func (a *AgentInstance) configLoad(cfg *config.Configuration, err error) {
 	a.Reload(cfg)
 }
 
-func (a *AgentInstance) Start(parent context.Context, configPath string) {
+func (a *AgentInstance) Start(parent context.Context) {
 	a.stateInput = make(chan []byte)
 	a.checkResult = make(chan map[string]interface{})
 	a.customCheckResultChan = make(chan *checkrunner.CustomCheckResult)
 	a.customCheckResults = map[string]interface{}{}
 	a.shutdown = make(chan struct{})
 	a.reload = make(chan *reloadConfig)
+	a.logHandler = &loghandler.LogHandler{
+		LogPath:       a.LogPath,
+		LogRotate:     a.LogRotate,
+		DefaultWriter: os.Stderr,
+	}
 
 	a.wg.Add(1)
 	go func() {
@@ -159,6 +177,8 @@ func (a *AgentInstance) Start(parent context.Context, configPath string) {
 
 		ctx, cancel := context.WithCancel(parent)
 		defer cancel()
+
+		a.logHandler.Start(ctx)
 
 		defer a.stop()
 
@@ -187,7 +207,7 @@ func (a *AgentInstance) Start(parent context.Context, configPath string) {
 	}()
 
 	config.Load(a.configLoad, &config.LoadConfigHint{
-		ConfigFile: configPath,
+		ConfigFile: a.ConfigurationPath,
 	})
 }
 

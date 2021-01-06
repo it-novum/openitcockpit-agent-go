@@ -23,6 +23,7 @@ type RootCmd struct {
 	logPath          string
 	disableLog       bool
 	disableLogRotate bool
+	logRotate        int
 
 	platformPath platformpaths.PlatformPath
 }
@@ -77,11 +78,21 @@ func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 }
 
 func (r *RootCmd) run(cmd *cobra.Command, args []string) {
-	r.agentRt = &agentrt.AgentInstance{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	r.agentRt.Start(ctx, r.configPath)
+	rotate := r.logRotate
+	if r.disableLog {
+		rotate = 0
+	}
+
+	r.agentRt = &agentrt.AgentInstance{
+		ConfigurationPath: r.configPath,
+		LogPath:           r.logPath,
+		LogRotate:         rotate,
+	}
+
+	r.agentRt.Start(ctx)
 	defer r.agentRt.Shutdown()
 
 	sig := make(chan os.Signal, 1)
@@ -105,6 +116,7 @@ func New() *RootCmd {
 	r.cmd.PersistentFlags().StringVarP(&r.logPath, "log", "l", "", "Set alternative path for log file output")
 	r.cmd.PersistentFlags().BoolVar(&r.disableLog, "disable-logfile", false, "disable log file")
 	r.cmd.PersistentFlags().BoolVar(&r.disableLogRotate, "disable-logrotate", false, "disable log file rotation")
+	r.cmd.PersistentFlags().IntVar(&r.logRotate, "log-rotate", 3, "number of log rotate files")
 
 	r.platformPath = platformpaths.Get()
 
