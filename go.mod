@@ -9,7 +9,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gorilla/mux v1.8.0
-	github.com/lufia/iostat v1.1.0
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
 	github.com/shirou/gopsutil/v3 v3.20.11
 	github.com/sirupsen/logrus v1.7.0
