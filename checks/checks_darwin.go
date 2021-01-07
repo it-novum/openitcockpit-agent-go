@@ -10,7 +10,7 @@ func getPlatformChecks() []Check {
 		&CheckDisk{},
 		&CheckDiskIo{},
 		&CheckLoad{},
-		&CheckNic{},
+		&CheckNet{},
 		&CheckSensor{},
 		//&CheckDocker{},
 		&CheckLaunchd{},
