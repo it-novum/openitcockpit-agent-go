@@ -2,9 +2,7 @@ package checks
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/shirou/gopsutil/v3/net"
+	"net"
 )
 
 // Run the actual check
@@ -12,32 +10,22 @@ import (
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckNet) Run(ctx context.Context) (interface{}, error) {
-	nics, err := net.InterfacesWithContext(ctx)
+	ifs, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
-
-	nicIo, err := net.IOCountersWithContext(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(nicIo)
 
 	nicResults := make(map[string]*resultNet)
-
-	for _, nic := range nics {
+	for _, nic := range ifs {
 		isUp := false
-		for _, flag := range nic.Flags {
-			if flag == "up" {
-				isUp = true
-			}
+		if nic.Flags&net.FlagUp != 0 {
+			isUp = true
 		}
 
 		nicResults[nic.Name] = &resultNet{
 			Isup: isUp,
-			MTU:  nic.MTU,
+			MTU:  int64(nic.MTU),
 		}
-
 	}
 
 	return nicResults, nil
