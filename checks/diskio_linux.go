@@ -2,7 +2,6 @@ package checks
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/prometheus/procfs/blockdevice"
@@ -12,7 +11,7 @@ import (
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	// https://www.kernel.org/doc/html/latest/admin-guide/abi-testing.html#symbols-under-proc-diskstats
 	// https://github.com/giampaolo/psutil/blob/f18438d135c12f7eb186f49622e0f6683c37f7f5/psutil/_pslinux.py#L1093
 
@@ -38,7 +37,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 			}
 		}
 
-		fmt.Println(iostats)
+		//fmt.Println(iostats)
 		if lastCheckResults != nil {
 			ReadCount, _ := c.Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadIOs))
 			WriteCount, _ := c.Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteIOs))
@@ -107,5 +106,5 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 	}
 
 	c.lastResults = diskResults
-	return &CheckResult{Result: diskResults}, nil
+	return diskResults, nil
 }
