@@ -11,7 +11,7 @@ import (
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
+func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 
 	disks, err := disk.IOCountersWithContext(ctx)
 	if err != nil {
@@ -97,5 +97,5 @@ func (c *CheckDiskIo) Run(ctx context.Context) (*CheckResult, error) {
 	}
 
 	c.lastResults = diskResults
-	return &CheckResult{Result: diskResults}, nil
+	return diskResults, nil
 }
