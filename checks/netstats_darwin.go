@@ -4,31 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-// CheckNic gathers information about system network interfaces (netstats or net_states in the Python version)
-type CheckNic struct {
+// CheckNet gathers information about system network interfaces (netstats or net_states in the Python version)
+type CheckNetstats struct {
 }
 
 // Name will be used in the response as check name
-func (c *CheckNic) Name() string {
-	return "net_stats"
-}
-
-type resultNic struct {
-	Isup   bool `json:"isup"`
-	Duplex int  `json:"duplex"`
-	Speed  int  `json:"speed"`
-	MTU    int  `json:"mtu"`
+func (c *CheckNetstats) Name() string {
+	return "net_io"
 }
 
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckNic) Run(ctx context.Context) (interface{}, error) {
+func (c *CheckNetstats) Run(ctx context.Context) (interface{}, error) {
 	nics, err := net.InterfacesWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -40,7 +32,7 @@ func (c *CheckNic) Run(ctx context.Context) (interface{}, error) {
 	}
 	fmt.Println(nicIo)
 
-	nicResults := make(map[string]*resultNic)
+	nicResults := make(map[string]*resultNet)
 
 	for _, nic := range nics {
 		isUp := false
@@ -50,17 +42,12 @@ func (c *CheckNic) Run(ctx context.Context) (interface{}, error) {
 			}
 		}
 
-		nicResults[nic.Name] = &resultNic{
+		nicResults[nic.Name] = &resultNet{
 			Isup: isUp,
-			MTU:  nic.MTU,
+			MTU:  int64(nic.MTU),
 		}
 
 	}
 
 	return nicResults, nil
-}
-
-// Configure the command or return false if the command was disabled
-func (c *CheckNic) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
 }

@@ -8,9 +8,9 @@ func getPlatformChecks() []Check {
 		&CheckSwap{},
 		&CheckUser{},
 		&CheckDisk{},
-		//&CheckDiskIo{}, //Check that all calcs are done right
+		&CheckDiskIo{},
 		&CheckLoad{},
-		&CheckNic{},
+		&CheckNet{},
 		&CheckSensor{},
 		//&CheckDocker{},
 		&CheckSystemd{},
