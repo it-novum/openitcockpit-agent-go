@@ -52,7 +52,10 @@ func (c *CheckLaunchd) getServiceListViaLaunchctl(ctx context.Context) ([]*resul
 	 * 177	0	com.apple.coreservicesd
 	 */
 	timeout := 10 * time.Second
-	result, err := utils.RunCommand(ctx, "launchctl list", timeout)
+	result, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: "launchctl list",
+		Timeout: timeout,
+	})
 	if err != nil || result.RC > 0 {
 		fmt.Println("Error while executing 'launchctl list'")
 		return nil, err
