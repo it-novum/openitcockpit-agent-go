@@ -1,6 +1,10 @@
 package platformpaths
 
-import "sync"
+import (
+	"sync"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // PlatformPath represents the default paths for specific directory and files
 type PlatformPath interface {
@@ -23,7 +27,9 @@ func Get() PlatformPath {
 	defer mtx.Unlock()
 	if instance == nil {
 		instance = getPlatformPath()
-		instance.Init()
+		if err := instance.Init(); err != nil {
+			log.Errorln(err)
+		}
 	}
 	return instance
 }

@@ -35,14 +35,20 @@ type Server struct {
 	wg sync.WaitGroup
 }
 
+func isAutosslEnabled(cfg *config.Configuration) bool {
+	return cfg.AutoSslEnabled &&
+		utils.FileExists(cfg.AutoSslCrtFile) &&
+		utils.FileExists(cfg.AutoSslKeyFile) &&
+		utils.FileExists(cfg.AutoSslCaFile)
+}
+
 func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	log.Infoln("Webserver: Reload")
 	newHandler := &handler{
 		StateInput:    s.StateInput,
 		Configuration: cfg.Configuration,
 	}
-	newHandler.prepare()
-	go newHandler.Run(ctx) // will be stopped by close()
+	newHandler.Start(ctx)
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)
 	log.Debugln("Webserver: Listening to ", serverAddr)
 	newServer := &http.Server{
@@ -54,7 +60,8 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 		MaxHeaderBytes: 256 * 1024,
 	}
 
-	if cfg.Configuration.AutoSslEnabled || (cfg.Configuration.KeyFile != "" && cfg.Configuration.CertificateFile != "") {
+	if isAutosslEnabled(cfg.Configuration) || (cfg.Configuration.KeyFile != "" && cfg.Configuration.CertificateFile != "") {
+
 		log.Debugln("Webserver: TLS enabled")
 		tlsConfig := &tls.Config{
 			MinVersion: tls.VersionTLS12,
@@ -104,6 +111,8 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 
 		newServer.TLSConfig = tlsConfig
 		newServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
+	} else if cfg.Configuration.AutoSslEnabled {
+		log.Infoln("Webserver: autossl enabled, but no certificates found")
 	}
 
 	s.close()
@@ -111,13 +120,13 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 
 	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		log.Infoln("Webserver: Starting http server")
 		err := listenServe(newServer)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal("Webserver: ", err)
 		}
 		log.Debugln("Webserver: http listener stopped")
-		s.wg.Done()
 	}()
 
 	s.server = newServer
@@ -129,7 +138,6 @@ func (s *Server) close() {
 	if s.server != nil {
 		log.Debugln("Webserver: Stopping http server")
 		s.server.Close()
-		s.wg.Wait()
 		s.server = nil
 		log.Infoln("Webserver: Server stopped")
 	}
@@ -175,6 +183,7 @@ func (s *Server) Start(ctx context.Context) {
 		defer s.wg.Done()
 
 		defer s.close()
+
 		for {
 			select {
 			case <-ctx.Done():

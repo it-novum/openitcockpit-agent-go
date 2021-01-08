@@ -37,7 +37,7 @@ func (b *basicAuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 func tlsAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(r.TLS.PeerCertificates) > 0 {
+		if r.TLS != nil && len(r.TLS.PeerCertificates) > 0 {
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), authenticatedKey, true)))
 		} else {
 			log.Infoln("Webserver: No client certificate: ", r.RemoteAddr)
@@ -127,17 +127,23 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 
+	log.Debugln("Webserver: Certificate update")
+
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		log.Errorln("Webserver: Could not read body: ", err)
 		http.Error(response, "could not read body", http.StatusInternalServerError)
 		return
 	}
+
 	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, body, 0666); err != nil {
 		log.Errorln("Webserver: Could not write certificate file: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	log.Debugln("Webserver: Certificate update successful, start reload")
+	w.Configuration.Reload()
 }
 
 // Handler can be used by http.Server to handle http connections
@@ -146,7 +152,7 @@ func (w *handler) Handler() *mux.Router {
 	defer w.mtx.Unlock()
 	if w.router == nil {
 		routes := mux.NewRouter()
-		if w.Configuration.AutoSslEnabled {
+		if isAutosslEnabled(w.Configuration) {
 			log.Infoln("Webserver: Activate TLS authentication")
 			routes.Use(tlsAuthMiddleware)
 		}
@@ -178,37 +184,31 @@ func (w *handler) Shutdown() {
 	w.wg.Wait()
 }
 
-func (w *handler) prepare() {
-	w.wg.Add(1)
+// Start webserver handler (should NOT run in a go routine)
+func (w *handler) Start(parentCtx context.Context) {
 	w.shutdown = make(chan struct{})
-	w.prepared = true
-}
 
-// Run webserver handler
-// (should be run in a go routine)
-func (w *handler) Run(parentCtx context.Context) {
-	if !w.prepared {
-		log.Fatalln("Webserver: handler was not prepared")
-	}
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
 
-	defer w.wg.Done()
+		ctx, cancel := context.WithCancel(parentCtx)
+		defer cancel()
 
-	ctx, cancel := context.WithCancel(parentCtx)
-	defer cancel()
+		log.Debugln("Webserver: Handler waiting for input")
 
-	log.Debugln("Webserver: Handler waiting for input")
-
-	for {
-		select {
-		case _, more := <-w.shutdown:
-			if !more {
+		for {
+			select {
+			case _, more := <-w.shutdown:
+				if !more {
+					return
+				}
+			case <-ctx.Done():
+				log.Debugln("Webserver: Handler ctx cancled")
 				return
+			case s := <-w.StateInput:
+				w.setState(s)
 			}
-		case <-ctx.Done():
-			log.Debugln("Webserver: Handler ctx cancled")
-			return
-		case s := <-w.StateInput:
-			w.setState(s)
 		}
-	}
+	}()
 }

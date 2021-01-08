@@ -3,8 +3,10 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
@@ -42,6 +44,7 @@ type CustomCheckConfiguration struct {
 type Configuration struct {
 	ConfigurationPath string
 	viper             *viper.Viper
+	reload            ReloadFunc
 
 	// TLS
 
@@ -108,6 +111,25 @@ type Configuration struct {
 
 	// Default is the namespace workaround we need for the configuration file format
 	Default *Configuration
+}
+
+// Reload the agent with same configuration async
+func (c *Configuration) Reload() {
+	go func() {
+		done := make(chan struct{})
+		go func() {
+			c.reload(c, nil)
+			done <- struct{}{}
+		}()
+		t := time.NewTimer(time.Second * 30)
+		defer t.Stop()
+		select {
+		case <-done:
+			return
+		case <-t.C:
+			log.Fatalln("Internal error: timeout for configuration reload")
+		}
+	}()
 }
 
 var defaultValue = map[string]interface{}{
@@ -196,10 +218,12 @@ func Load(reload ReloadFunc, configHint *LoadConfigHint) {
 
 	v.OnConfigChange(func(in fsnotify.Event) {
 		cfg, err := unmarshalConfiguration(v)
+		cfg.reload = reload
 		reload(cfg, err)
 	})
 
 	cfg, err := unmarshalConfiguration(v)
+	cfg.reload = reload
 	reload(cfg, err)
 	if err == nil {
 		go v.WatchConfig()

@@ -8,9 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
@@ -27,16 +25,10 @@ func TestWebserverHandler(t *testing.T) {
 		StateInput: stateInput,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	w.prepare()
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		w.Run(ctx)
-	}()
+	w.Start(ctx)
 	stateInput <- []byte(`{"test": "tata"}`)
 	cancel()
-	wg.Wait()
+	w.wg.Wait()
 }
 
 func TestWebserverHandlerState(t *testing.T) {
@@ -50,12 +42,10 @@ func TestWebserverHandlerState(t *testing.T) {
 			BasicAuth: "",
 		},
 	}
-	w.prepare()
-
 	ts := httptest.NewServer(w.Handler())
 	defer ts.Close()
 
-	go w.Run(ctx)
+	w.Start(ctx)
 
 	testState := []byte(`{"test": "tata"}`)
 	client := &http.Client{}
@@ -102,8 +92,7 @@ func TestWebserverHandlerAuthFailed(t *testing.T) {
 			BasicAuth: testBasicAuth,
 		},
 	}
-	w.prepare()
-	go w.Run(ctx)
+	w.Start(ctx)
 
 	ts := httptest.NewServer(w.Handler())
 	defer ts.Close()
@@ -154,42 +143,33 @@ func TestWebserverHandlerConfig(t *testing.T) {
 			ConfigurationPath: cfgPath,
 		},
 	}
-	w.prepare()
 
 	ts := httptest.NewServer(w.Handler())
 	defer ts.Close()
 
 	result := ""
-	done := make(chan struct{})
-
-	go func() {
-		done <- struct{}{}
-	}()
-
-	go w.Run(ctx)
+	w.Start(ctx)
 
 	cfg := "someconfig"
 	resp, err := http.Post(ts.URL+"/config", "text/plain", strings.NewReader(cfg))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 	if resp.StatusCode != 200 {
 		t.Error("Status code is not 200")
 	}
 
-	select {
-	case <-done:
-		d, err := ioutil.ReadFile(cfgPath)
-		if err != nil {
-			t.Error(err)
-			break
-		}
+	d, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		t.Error(err)
+	} else {
 		result = string(d)
 		if result != cfg {
 			t.Error("unexpected result")
 		}
-	case <-time.After(time.Second * 2):
-		t.Error("Timeout")
 	}
 
 	w.Shutdown()

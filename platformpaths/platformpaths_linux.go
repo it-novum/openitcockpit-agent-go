@@ -8,7 +8,7 @@ func (p *linuxPlatformPath) Init() error {
 }
 
 func (p *linuxPlatformPath) LogPath() string {
-	return "/var/log/agent.log"
+	return "/var/log/openitcockpit-agent/agent.log"
 }
 
 func (p *linuxPlatformPath) ConfigPath() string {
