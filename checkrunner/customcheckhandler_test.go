@@ -20,9 +20,9 @@ func getCommandLine() string {
 }
 
 func TestRun(t *testing.T) {
-	cc := &CustomCheckRunner{
-		Result: make(chan *CustomCheckResult),
-		Checks: []*config.CustomCheck{
+	cc := &CustomCheckHandler{
+		ResultOutput: make(chan *CustomCheckResult),
+		Configuration: []*config.CustomCheck{
 			{
 				Name:     "check_1",
 				Interval: 1,
@@ -44,9 +44,9 @@ outerfor:
 			fmt.Println("timeout")
 			go func() {
 				cc.Shutdown()
-				close(cc.Result)
+				close(cc.ResultOutput)
 			}()
-		case res, ok := <-cc.Result:
+		case res, ok := <-cc.ResultOutput:
 			if !ok {
 				break outerfor
 			}

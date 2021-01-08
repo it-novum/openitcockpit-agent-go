@@ -21,6 +21,13 @@ type CustomCheck struct {
 	Enabled  bool   `mapstructure:"enabled"`
 	Command  string `mapstructure:"command"`
 	Timeout  int64  `mapstructure:"timeout"`
+	// Linux/Darwin = if set run shell and pipe command into it
+	// Windows => powershell -> start powershell, command must be path to powershell file
+	// Windows => powershell_command -> start powershell, run command directly
+	// Windows => bat -> start cmd call, command must be path to bat file
+	// Windows => vbs -> wscript, command must be path to vbs file
+	// if not set the command will be just executed as it is
+	Shell string `mapstructure:"shell"`
 }
 
 // CustomCheckConfiguration stores only custom check commands

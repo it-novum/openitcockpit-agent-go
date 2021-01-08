@@ -39,10 +39,10 @@ type AgentInstance struct {
 
 	customCheckResults map[string]interface{}
 
-	logHandler        *loghandler.LogHandler
-	webserver         *webserver.Server
-	checkRunner       *checkrunner.CheckRunner
-	customCheckRunner *checkrunner.CustomCheckRunner
+	logHandler         *loghandler.LogHandler
+	webserver          *webserver.Server
+	checkRunner        *checkrunner.CheckRunner
+	customCheckHandler *checkrunner.CustomCheckHandler
 }
 
 func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
@@ -117,14 +117,14 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
 }
 
 func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.CustomCheck) {
-	if a.customCheckRunner != nil {
-		a.customCheckRunner.Shutdown()
+	if a.customCheckHandler != nil {
+		a.customCheckHandler.Shutdown()
 	}
-	a.customCheckRunner = &checkrunner.CustomCheckRunner{
-		Checks: ccc,
-		Result: a.customCheckResultChan,
+	a.customCheckHandler = &checkrunner.CustomCheckHandler{
+		Configuration: ccc,
+		ResultOutput:  a.customCheckResultChan,
 	}
-	a.customCheckRunner.Start(ctx)
+	a.customCheckHandler.Start(ctx)
 }
 
 func (a *AgentInstance) stop() {
@@ -136,9 +136,9 @@ func (a *AgentInstance) stop() {
 		a.webserver.Shutdown()
 		a.webserver = nil
 	}
-	if a.customCheckRunner != nil {
-		a.customCheckRunner.Shutdown()
-		a.customCheckRunner = nil
+	if a.customCheckHandler != nil {
+		a.customCheckHandler.Shutdown()
+		a.customCheckHandler = nil
 	}
 	if a.checkRunner != nil {
 		a.checkRunner.Shutdown()
