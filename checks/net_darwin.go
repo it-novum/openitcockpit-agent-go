@@ -22,6 +22,7 @@ func (c *CheckNet) Run(ctx context.Context) (interface{}, error) {
 			isUp = true
 		}
 
+		//To get Speed and Duplex mode is more or less _impossible_ on macos
 		nicResults[nic.Name] = &resultNet{
 			Isup: isUp,
 			MTU:  int64(nic.MTU),
