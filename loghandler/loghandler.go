@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,7 +61,7 @@ func (h *LogHandler) doRotate() {
 			for i := h.LogRotate - 1; i >= 1; i-- {
 				curName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, i))
 				nextName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, i+1))
-				if _, err := os.Stat(curName); !os.IsNotExist(err) {
+				if utils.FileExists(curName) {
 					log.Infoln("LogHandler: rotate log file ", curName, " -> ", nextName)
 					if err := os.Rename(curName, nextName); err != nil {
 						log.Errorln("LogHandler: could not rename log file: ", err)
@@ -69,7 +70,7 @@ func (h *LogHandler) doRotate() {
 			}
 		}
 		h.closeLogFile()
-		if _, err := os.Stat(h.LogPath); !os.IsNotExist(err) {
+		if utils.FileExists(h.LogPath) {
 			nextName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, 1))
 			log.Infoln("LogHandler: rotate log file ", h.LogPath, " -> ", nextName)
 			if err := os.Rename(h.LogPath, nextName); err != nil {

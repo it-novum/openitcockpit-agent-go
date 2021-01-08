@@ -34,7 +34,10 @@ func init() {
 func TestRunPingCommand(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	timeout := 5 * time.Second
-	result, err := RunCommand(ctx, testCommands.ping, timeout)
+	result, err := RunCommand(ctx, CommandArgs{
+		Command: testCommands.ping,
+		Timeout: timeout,
+	})
 	if err != nil {
 		t.Fatal("there was an error running ping")
 	}
@@ -54,7 +57,10 @@ func TestRunPingCommand(t *testing.T) {
 
 func TestCommandTimeout(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), testCommands.sleep, timeout)
+	result, err := RunCommand(context.Background(), CommandArgs{
+		Command: testCommands.sleep,
+		Timeout: timeout,
+	})
 	if err == nil {
 		t.Fatal("there was no error")
 	}
@@ -77,7 +83,10 @@ func TestCommandCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		RunCommand(ctx, testCommands.sleep, timeout)
+		RunCommand(ctx, CommandArgs{
+			Command: testCommands.sleep,
+			Timeout: timeout,
+		})
 		done <- struct{}{}
 	}()
 
@@ -91,7 +100,10 @@ func TestCommandCancel(t *testing.T) {
 
 func TestCommandNotFound(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), "foobar 123", timeout)
+	result, err := RunCommand(context.Background(), CommandArgs{
+		Command: "foobar 123",
+		Timeout: timeout,
+	})
 	if err == nil {
 		t.Error("there was no error")
 	}
@@ -109,7 +121,10 @@ func TestCommandNotFound(t *testing.T) {
 
 func TestCommandNotFoundFromOs(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), "/foo/bar 123", timeout)
+	result, err := RunCommand(context.Background(), CommandArgs{
+		Command: "/foo/bar 123",
+		Timeout: timeout,
+	})
 	if err == nil {
 		t.Error("there was no error")
 	}
@@ -127,7 +142,10 @@ func TestCommandNotFoundFromOs(t *testing.T) {
 
 func TestCommandNotExecutable(t *testing.T) {
 	timeout := 5 * time.Second
-	result, err := RunCommand(context.Background(), testCommands.notExecutable, timeout)
+	result, err := RunCommand(context.Background(), CommandArgs{
+		Command: testCommands.notExecutable,
+		Timeout: timeout,
+	})
 	if err == nil {
 		t.Errorf("there was no error")
 	}
@@ -139,7 +157,10 @@ func TestCommandNotExecutable(t *testing.T) {
 
 func TestCommandShlex(t *testing.T) {
 	timeout := 5 * time.Second
-	_, err := RunCommand(context.Background(), `blubb "sdf`, timeout)
+	_, err := RunCommand(context.Background(), CommandArgs{
+		Command: `blubb "sdf`,
+		Timeout: timeout,
+	})
 	if err == nil {
 		t.Fatal("there was no error")
 	}
