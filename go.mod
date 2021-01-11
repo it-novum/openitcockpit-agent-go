@@ -3,6 +3,7 @@ module github.com/it-novum/openitcockpit-agent-go
 go 1.15
 
 require (
+	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coreos/go-systemd/v22 v22.1.0
@@ -16,6 +17,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
 	github.com/shirou/gopsutil/v3 v3.20.11
 	github.com/sirupsen/logrus v1.7.0
@@ -24,5 +26,4 @@ require (
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
 	golang.org/x/text v0.3.2
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	github.com/pkg/errors v0.9.1
 )
