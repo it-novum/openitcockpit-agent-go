@@ -12,6 +12,7 @@ func getPlatformChecks() []Check {
 		&CheckLoad{},
 		&CheckCpu{},
 		&CheckNet{},
+		&CheckNetIo{},
 		&CheckSensor{},
 		&CheckDocker{},
 		&CheckLaunchd{},

@@ -2,6 +2,8 @@ package checks
 
 import (
 	"context"
+	"fmt"
+	"math"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
@@ -34,4 +36,27 @@ func ChecksForConfiguration(config *config.Configuration) ([]Check, error) {
 		}
 	}
 	return res, nil
+}
+
+//Wrapdiff calculate the difference between last and curr
+//If last > curr, try to guess the boundary at which the value must have wrapped
+//by trying the maximum values of 64, 32 and 16 bit signed and unsigned ints.
+func Wrapdiff(last, curr float64) (float64, error) {
+	if last <= curr {
+		return curr - last, nil
+	}
+
+	boundaries := []float64{64, 63, 32, 31, 16, 15}
+	var currBoundary float64
+	for _, boundary := range boundaries {
+		if last > math.Pow(2, boundary) {
+			currBoundary = boundary
+		}
+	}
+
+	if currBoundary == 0 {
+		return 0, fmt.Errorf("Couldn't determine boundary")
+	}
+
+	return math.Pow(2, currBoundary) - last + curr, nil
 }

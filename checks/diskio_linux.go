@@ -39,14 +39,14 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 
 		//fmt.Println(iostats)
 		if lastCheckResults != nil {
-			ReadCount, _ := c.Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadIOs))
-			WriteCount, _ := c.Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteIOs))
-			IoTime, _ := c.Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IOsTotalTicks)) //BusyTime
-			ReadTime, _ := c.Wrapdiff(float64(lastCheckResults.ReadTime), float64(iostats.ReadTicks))
-			WriteTime, _ := c.Wrapdiff(float64(lastCheckResults.WriteTime), float64(iostats.WriteTicks))
-			ReadBytes, _ := c.Wrapdiff(float64(lastCheckResults.ReadBytes), float64(iostats.ReadMerges))
-			WriteBytes, _ := c.Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteMerges))
-			Timestamp, _ := c.Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
+			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadIOs))
+			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteIOs))
+			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IOsTotalTicks)) //BusyTime
+			ReadTime, _ := Wrapdiff(float64(lastCheckResults.ReadTime), float64(iostats.ReadTicks))
+			WriteTime, _ := Wrapdiff(float64(lastCheckResults.WriteTime), float64(iostats.WriteTicks))
+			ReadBytes, _ := Wrapdiff(float64(lastCheckResults.ReadBytes), float64(iostats.ReadMerges))
+			WriteBytes, _ := Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteMerges))
+			Timestamp, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
 
 			loadPercent := IoTime / (Timestamp * 1000) * 100
 
