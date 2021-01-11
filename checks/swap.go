@@ -17,12 +17,12 @@ func (c *CheckSwap) Name() string {
 }
 
 type resultSwap struct {
-	Total   uint64  `json:"total"`
-	Percent float64 `json:"percent"`
-	Used    uint64  `json:"used"`
-	Free    uint64  `json:"free"`
-	Sin     uint64  `json:"sin"`
-	Sout    uint64  `json:"sout"`
+	Total   uint64  `json:"total"`   // Total amount of swap space in bytes
+	Percent float64 `json:"percent"` // Used swap space as percentage
+	Used    uint64  `json:"used"`    // Used swap space in bytes
+	Free    uint64  `json:"free"`    // Free swap space in bytes
+	Sin     uint64  `json:"sin"`     // Linux only - Number of bytes the system has swapped in from disk
+	Sout    uint64  `json:"sout"`    // Linux only - Number of bytes the system has swapped out to disk
 }
 
 // Run the actual check
