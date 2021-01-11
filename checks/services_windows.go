@@ -49,13 +49,13 @@ func (c *CheckWinService) Name() string {
 }
 
 type resultWindowsServices struct {
-	DisplayName string
-	BinPath     string
-	StartType   string
-	Status      string
-	Pid         uint32
-	Name        string
-	Description string
+	DisplayName string // Xbox Live Authentifizierungs-Manager
+	BinPath     string // C:\\Windows\\system32\\svchost.exe -k netsvcs -p
+	StartType   string // Manual
+	Status      string // Stopped
+	Pid         uint32 // 1337
+	Name        string // XblAuthManager
+	Description string // Stellt Authentifizierungs- und Autorisierungsservices für Xbox Live bereit. Wenn der Service beendet wird, funktionieren einige Anwendungen möglicherweise nicht richtig.
 }
 
 // Run the actual check
