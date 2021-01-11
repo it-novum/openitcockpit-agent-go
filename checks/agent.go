@@ -44,14 +44,14 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 
 	now := time.Now()
 	return &resultAgent{
-		LastUpdated:          now.String(),
-		LastUpdatedTimestamp: now.Unix(),
-		System:               platfrom,
-		SystemUptime:         uptime,
-		KernelVersion:        kernel,
-		MacVersion:           pver,
-		Family:               family,
-		AgentVersion:         config.AgentVersion,
+		LastUpdated:          now.String(),        // e.g.: 2021-01-11 15:58:35.987952 +0100 CET m=+19.945268128
+		LastUpdatedTimestamp: now.Unix(),          // w.g.: 1610377115
+		System:               platfrom,            // darwin | linux | windows
+		SystemUptime:         uptime,              // System uptime in seconds
+		KernelVersion:        kernel,              // e.g.: 19.6.0
+		MacVersion:           pver,                // e.g.: 10.15.7
+		Family:               family,              // Standalone Workstation | Server
+		AgentVersion:         config.AgentVersion, // e.g. 3.0.0
 		TemperatureUnit:      "C",
 	}, nil
 }
