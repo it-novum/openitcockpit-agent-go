@@ -20,9 +20,9 @@ func (c *CheckDocker) Name() string {
 }
 
 type resultDocker struct {
-	Id               string  `json:"id"`
-	Name             string  `json:"name"`
-	Image            string  `json:"image"`
+	Id               string  `json:"id"`                // First 10 chars of the container id
+	Name             string  `json:"name"`              // First name of the docker container
+	Image            string  `json:"image"`             // Name of the used Docker image
 	SizeRw           int64   `json:"size_rw"`           // Modified or created files (delta/diff to the docker image) in bytes
 	SizeRootFs       int64   `json:"size_root_fs"`      // Total size of the containers file system in bytes
 	State            string  `json:"state"`             // created, restarting, running, removing, paused, exited, dead // https://docs.docker.com/engine/api/v1.41/#operation/ContainerList
