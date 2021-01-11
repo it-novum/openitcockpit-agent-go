@@ -17,10 +17,10 @@ func (c *CheckUser) Name() string {
 }
 
 type resultUser struct {
-	Name     string `json:"name"`
-	Terminal string `json:"terminal"`
-	Host     string `json:"host"`
-	Started  int    `json:"started"`
+	Name     string `json:"name"`     // The name of the user
+	Terminal string `json:"terminal"` // The tty or pseudo-tty associated with the user, if an
+	Host     string `json:"host"`     // The host name associated with the entry, if any
+	Started  int    `json:"started"`  // The creation time as a floating point number expressed in seconds since the epoch. - Maybe not under macOS???
 }
 
 // Run the actual check
