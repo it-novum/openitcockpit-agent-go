@@ -1,0 +1,36 @@
+package checks
+
+import (
+	"context"
+	"fmt"
+	"testing"
+)
+
+func TestChecksCheckDocker(t *testing.T) {
+
+	check := &CheckDocker{}
+
+	cr, err := check.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, ok := cr.([]*resultDocker)
+	if !ok {
+		t.Fatal("False type")
+
+	}
+
+	if len(results) == 0 {
+		fmt.Println("No running docker containers found")
+	}
+
+	if len(results) > 0 {
+		for _, result := range results {
+			if result.MemoryUsed == 0.0 {
+				t.Fatal("Container memory usage is 0.0 - thats suspect!")
+			}
+		}
+	}
+
+}
