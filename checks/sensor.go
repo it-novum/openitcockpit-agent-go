@@ -22,9 +22,10 @@ type resultSensor struct {
 	Batteries    []*batterySensor
 }
 
+//For Mac systems a list of SMC sensors: https://logi.wiki/index.php/SMC_Sensor_Codes
 type temperatureSensor struct {
-	Label    string  `json:"label"`
-	Current  float64 `json:"current"`
+	Label    string  `json:"label"`   // e.g.: TB2T
+	Current  float64 `json:"current"` // e.g.: 31 (value in °C)
 	High     float64 `json:"high"`
 	Critical float64 `json:"critical"`
 }
