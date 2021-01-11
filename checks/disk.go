@@ -18,16 +18,16 @@ func (c *CheckDisk) Name() string {
 
 type resultDisk struct {
 	Disk struct {
-		Device     string   `json:"device"`
-		Mountpoint string   `json:"mountpoint"`
-		Fstype     string   `json:"fstype"`
-		Opts       []string `json:"opts"`
+		Device     string   `json:"device"`     // e.g.: /dev/disk1s5,/dev/sda
+		Mountpoint string   `json:"mountpoint"` // e.g.: /
+		Fstype     string   `json:"fstype"`     // e.g.: apfs, etx4
+		Opts       []string `json:"opts"`       // e.g.: ["rw","nobrowse","multilabel"]
 	}
 	Usage struct {
-		Total   uint64  `json:"total"`
-		Used    uint64  `json:"used"`
-		Free    uint64  `json:"free"`
-		Percent float64 `json:"percent"`
+		Total   uint64  `json:"total"`   // Total disk space in byte
+		Used    uint64  `json:"used"`    // Used disk space in byte
+		Free    uint64  `json:"free"`    // Free disk space in byte
+		Percent float64 `json:"percent"` // Used disk spaces as percent
 	}
 }
 
