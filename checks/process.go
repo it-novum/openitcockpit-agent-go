@@ -12,20 +12,21 @@ type CheckProcess struct {
 }
 
 type resultProcess struct {
-	Pid           int32    `json:"pid"`
-	Ppid          int32    `json:"ppid"`
-	Username      string   `json:"username"`
-	Name          string   `json:"name"`
-	CPUPercent    float64  `json:"cpu_percent"`
-	MemoryPercent float32  `json:"memory_percent"`
-	Cmdline       string   `json:"cmdline"`
-	Status        []string `json:"status"`
-	Exe           string   `json:"exec"`
-	Nice          int32    `json:"nice_level"`
-	NumFds        int32    `json:"num_fds"`
+	Pid           int32    `json:"pid"`            // Pid of the process itself
+	Ppid          int32    `json:"ppid"`           // Pid of the parent process
+	Username      string   `json:"username"`       // Username which runs the process
+	Name          string   `json:"name"`           // (empty on macOS?)
+	CPUPercent    float64  `json:"cpu_percent"`    // Used CPU resources as percentage
+	MemoryPercent float32  `json:"memory_percent"` // Used memory resources as percentage
+	Cmdline       string   `json:"cmdline"`        // command line e.g.: /Applications/Firefox.app/Contents/MacOS/firefox
+	Status        []string `json:"status"`         // https://psutil.readthedocs.io/en/latest/#process-status-constants
+	Exe           string   `json:"exec"`           // e.g: /Applications/Firefox.app/Contents/MacOS/firefox
+	Nice          int32    `json:"nice_level"`     // e.g.: 0
+	NumFds        int32    `json:"num_fds"`        // Number of open file descriptor
 	Memory        struct {
-		RSS    uint64 `json:"rss"`
-		VMS    uint64 `json:"vms"`
+		// https://psutil.readthedocs.io/en/latest/#psutil.Process.memory_info
+		RSS    uint64 `json:"rss"` // Resident Set Size in bytes
+		VMS    uint64 `json:"vms"` // Virtual Memory Size in bytes
 		HWM    uint64 `json:"hwm"`
 		Data   uint64 `json:"data"`
 		Stack  uint64 `json:"stack"`
