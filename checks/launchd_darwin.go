@@ -23,8 +23,8 @@ func (c *CheckLaunchd) Name() string {
 type resultLaunchdServices struct {
 	IsRunning bool
 	Pid       int
-	Status    int
-	Label     string
+	Status    int    // e.g.: 0 (last exit status of the job)
+	Label     string // e.g.: org.virtualbox.app.VirtualBox.28928
 }
 
 // Run the actual check
