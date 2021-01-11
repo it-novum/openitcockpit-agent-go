@@ -17,9 +17,9 @@ const DUPLEX_UNKNOWN = 0
 
 type resultNet struct {
 	Isup   bool  `json:"isup"`
-	Duplex int   `json:"duplex"`
-	Speed  int64 `json:"speed"`
-	MTU    int64 `json:"mtu"`
+	Duplex int   `json:"duplex"` // 0=unknown | 1=half | 2=full
+	Speed  int64 `json:"speed"`  // Linux and Windows only (0 on macOS)
+	MTU    int64 `json:"mtu"`    // e.g.: 1500
 }
 
 // Configure the command or return false if the command was disabled
