@@ -19,10 +19,10 @@ func (c *CheckCpu) Name() string {
 }
 
 type cpuDetails struct {
-	User   float64 // Linux, macOS, Windows
-	Nice   float64 // Linux, macOS
-	System float64 // Linux, macOS, Windows
-	Idle   float64 // Linux, macOS, Windows
+	User   float64 // Linux, macOS, Windows  - Seconds
+	Nice   float64 // Linux, macOS           - Seconds
+	System float64 // Linux, macOS, Windows  - Seconds
+	Idle   float64 // Linux, macOS, Windows  - Seconds
 	Iowait float64 // Linux
 }
 
