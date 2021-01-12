@@ -15,9 +15,11 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gorilla/mux v1.8.0
+	github.com/leoluk/perflib_exporter v0.1.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/common v0.4.0
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
 	github.com/shirou/gopsutil/v3 v3.20.11
 	github.com/sirupsen/logrus v1.7.0
