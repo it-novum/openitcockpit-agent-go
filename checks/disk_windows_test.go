@@ -2,8 +2,6 @@ package checks
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 )
 
@@ -22,8 +20,14 @@ func TestChecksCheckDisk(t *testing.T) {
 
 	}
 
-	js, _ := json.Marshal(results)
+	for _, result := range results{
+		if result.Disk.Device == "_Total"{
 
-	fmt.Println(string(js))
+			freeDiskSpacePercentage := 100.0 - result.Usage.Percent
 
+			if freeDiskSpacePercentage <= 5.0 {
+				t.Fatal("Equal or less than 5% free disk space available")
+			}
+		}
+	}
 }
