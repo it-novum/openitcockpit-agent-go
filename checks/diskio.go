@@ -15,24 +15,32 @@ func (c *CheckDiskIo) Name() string {
 }
 
 type resultDiskIo struct {
-	ReadBytes    uint64  // Number of bytes read from disk since last evaluation
-	WriteBytes   uint64  // Number of bytes written to disk since last evaluation
-	ReadIops     uint64  // Number of read iops since last evaluation
-	WriteIops    uint64  // Number of write iops since last evaluation
-	TotalIops    uint64  // Total number of write iops since last evaluation
-	ReadCount    uint64  // Number of read iops since last evaluation (same as ReadIops)
-	WriteCount   uint64  // Number of write iops since last evaluation (same as WriteIops)
-	IoTime       uint64  // Time spent doing actual I/Os (in milliseconds) (busy_time in python psutil)
-	ReadAvgWait  float64 // Average io_wait for read iops in milliseconds
-	ReadTime     uint64  // Number of io_wait for read iops in milliseconds
-	ReadAvgSize  float64 // Average request size of reads in bytes
-	WriteAvgWait float64 // Average io_wait for write iops in milliseconds
-	WriteAvgSize float64 // Average request size of writes in bytes
-	WriteTime    uint64  // Number of io_wait for write iops in milliseconds
-	TotalAvgWait float64 // Total io_wait in milliseconds
-	LoadPercent  int64   // Disk load as percentage
-	Timestamp    int64   // Timestamp of the last check evaluation
-	Device       string  // Name of the disk
+	//Meta data
+	Timestamp int64  // Timestamp of the last check evaluation
+	Device    string // Name of the disk
+
+	// From iostat
+	ReadBytes  uint64 // Number of bytes read from disk (Counter)
+	WriteBytes uint64 // Number of bytes written to disk (Counter)
+	ReadCount  uint64 // Number of read iops (Counter)
+	WriteCount uint64 // Number of write iops (Counter)
+	ReadTime   uint64 // Number of io_wait for read iops in milliseconds
+	WriteTime  uint64 // Number of io_wait for write iops in milliseconds
+	IoTime     uint64 // Time spent doing actual I/Os (in milliseconds) (busy_time in python psutil) (Counter)
+
+	// Gets calculated
+	ReadIopsPerSecond   uint64  // Number of read iops per second
+	WriteIopsPerSecond  uint64  // Number of write iops per second
+	TotalIopsPerSecond  uint64  // Number of read and write iops per second
+	ReadBytesPerSecond  uint64  // Number of bytes read from disk per second
+	WriteBytesPerSecond uint64  // Number of bytes written to disk per second
+	TotalAvgWait        float64 // Total io_wait in milliseconds
+	ReadAvgWait         float64 // Average io_wait for read iops in milliseconds
+	WriteAvgWait        float64 // Average io_wait for write iops in milliseconds
+	ReadAvgSize         float64 // Average request size of reads in bytes
+	WriteAvgSize        float64 // Average request size of writes in bytes
+	LoadPercent         float64 // Disk load as percentage
+
 }
 
 // Configure the command or return false if the command was disabled
