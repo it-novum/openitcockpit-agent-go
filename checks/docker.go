@@ -117,7 +117,7 @@ func (c *CheckDocker) Run(ctx context.Context) (interface{}, error) {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckDocker) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.Docker, nil
 }
 
 func (c *CheckDocker) calcCpuPercentageUnix(previousCPU, previousSystem float64, stats *types.StatsJSON) float64 {
