@@ -78,7 +78,7 @@ func UnmarshalObject(object *perflib.PerfObject, dst interface{}) error {
 			case perflibMapper.PERF_ELAPSED_TIME:
 				target.Field(i).SetFloat(float64(ctr.Value-WINDOWS_TO_UNIX_EPOCH) / float64(object.Frequency))
 			case perflibMapper.PERF_100NSEC_TIMER, perflibMapper.PERF_PRECISION_100NS_TIMER:
-				target.Field(i).SetFloat(float64(ctr.Value) * WINDOWS_TICKS_PER_SECONDS)
+				target.Field(i).SetFloat(float64(ctr.Value) / WINDOWS_TICKS_PER_SECONDS)
 				//target.Field(i).SetFloat(float64(ctr.Value))
 
 			default:
