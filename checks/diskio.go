@@ -6,7 +6,7 @@ import (
 
 // CheckDiskIo gathers information about system disks IO
 type CheckDiskIo struct {
-	lastResults []*resultDiskIo
+	lastResults map[string]*resultDiskIo
 }
 
 // Name will be used in the response as check name

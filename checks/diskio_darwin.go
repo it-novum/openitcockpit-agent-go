@@ -17,19 +17,11 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	diskResults := make([]*resultDiskIo, 0, len(disks))
+	diskResults := make(map[string]*resultDiskIo)
 
 	for device, iostats := range disks {
 
-		var lastCheckResults *resultDiskIo
-		for _, lastCheckResultsLoop := range c.lastResults {
-			if lastCheckResultsLoop.Device == device {
-				lastCheckResults = lastCheckResultsLoop
-				break
-			}
-		}
-
-		if lastCheckResults != nil {
+		if lastCheckResults, ok := c.lastResults[disk.Name]; ok {
 			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadCount))
 			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteCount))
 			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IoTime))
@@ -73,7 +65,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 					Device:       device,
 				}
 
-				diskResults = append(diskResults, diskstats)
+				diskResults[disk.Name] = diskstats
 			}
 
 		} else {
@@ -91,7 +83,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			}
 
 			//Store result for next check run
-			diskResults = append(diskResults, diskstats)
+			diskResults[disk.Name] = diskstats
 		}
 
 	}

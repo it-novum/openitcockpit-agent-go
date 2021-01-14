@@ -16,7 +16,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, ok := cr.([]*resultDiskIo)
+	results, ok := cr.(map[string]*resultDiskIo)
 	if !ok {
 		t.Fatal("False type")
 
@@ -40,7 +40,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, ok = cr.([]*resultDiskIo)
+	results, ok = cr.(map[string]*resultDiskIo)
 	if !ok {
 		t.Fatal("False type")
 
