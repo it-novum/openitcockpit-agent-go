@@ -20,8 +20,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	diskResults := make(map[string]*resultDiskIo)
 
 	for device, iostats := range disks {
-
-		if lastCheckResults, ok := c.lastResults[disk.Name]; ok {
+		if lastCheckResults, ok := c.lastResults[iostats.Name]; ok {
 			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadCount))
 			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteCount))
 			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IoTime))
@@ -65,7 +64,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 					Device:       device,
 				}
 
-				diskResults[disk.Name] = diskstats
+				diskResults[iostats.Name] = diskstats
 			}
 
 		} else {
@@ -83,7 +82,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			}
 
 			//Store result for next check run
-			diskResults[disk.Name] = diskstats
+			diskResults[iostats.Name] = diskstats
 		}
 
 	}

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/prometheus/procfs/blockdevice"
-	"github.com/shirou/gopsutil/v3/disk"
 )
 
 // Run the actual check
@@ -30,7 +29,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	diskResults := make(map[string]*resultDiskIo)
 
 	for _, iostats := range stats {
-		if lastCheckResults, ok := c.lastResults[disk.Name]; ok {
+		if lastCheckResults, ok := c.lastResults[iostats.Name]; ok {
 			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadIOs))
 			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteIOs))
 			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IOsTotalTicks)) //BusyTime
@@ -74,7 +73,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 					Device:       iostats.DeviceName,
 				}
 
-				diskResults[disk.Name] = diskstats
+				diskResults[iostats.Name] = diskstats
 			}
 
 		} else {
@@ -92,7 +91,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			}
 
 			//Store result for next check run
-			diskResults[disk.Name] = diskstats
+			diskResults[iostats.Name] = diskstats
 		}
 
 	}
