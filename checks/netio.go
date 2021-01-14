@@ -63,7 +63,7 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 			ErrorOut, _ := Wrapdiff(float64(lastCheckResults.ErrorOut), float64(nic.Errout))
 			DropIn, _ := Wrapdiff(float64(lastCheckResults.DropIn), float64(nic.Dropin))
 			DropOut, _ := Wrapdiff(float64(lastCheckResults.DropOut), float64(nic.Dropout))
-			Timestamp, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
+			Interval, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
 
 			// Just in case this this has the same bug as Python psutil has^^
 			netResults[nic.Name] = &resultNetIo{
@@ -77,14 +77,14 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 				ErrorOut:                    nic.Errout,
 				DropIn:                      nic.Dropin,
 				DropOut:                     nic.Dropout,
-				AvgBytesSentPerSecond:       uint64(BytesSent / Timestamp),
-				AvgBytesReceivedPerSecond:   uint64(BytesRecv / Timestamp),
-				AvgPacketsSentPerSecond:     uint64(PacketsSent / Timestamp),
-				AvgPacketsReceivedPerSecond: uint64(PacketsRecv / Timestamp),
-				AvgErrorInPerSecond:         uint64(ErrorIn / Timestamp),
-				AvgErrorOutPerSecond:        uint64(ErrorOut / Timestamp),
-				AvgDropInPerSecond:          uint64(DropIn / Timestamp),
-				AvgDropOutPerSecond:         uint64(DropOut / Timestamp),
+				AvgBytesSentPerSecond:       uint64(BytesSent / Interval),
+				AvgBytesReceivedPerSecond:   uint64(BytesRecv / Interval),
+				AvgPacketsSentPerSecond:     uint64(PacketsSent / Interval),
+				AvgPacketsReceivedPerSecond: uint64(PacketsRecv / Interval),
+				AvgErrorInPerSecond:         uint64(ErrorIn / Interval),
+				AvgErrorOutPerSecond:        uint64(ErrorOut / Interval),
+				AvgDropInPerSecond:          uint64(DropIn / Interval),
+				AvgDropOutPerSecond:         uint64(DropOut / Interval),
 			}
 
 		} else {
