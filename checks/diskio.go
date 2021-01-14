@@ -28,6 +28,12 @@ type resultDiskIo struct {
 	WriteTime  uint64 // Number of io_wait for write iops in milliseconds
 	IoTime     uint64 // Time spent doing actual I/Os (in milliseconds) (busy_time in python psutil) (Counter)
 
+	// MS Perflib
+	AvgDiskQueueLength float64 // The “% Disk Time” counter is nothing more than the “Avg. Disk Queue Length” counter multiplied by 100. It is the same value displayed in a different scale.
+	DiskTime_Base      float64
+	DiskTime           float64
+	IdleTime           float64
+
 	// Gets calculated
 	ReadIopsPerSecond   uint64  // Number of read iops per second
 	WriteIopsPerSecond  uint64  // Number of write iops per second

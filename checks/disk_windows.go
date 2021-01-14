@@ -15,6 +15,7 @@ import (
 // https://msdn.microsoft.com/en-us/library/ms803973.aspx - LogicalDisk object reference
 type Perf_LogicalDisk struct {
 	Name                   string
+	AvgDiskQueueLength     float64 `perflib:"Avg. Disk Queue Length"`    // Type: QUEUELEN
 	CurrentDiskQueueLength float64 `perflib:"Current Disk Queue Length"` // Type: Gauge
 	DiskReadBytesPerSec    float64 `perflib:"Disk Read Bytes/sec"`       // Type: Counter
 	DiskReadsPerSec        float64 `perflib:"Disk Reads/sec"`            // Type: Counter
@@ -29,6 +30,9 @@ type Perf_LogicalDisk struct {
 	AvgDiskSecPerRead      float64 `perflib:"Avg. Disk sec/Read"`        // Type: Counter
 	AvgDiskSecPerWrite     float64 `perflib:"Avg. Disk sec/Write"`       // Type: Counter
 	AvgDiskSecPerTransfer  float64 `perflib:"Avg. Disk sec/Transfer"`    // Type: Counter
+	DiskTime               float64 `perflib:"% Disk Time"`
+	DiskTime_Base          float64 `perflib:"% Disk Time_Base"`
+	IdleTime               float64 `perflib:"% Idle Time"`
 }
 
 // Run the actual check
