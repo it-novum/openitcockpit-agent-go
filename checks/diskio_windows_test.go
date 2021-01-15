@@ -54,6 +54,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
+
 			newIops = result.TotalIopsPerSecond
 		}
 	}

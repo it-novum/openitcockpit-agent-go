@@ -26,9 +26,9 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		if result.Device == "disk0" {
 			fmt.Printf("Device [Check 1]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
-			fmt.Printf("TotalIops: %v\n", result.TotalIops)
+			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
-			oldIops = result.TotalIops
+			oldIops = result.TotalIopsPerSecond
 		}
 	}
 
@@ -49,9 +49,9 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		if result.Device == "disk0" {
 			fmt.Printf("Device [Check 2]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
-			fmt.Printf("TotalIops: %v\n", result.TotalIops)
+			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
-			newIops = result.TotalIops
+			newIops = result.TotalIopsPerSecond
 		}
 	}
 

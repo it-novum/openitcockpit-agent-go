@@ -20,70 +20,81 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	diskResults := make(map[string]*resultDiskIo)
 
 	for device, iostats := range disks {
+		if lastCheckResults, ok := c.lastResults[iostats.Name]; ok {
+			//All values are counters so we need to diff the current value with the last value
+			ReadBytes, _ := Wrapdiff(float64(lastCheckResults.ReadBytes), float64(iostats.ReadBytes))    // Number of bytes read from disk (Counter)
+			WriteBytes, _ := Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteBytes)) // Number of bytes written to disk (Counter)
+			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadCount))    // Number of read iops (Counter)
+			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteCount)) // Number of write iops (Counter)
+			ReadTime, _ := Wrapdiff(float64(lastCheckResults.ReadTime), float64(iostats.ReadTime))       // Time spent reading from disk (in milliseconds)
+			WriteTime, _ := Wrapdiff(float64(lastCheckResults.WriteTime), float64(iostats.WriteTime))    // Time spent writing to disk (in milliseconds)
+			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IoTime))             // Time spent doing actual I/Os (in milliseconds)
+			Interval, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))     // Time between current and last check (in seconds)
 
-		if lastCheckResults, ok := c.lastResults[disk.Name]; ok {
-			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadCount))
-			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteCount))
-			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IoTime))
-			ReadTime, _ := Wrapdiff(float64(lastCheckResults.ReadTime), float64(iostats.ReadTime))
-			WriteTime, _ := Wrapdiff(float64(lastCheckResults.WriteTime), float64(iostats.WriteTime))
-			ReadBytes, _ := Wrapdiff(float64(lastCheckResults.ReadBytes), float64(iostats.ReadBytes))
-			WriteBytes, _ := Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteBytes))
-			Timestamp, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
+			loadPercent := IoTime / (Interval * 1000.0) * 100.0
 
-			loadPercent := IoTime / (Timestamp * 1000) * 100
-
+			readIopsPerSecond := ReadCount / Interval
+			readBytesPerSecond := ReadBytes / Interval
 			readAvgWait := ReadTime / ReadCount
 			readAvgSize := ReadBytes / ReadCount
 
+			writeIopsPerSecond := WriteCount / Interval
+			writeBytesPerSecond := WriteBytes / Interval
 			writeAvgWait := WriteTime / WriteCount
 			writeAvgSize := WriteBytes / WriteCount
 
-			totIos := ReadCount + WriteCount
-			totalAvgWait := (ReadTime + WriteTime) / totIos
+			totIops := ReadCount + WriteCount
+			totIopsPerSecond := totIops / Interval
+			totalAvgWait := (ReadTime + WriteTime) / totIops
 
 			if loadPercent <= 101 {
 				// Just in case this this has the same bug as Python psutil has^^
 				diskstats := &resultDiskIo{
-					Timestamp:    time.Now().Unix(),
-					ReadBytes:    uint64(ReadCount),
-					WriteBytes:   uint64(WriteBytes),
-					ReadIops:     uint64(ReadCount),
-					WriteIops:    uint64(WriteCount),
-					TotalIops:    uint64(totIos),
-					ReadCount:    uint64(ReadCount),
-					WriteCount:   uint64(WriteCount),
-					IoTime:       uint64(IoTime),
-					ReadAvgWait:  readAvgWait,
-					ReadTime:     uint64(ReadTime),
-					ReadAvgSize:  readAvgSize,
-					WriteAvgWait: writeAvgWait,
-					WriteAvgSize: writeAvgSize,
-					WriteTime:    uint64(WriteTime),
-					TotalAvgWait: totalAvgWait,
-					LoadPercent:  int64(loadPercent),
-					Device:       device,
+					// Store counter values for next check evaluation
+					Timestamp:  time.Now().Unix(),
+					Device:     device,
+					ReadBytes:  iostats.ReadBytes,
+					WriteBytes: iostats.WriteBytes,
+					ReadCount:  iostats.ReadCount,
+					WriteCount: iostats.WriteCount,
+					ReadTime:   iostats.ReadTime,
+					WriteTime:  iostats.WriteTime,
+					IoTime:     iostats.IoTime,
+
+					// Store calculated values
+					ReadIopsPerSecond:   uint64(readIopsPerSecond),
+					WriteIopsPerSecond:  uint64(writeIopsPerSecond),
+					TotalIopsPerSecond:  uint64(totIopsPerSecond),
+					ReadBytesPerSecond:  uint64(readBytesPerSecond),
+					WriteBytesPerSecond: uint64(writeBytesPerSecond),
+					TotalAvgWait:        totalAvgWait,
+					ReadAvgWait:         readAvgWait,
+					WriteAvgWait:        writeAvgWait,
+					ReadAvgSize:         readAvgSize,
+					WriteAvgSize:        writeAvgSize,
+					LoadPercent:         loadPercent,
 				}
 
-				diskResults[disk.Name] = diskstats
+				diskResults[iostats.Name] = diskstats
 			}
 
 		} else {
 			//No previous check results for calculations... wait until check runs again
 			diskstats := &resultDiskIo{
-				ReadCount:  iostats.ReadCount,
-				WriteCount: iostats.WriteCount,
-				IoTime:     iostats.IoTime,
-				ReadTime:   iostats.ReadTime,
-				WriteTime:  iostats.WriteTime,
-				ReadBytes:  iostats.ReadBytes,
-				WriteBytes: iostats.WriteBytes,
+				// Store counter values for next check evaluation
 				Timestamp:  time.Now().Unix(),
 				Device:     device,
+				ReadBytes:  iostats.ReadBytes,
+				WriteBytes: iostats.WriteBytes,
+				ReadCount:  iostats.ReadCount,
+				WriteCount: iostats.WriteCount,
+				ReadTime:   iostats.ReadTime,
+				WriteTime:  iostats.WriteTime,
+				IoTime:     iostats.IoTime,
 			}
 
 			//Store result for next check run
-			diskResults[disk.Name] = diskstats
+			diskResults[iostats.Name] = diskstats
 		}
 
 	}
