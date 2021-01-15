@@ -51,16 +51,18 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 				tmpIoTime := uint64(disk.PercentDiskReadTime) + uint64(disk.PercentDiskWriteTime)
 				IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(tmpIoTime))
 
-				//DiskTime_Base, _ = Wrapdiff(float64(lastCheckResults.DiskTime_Base), float64(disk.DiskTime_Base))
+				//AvgDiskQueueLength, _ := Wrapdiff(float64(lastCheckResults.AvgDiskQueueLength), float64(disk.AvgDiskQueueLength))
+
+				DiskTime_Base, _ := Wrapdiff(float64(lastCheckResults.DiskTime_Base), float64(disk.DiskTime_Base))
 				DiskTime, _ := Wrapdiff(float64(lastCheckResults.DiskTime), float64(disk.DiskTime))
 				//IdleTime, _ := Wrapdiff(float64(lastCheckResults.IdleTime), disk.IdleTime)
 
 				Interval, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix())) // Time between current and last check (in seconds)
 
-				//loadPercent := disk.DiskTime_Base / disk.DiskTime * 100.0
+				loadPercent := DiskTime_Base / DiskTime * 100.0
 
-				loadPercent := DiskTime / Interval * 100.0
-				fmt.Printf("\n***\nLoad percentage: %v\n", loadPercent)
+				//loadPercent := AvgDiskQueueLength //DiskTime / Interval * 100.0
+				fmt.Printf("\n***\nLoad of %v is percentage: %v\n", disk.Name, loadPercent)
 
 				readIopsPerSecond := DiskReadsPerSeccond / Interval
 				readBytesPerSecond := ReadBytesPerSecond / Interval
