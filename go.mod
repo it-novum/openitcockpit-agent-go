@@ -15,6 +15,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gorilla/mux v1.8.0
+	github.com/iamacarpet/go-win64api v0.0.0-20200715182619-8cbc936e1a5a
 	github.com/leoluk/perflib_exporter v0.1.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
