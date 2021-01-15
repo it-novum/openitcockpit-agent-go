@@ -43,7 +43,7 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 			Type:  "RSA PRIVATE KEY",
 			Bytes: x509.MarshalPKCS1PrivateKey(key),
 		})
-		if err := ioutil.WriteFile(keyFile, pemData, 0666); err != nil {
+		if err := ioutil.WriteFile(keyFile, pemData, 0600); err != nil {
 			return err
 		}
 	}
@@ -81,5 +81,13 @@ func CSRFromKeyFile(keyFile, subject string) ([]byte, error) {
 		DNSNames: []string{subject},
 	}
 
-	return x509.CreateCertificateRequest(rand.Reader, req, key)
+	der, err := x509.CreateCertificateRequest(rand.Reader, req, key)
+	if err != nil {
+		return nil, err
+	}
+
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE REQUEST",
+		Bytes: der,
+	}), nil
 }

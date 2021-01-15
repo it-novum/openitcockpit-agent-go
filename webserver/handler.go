@@ -46,6 +46,22 @@ func tlsAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func debugMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Debugln("Webserver: Request: ", r.RemoteAddr, " ", r.Method, " ", r.URL)
+		next.ServeHTTP(w, r)
+	})
+}
+
+type csrResponse struct {
+	Csr string `json:"csr"`
+}
+
+type updateCrtRequest struct {
+	Signed string `json:"signed"`
+	CA     string `json:"ca"`
+}
+
 type handler struct {
 	StateInput <-chan []byte
 
@@ -55,7 +71,6 @@ type handler struct {
 	shutdown chan struct{}
 	state    []byte
 	wg       sync.WaitGroup
-	prepared bool
 
 	router              *mux.Router
 	basicAuthMiddleware *basicAuthMiddleware
@@ -73,12 +88,17 @@ func (w *handler) getState() []byte {
 func (w *handler) setState(newState []byte) {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
+	log.Debugln("Webserver: set new state")
 	w.state = newState
 }
 
 func (w *handler) handleStatus(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
-	response.Write(w.getState())
+	response.WriteHeader(http.StatusOK)
+	_, err := response.Write(w.getState())
+	if err != nil {
+		log.Errorln("Webserver: ", err)
+	}
 }
 
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
@@ -100,6 +120,8 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 }
 
 func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request) {
+	log.Infoln("Webserver: openITCOCKPIT requests the CSR")
+
 	if err := utils.GeneratePrivateKeyIfNotExists(w.Configuration.AutoSslKeyFile); err != nil {
 		log.Errorln("Webserver: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
@@ -111,17 +133,23 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	log.Infoln("Webserver: CSR generated")
 	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0666); err != nil {
 		log.Infoln("Webserver: could not store csr: ", err)
 	}
-	js, err := json.Marshal(struct{ Csr string }{string(csr)})
+	js, err := json.Marshal(csrResponse{Csr: string(csr)})
 	if err != nil {
 		log.Errorln("Webserver: Could not create json for csr: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	log.Debugln("Webserver: Send CSR: ", string(js))
 	response.Header().Add("Content-Type", "application/json")
-	response.Write(js)
+	if _, err := response.Write(js); err != nil {
+		log.Errorln("Webserver: ", err)
+	} else {
+		log.Infoln("Webserver: CSR sent successfully")
+	}
 }
 
 func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.Request) {
@@ -136,7 +164,16 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 		return
 	}
 
-	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, body, 0666); err != nil {
+	log.Debugln("Webserver: received new certificate: ", string(body))
+
+	crtReq := &updateCrtRequest{}
+	if err := json.Unmarshal([]byte(body), crtReq); err != nil {
+		log.Errorln("Webserver: Could not parse certificate update request: ", err)
+		http.Error(response, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, []byte(crtReq.Signed), 0600); err != nil {
 		log.Errorln("Webserver: Could not write certificate file: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
@@ -152,6 +189,10 @@ func (w *handler) Handler() *mux.Router {
 	defer w.mtx.Unlock()
 	if w.router == nil {
 		routes := mux.NewRouter()
+		if log.GetLevel() == log.DebugLevel {
+			log.Debugln("Webserver: Activate Handler Debug Middleware")
+			routes.Use(debugMiddleware)
+		}
 		if isAutosslEnabled(w.Configuration) {
 			log.Infoln("Webserver: Activate TLS authentication")
 			routes.Use(tlsAuthMiddleware)

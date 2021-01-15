@@ -60,6 +60,9 @@ func TestWebserverHandlerState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := r.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 	if string(body) != "{}" {
 		t.Fatal("body does not match")
 	}
@@ -72,6 +75,9 @@ func TestWebserverHandlerState(t *testing.T) {
 	}
 	body, err = ioutil.ReadAll(r.Body)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Body.Close(); err != nil {
 		t.Fatal(err)
 	}
 	if string(body) != string(testState) {
