@@ -29,6 +29,7 @@ Thumbs.db
 /.vscode
 /config.ini
 /customchecks.ini
+/__debug_bin
 
 # VSCode local history
 .history

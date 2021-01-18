@@ -179,6 +179,12 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 		return
 	}
 
+	if err := ioutil.WriteFile(w.Configuration.AutoSslCaFile, []byte(crtReq.CA), 0600); err != nil {
+		log.Errorln("Webserver: Could not write ca certificate file: ", err)
+		http.Error(response, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	log.Debugln("Webserver: Certificate update successful, start reload")
 	w.Configuration.Reload()
 }

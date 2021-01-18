@@ -36,10 +36,23 @@ type Server struct {
 }
 
 func isAutosslEnabled(cfg *config.Configuration) bool {
-	return cfg.AutoSslEnabled &&
-		utils.FileExists(cfg.AutoSslCrtFile) &&
-		utils.FileExists(cfg.AutoSslKeyFile) &&
-		utils.FileExists(cfg.AutoSslCaFile)
+	if cfg.AutoSslEnabled {
+		log.Debugln("Webserver: AutoSSL is enabled: checking for certificate files")
+		if utils.FileNotExists(cfg.AutoSslCrtFile) {
+			log.Infoln("Webserver: AutoSSL certificate is missing: ", cfg.AutoSslCrtFile)
+			return false
+		}
+		if utils.FileNotExists(cfg.AutoSslKeyFile) {
+			log.Infoln("Webserver: AutoSSL key is missing: ", cfg.AutoSslKeyFile)
+			return false
+		}
+		if utils.FileNotExists(cfg.AutoSslCaFile) {
+			log.Infoln("Webserver: AutoSSL ca certificate is missing: ", cfg.AutoSslCaFile)
+			return false
+		}
+		return true
+	}
+	return false
 }
 
 func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
