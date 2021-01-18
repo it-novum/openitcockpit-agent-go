@@ -30,68 +30,71 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 
 	for _, iostats := range stats {
 		if lastCheckResults, ok := c.lastResults[iostats.DeviceName]; ok {
-			ReadSectors, _ := Wrapdiff(float64(lastCheckResults.ReadBytes), float64(iostats.ReadSectors))
-			WriteSectors, _ := Wrapdiff(float64(lastCheckResults.WriteBytes), float64(iostats.WriteSectors))
-			ReadCount, _ := Wrapdiff(float64(lastCheckResults.ReadCount), float64(iostats.ReadIOs))
-			WriteCount, _ := Wrapdiff(float64(lastCheckResults.WriteCount), float64(iostats.WriteIOs))
-			ReadTime, _ := Wrapdiff(float64(lastCheckResults.ReadTime), float64(iostats.ReadTicks))
-			WriteTime, _ := Wrapdiff(float64(lastCheckResults.WriteTime), float64(iostats.WriteTicks))
-			IoTime, _ := Wrapdiff(float64(lastCheckResults.IoTime), float64(iostats.IOsTotalTicks)) //BusyTime
-			Interval, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
+			ReadSectors := WrapDiffUint64(lastCheckResults.ReadBytes, iostats.ReadSectors)
+			WriteSectors := WrapDiffUint64(lastCheckResults.WriteBytes, iostats.WriteSectors)
+			ReadCount := WrapDiffUint64(lastCheckResults.ReadCount, iostats.ReadIOs)
+			WriteCount := WrapDiffUint64(lastCheckResults.WriteCount, iostats.WriteIOs)
+			ReadTime := WrapDiffUint64(lastCheckResults.ReadTime, iostats.ReadTicks)
+			WriteTime := WrapDiffUint64(lastCheckResults.WriteTime, iostats.WriteTicks)
+			IoTime := WrapDiffUint64(lastCheckResults.IoTime, iostats.IOsTotalTicks) //BusyTime
+			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)
+			IntervalFloat := float64(Interval)
 
 			// http://www.mjmwired.net/kernel/Documentation/block/stat.txt
 			// The "sectors" in question are the standard UNIX 512-byte
 			// sectors, not any device- or filesystem-specific block size.
-			BytesPerSector := 512.0
+			var BytesPerSector uint64 = 512
 			ReadBytes := ReadSectors * BytesPerSector
 			WriteBytes := WriteSectors * BytesPerSector
 
-			loadPercent := IoTime / (Interval * 1000.0) * 100.0
+			loadPercent := float64(IoTime) / (IntervalFloat * 1000.0) * 100.0
+			if loadPercent >= 100.0 {
+				// Just in case this this has the same bug as Python psutil has^^
+				loadPercent = 100.0
+			}
 
 			readIopsPerSecond := ReadCount / Interval
-			readBytesPerSecond := ReadBytes / Interval
-			readAvgWait := ReadTime / ReadCount
-			readAvgSize := ReadBytes / ReadCount
+			readBytesPerSecond := float64(ReadBytes) / IntervalFloat
+			readAvgWait := float64(ReadTime) / float64(ReadCount)
+			readAvgSize := float64(ReadBytes) / float64(ReadCount)
 
 			writeIopsPerSecond := WriteCount / Interval
-			writeBytesPerSecond := WriteBytes / Interval
-			writeAvgWait := WriteTime / WriteCount
-			writeAvgSize := WriteBytes / WriteCount
+			writeBytesPerSecond := float64(WriteBytes) / IntervalFloat
+			writeAvgWait := float64(WriteTime) / float64(WriteCount)
+			writeAvgSize := float64(WriteBytes) / float64(WriteCount)
 
 			totIops := ReadCount + WriteCount
-			totIopsPerSecond := totIops / Interval
-			totalAvgWait := (ReadTime + WriteTime) / totIops
 
-			if loadPercent <= 101 {
-				// Just in case this this has the same bug as Python psutil has^^
-				diskstats := &resultDiskIo{
-					// Store counter values for next check evaluation
-					Timestamp:  time.Now().Unix(),
-					Device:     iostats.DeviceName,
-					ReadBytes:  iostats.ReadMerges,
-					WriteBytes: iostats.WriteMerges,
-					ReadCount:  iostats.ReadIOs,
-					WriteCount: iostats.WriteIOs,
-					ReadTime:   iostats.ReadTicks,
-					WriteTime:  iostats.WriteTicks,
-					IoTime:     iostats.IOsTotalTicks,
+			totIopsPerSecond := float64(totIops) / IntervalFloat
+			totalAvgWait := (float64(ReadTime) + float64(WriteTime)) / float64(totIops)
 
-					// Store calculated values
-					ReadIopsPerSecond:   uint64(readIopsPerSecond),
-					WriteIopsPerSecond:  uint64(writeIopsPerSecond),
-					TotalIopsPerSecond:  uint64(totIopsPerSecond),
-					ReadBytesPerSecond:  uint64(readBytesPerSecond),
-					WriteBytesPerSecond: uint64(writeBytesPerSecond),
-					TotalAvgWait:        totalAvgWait,
-					ReadAvgWait:         readAvgWait,
-					WriteAvgWait:        writeAvgWait,
-					ReadAvgSize:         readAvgSize,
-					WriteAvgSize:        writeAvgSize,
-					LoadPercent:         loadPercent,
-				}
+			diskstats := &resultDiskIo{
+				// Store counter values for next check evaluation
+				Timestamp:  time.Now().Unix(),
+				Device:     iostats.DeviceName,
+				ReadBytes:  iostats.ReadSectors,
+				WriteBytes: iostats.WriteSectors,
+				ReadCount:  iostats.ReadIOs,
+				WriteCount: iostats.WriteIOs,
+				ReadTime:   iostats.ReadTicks,
+				WriteTime:  iostats.WriteTicks,
+				IoTime:     iostats.IOsTotalTicks,
 
-				diskResults[iostats.DeviceName] = diskstats
+				// Store calculated values
+				ReadIopsPerSecond:   uint64(readIopsPerSecond),
+				WriteIopsPerSecond:  uint64(writeIopsPerSecond),
+				TotalIopsPerSecond:  uint64(totIopsPerSecond),
+				ReadBytesPerSecond:  uint64(readBytesPerSecond),
+				WriteBytesPerSecond: uint64(writeBytesPerSecond),
+				TotalAvgWait:        totalAvgWait,
+				ReadAvgWait:         readAvgWait,
+				WriteAvgWait:        writeAvgWait,
+				ReadAvgSize:         readAvgSize,
+				WriteAvgSize:        writeAvgSize,
+				LoadPercent:         loadPercent,
 			}
+
+			diskResults[iostats.DeviceName] = diskstats
 
 		} else {
 			//No previous check results for calculations... wait until check runs again
@@ -99,8 +102,8 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 				// Store counter values for next check evaluation
 				Timestamp:  time.Now().Unix(),
 				Device:     iostats.DeviceName,
-				ReadBytes:  iostats.ReadMerges,
-				WriteBytes: iostats.WriteMerges,
+				ReadBytes:  iostats.ReadSectors,
+				WriteBytes: iostats.WriteSectors,
 				ReadCount:  iostats.ReadIOs,
 				WriteCount: iostats.WriteIOs,
 				ReadTime:   iostats.ReadTicks,

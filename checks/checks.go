@@ -60,3 +60,19 @@ func Wrapdiff(last, curr float64) (float64, error) {
 
 	return math.Pow(2, currBoundary) - last + curr, nil
 }
+
+func WrapDiffUint32(last, curr uint32) uint32 {
+	if last <= curr {
+		return curr - last
+	}
+
+	return (math.MaxInt32 - last) + curr
+}
+
+func WrapDiffUint64(last, curr uint64) uint64 {
+	if last <= curr {
+		return curr - last
+	}
+
+	return (math.MaxUint64 - last) + curr
+}

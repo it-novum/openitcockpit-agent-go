@@ -55,15 +55,15 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 	for _, nic := range stats {
 
 		if lastCheckResults, ok := c.lastResults[nic.Name]; ok {
-			BytesRecv, _ := Wrapdiff(float64(lastCheckResults.BytesReceived), float64(nic.BytesRecv))
-			BytesSent, _ := Wrapdiff(float64(lastCheckResults.BytesSent), float64(nic.BytesSent))
-			PacketsSent, _ := Wrapdiff(float64(lastCheckResults.PacketsSent), float64(nic.PacketsSent))
-			PacketsRecv, _ := Wrapdiff(float64(lastCheckResults.PacketsReceived), float64(nic.PacketsRecv))
-			ErrorIn, _ := Wrapdiff(float64(lastCheckResults.ErrorIn), float64(nic.Errin))
-			ErrorOut, _ := Wrapdiff(float64(lastCheckResults.ErrorOut), float64(nic.Errout))
-			DropIn, _ := Wrapdiff(float64(lastCheckResults.DropIn), float64(nic.Dropin))
-			DropOut, _ := Wrapdiff(float64(lastCheckResults.DropOut), float64(nic.Dropout))
-			Interval, _ := Wrapdiff(float64(lastCheckResults.Timestamp), float64(time.Now().Unix()))
+			BytesRecv := WrapDiffUint64(lastCheckResults.BytesReceived, nic.BytesRecv)
+			BytesSent := WrapDiffUint64(lastCheckResults.BytesSent, nic.BytesSent)
+			PacketsSent := WrapDiffUint64(lastCheckResults.PacketsSent, nic.PacketsSent)
+			PacketsRecv := WrapDiffUint64(lastCheckResults.PacketsReceived, nic.PacketsRecv)
+			ErrorIn := WrapDiffUint64(lastCheckResults.ErrorIn, nic.Errin)
+			ErrorOut := WrapDiffUint64(lastCheckResults.ErrorOut, nic.Errout)
+			DropIn := WrapDiffUint64(lastCheckResults.DropIn, nic.Dropin)
+			DropOut := WrapDiffUint64(lastCheckResults.DropOut, nic.Dropout)
+			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)
 
 			// Just in case this this has the same bug as Python psutil has^^
 			netResults[nic.Name] = &resultNetIo{

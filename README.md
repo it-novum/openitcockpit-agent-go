@@ -59,6 +59,56 @@ Add the following settings to your JSON.
 ```
 > Source: https://github.com/golang/tools/blob/master/gopls/doc/vscode.md
 
+5. Debug Launch Configuration
+
+Run -> Open Configurations
+```JS
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {},
+            "args": ["-c", ".\\config.cnf", "--disable-logfile", "--debug"]
+        }
+    ]
+}
+```
+
+Create a new file in workspace folder -> "config.cnf"
+```ini
+[default]
+customchecks = ./customchecks.ini
+```
+
+Create a new file in workspace folder -> "customchecks.ini" (Windows)
+
+```ini
+[check_Windows_Services_Status_OSS]
+command = echo 'hello world'
+interval = 15
+timeout = 10
+enabled = false
+```
+
+Create a new file in workspace folder -> "customchecks.ini" (Linux/Mac)
+
+```ini
+[check_echo]
+command = echo 'hello world'
+interval = 15
+timeout = 10
+enabled = false
+```
+
+
 Start hacking :)
 
 ## Notes

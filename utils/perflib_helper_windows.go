@@ -11,7 +11,13 @@ import (
 // Ein einzelner Takt stellt hundert Nanosekunden oder ein Zehnmillionstel einer Sekunde dar. Es gibt 10.000 Ticks in einer Millisekunde (siehe TicksPerMillisecond )
 // und 10 Millionen Ticks in einer Sekunde.
 // https://docs.microsoft.com/de-de/dotnet/api/system.datetime.ticks?view=net-5.0
-const WINDOWS_TICKS_PER_SECONDS = 10000000
+const WINDOWS_TICKS_PER_SECONDS float64 = 1.0e-7 // = 1 / 10000000
+
+const WINDOWS_TICKS_PER_MILISECONDS float64 = 1.0e-6 // = 1 / 1000000
+
+// Credit to: https://github.com/bosun-monitor/bosun/blob/master/cmd/scollector/collectors/disk_windows.go#L15-L22
+//Converts 100ns samples to 0-100 Percent samples
+const WIDOWS_TICKS_TO_PERCENT = 100000
 
 // Windows timestamps starts at 1601-01-01T00:00:00Z which is 11644473600 before unix timestamps starts 1970-01-01T00:00:00Z.
 // https://stackoverflow.com/a/6161842
@@ -78,7 +84,8 @@ func UnmarshalObject(object *perflib.PerfObject, dst interface{}) error {
 			case perflibMapper.PERF_ELAPSED_TIME:
 				target.Field(i).SetFloat(float64(ctr.Value-WINDOWS_TO_UNIX_EPOCH) / float64(object.Frequency))
 			case perflibMapper.PERF_100NSEC_TIMER, perflibMapper.PERF_PRECISION_100NS_TIMER:
-				target.Field(i).SetFloat(float64(ctr.Value) / WINDOWS_TICKS_PER_SECONDS)
+				//target.Field(i).SetFloat(float64(ctr.Value) / WINDOWS_TICKS_PER_SECONDS)
+				target.Field(i).SetFloat(float64(ctr.Value) * WINDOWS_TICKS_PER_SECONDS)
 				//target.Field(i).SetFloat(float64(ctr.Value))
 
 			default:
@@ -107,5 +114,5 @@ func counterMapKeys(m map[string]*perflib.PerfCounter) []string {
 }
 
 func WindowsTicksToUnixSeconds(windowsTicks uint64) uint64 {
-	return (windowsTicks/WINDOWS_TICKS_PER_SECONDS - WINDOWS_TO_UNIX_EPOCH)
+	return uint64((float64(windowsTicks)*WINDOWS_TICKS_PER_SECONDS - WINDOWS_TO_UNIX_EPOCH))
 }
