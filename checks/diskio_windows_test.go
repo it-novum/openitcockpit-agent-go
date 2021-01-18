@@ -3,6 +3,7 @@ package checks
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -23,8 +24,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 
 	var oldIops uint64 = 0
 	for _, result := range results {
-		//fmt.Println(result)
-		if result.Device == "C:" {
+		if strings.Contains(result.Device, "C:") {
 			fmt.Printf("Device [Check 1]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
@@ -47,8 +47,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 
 	var newIops uint64 = 0
 	for _, result := range results {
-		//fmt.Println(result)
-		if result.Device == "C:" {
+		if strings.Contains(result.Device, "C:") {
 			fmt.Printf("Device [Check 2]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)

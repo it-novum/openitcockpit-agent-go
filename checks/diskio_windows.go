@@ -137,12 +137,14 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			AvgDiskSecPerWriteDiff := WrapDiffUint32(lastCheckResults.AvgDiskSecPerWrite, disk.AvgDiskSecPerWrite)               // N1 - N0 (Writes)
 			AvgDiskSecPerWriteBaseDiff := WrapDiffUint32(lastCheckResults.AvgDiskSecPerWrite_Base, disk.AvgDiskSecPerWrite_Base) // D1 - D0 (Writes)
 
+			// nolint:ineffassign
 			var AvgDiskSecPerRead_Us, AvgDiskSecPerRead_Ms float64 = 0.0, 0.0
 			if AvgDiskSecPerReadDiff > 0 {
 				AvgDiskSecPerRead_Us = (float64(AvgDiskSecPerReadDiff) / float64(disk.Frequency_PerfTime)) / float64(AvgDiskSecPerReadBaseDiff)
 				AvgDiskSecPerRead_Ms = AvgDiskSecPerRead_Us * 1000.0 // DefaultScale 3 -> DefaultScale is power of 10 -> 10 * 10 * 10 = 1000
 			}
 
+			// nolint:ineffassign
 			var AvgDiskSecPerWrite_Us, AvgDiskSecPerWrite_Ms float64 = 0.0, 0.0
 			if AvgDiskSecPerWriteDiff > 0 {
 				AvgDiskSecPerWrite_Us = (float64(AvgDiskSecPerWriteDiff) / float64(disk.Frequency_PerfTime)) / float64(AvgDiskSecPerWriteBaseDiff)
