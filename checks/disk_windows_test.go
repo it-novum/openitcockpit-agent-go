@@ -20,8 +20,8 @@ func TestChecksCheckDisk(t *testing.T) {
 
 	}
 
-	for _, result := range results{
-		if result.Disk.Device == "_Total"{
+	for _, result := range results {
+		if result.Disk.Device == "C:" {
 
 			freeDiskSpacePercentage := 100.0 - result.Usage.Percent
 

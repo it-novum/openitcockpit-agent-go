@@ -65,27 +65,28 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 		}
 
 		for _, disk := range dst {
+			if disk.Name != "_Total" {
+				//Do the math
+				totalDiskSpaceBytes := disk.PercentFreeSpace * 1024 * 1024
+				freeDiskSpaceBytes := disk.PercentFreeSpace_Base * 1024 * 1024
+				usedDiskSpaceBytes := totalDiskSpaceBytes - freeDiskSpaceBytes
 
-			//Do the math
-			totalDiskSpaceBytes := disk.PercentFreeSpace * 1024 * 1024
-			freeDiskSpaceBytes := disk.PercentFreeSpace_Base * 1024 * 1024
-			usedDiskSpaceBytes := totalDiskSpaceBytes - freeDiskSpaceBytes
+				freeDiskSpacePercentage := freeDiskSpaceBytes / totalDiskSpaceBytes * 100.0
+				usedDiskSpacePercentage := 100.0 - freeDiskSpacePercentage
 
-			freeDiskSpacePercentage := freeDiskSpaceBytes / totalDiskSpaceBytes * 100.0
-			usedDiskSpacePercentage := 100.0 - freeDiskSpacePercentage
+				//Save to struct
+				result := &resultDisk{}
 
-			//Save to struct
-			result := &resultDisk{}
+				result.Disk.Device = disk.Name
+				result.Disk.Mountpoint = disk.Name
 
-			result.Disk.Device = disk.Name
-			result.Disk.Mountpoint = disk.Name
+				result.Usage.Total = uint64(totalDiskSpaceBytes)
+				result.Usage.Used = uint64(usedDiskSpaceBytes)
+				result.Usage.Free = uint64(freeDiskSpaceBytes)
+				result.Usage.Percent = usedDiskSpacePercentage
 
-			result.Usage.Total = uint64(totalDiskSpaceBytes)
-			result.Usage.Used = uint64(usedDiskSpaceBytes)
-			result.Usage.Free = uint64(freeDiskSpaceBytes)
-			result.Usage.Percent = usedDiskSpacePercentage
-
-			diskResults = append(diskResults, result)
+				diskResults = append(diskResults, result)
+			}
 		}
 	}
 
