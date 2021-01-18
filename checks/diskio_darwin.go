@@ -32,6 +32,10 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)            // Time between current and last check (in seconds)
 
 			loadPercent := float64(IoTime) / (float64(Interval) * 1000.0) * 100.0
+			if loadPercent >= 100.0 {
+				// Just in case this this has the same bug as Python psutil has^^
+				loadPercent = 100.0
+			}
 
 			readIopsPerSecond := ReadCount / Interval
 			readBytesPerSecond := float64(ReadBytes) / float64(Interval)
@@ -48,36 +52,33 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			totIopsPerSecond := float64(totIops) / float64(Interval)
 			totalAvgWait := (float64(ReadTime) + float64(WriteTime)) / float64(totIops)
 
-			if loadPercent <= 100.0 {
-				// Just in case this this has the same bug as Python psutil has^^
-				diskstats := &resultDiskIo{
-					// Store counter values for next check evaluation
-					Timestamp:  time.Now().Unix(),
-					Device:     device,
-					ReadBytes:  iostats.ReadBytes,
-					WriteBytes: iostats.WriteBytes,
-					ReadCount:  iostats.ReadCount,
-					WriteCount: iostats.WriteCount,
-					ReadTime:   iostats.ReadTime,
-					WriteTime:  iostats.WriteTime,
-					IoTime:     iostats.IoTime,
+			diskstats := &resultDiskIo{
+				// Store counter values for next check evaluation
+				Timestamp:  time.Now().Unix(),
+				Device:     device,
+				ReadBytes:  iostats.ReadBytes,
+				WriteBytes: iostats.WriteBytes,
+				ReadCount:  iostats.ReadCount,
+				WriteCount: iostats.WriteCount,
+				ReadTime:   iostats.ReadTime,
+				WriteTime:  iostats.WriteTime,
+				IoTime:     iostats.IoTime,
 
-					// Store calculated values
-					ReadIopsPerSecond:   uint64(readIopsPerSecond),
-					WriteIopsPerSecond:  uint64(writeIopsPerSecond),
-					TotalIopsPerSecond:  uint64(totIopsPerSecond),
-					ReadBytesPerSecond:  uint64(readBytesPerSecond),
-					WriteBytesPerSecond: uint64(writeBytesPerSecond),
-					TotalAvgWait:        totalAvgWait,
-					ReadAvgWait:         readAvgWait,
-					WriteAvgWait:        writeAvgWait,
-					ReadAvgSize:         readAvgSize,
-					WriteAvgSize:        writeAvgSize,
-					LoadPercent:         loadPercent,
-				}
-
-				diskResults[iostats.Name] = diskstats
+				// Store calculated values
+				ReadIopsPerSecond:   uint64(readIopsPerSecond),
+				WriteIopsPerSecond:  uint64(writeIopsPerSecond),
+				TotalIopsPerSecond:  uint64(totIopsPerSecond),
+				ReadBytesPerSecond:  uint64(readBytesPerSecond),
+				WriteBytesPerSecond: uint64(writeBytesPerSecond),
+				TotalAvgWait:        totalAvgWait,
+				ReadAvgWait:         readAvgWait,
+				WriteAvgWait:        writeAvgWait,
+				ReadAvgSize:         readAvgSize,
+				WriteAvgSize:        writeAvgSize,
+				LoadPercent:         loadPercent,
 			}
+
+			diskResults[iostats.Name] = diskstats
 
 		} else {
 			//No previous check results for calculations... wait until check runs again
