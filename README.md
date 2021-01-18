@@ -76,7 +76,7 @@ Run -> Open Configurations
             "mode": "auto",
             "program": "${workspaceFolder}",
             "env": {},
-            "args": ["-c", ".\\config.cnf", "--disable-logfile"]
+            "args": ["-c", ".\\config.cnf", "--disable-logfile", "--debug"]
         }
     ]
 }
