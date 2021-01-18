@@ -17,10 +17,10 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/iamacarpet/go-win64api v0.0.0-20200715182619-8cbc936e1a5a
 	github.com/leoluk/perflib_exporter v0.1.0
+	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
+	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/pkg/errors v0.9.1
-	github.com/prometheus/common v0.4.0
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
 	github.com/shirou/gopsutil/v3 v3.20.11
 	github.com/sirupsen/logrus v1.7.0
@@ -29,4 +29,5 @@ require (
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
 	golang.org/x/text v0.3.2
 	gopkg.in/ini.v1 v1.62.0 // indirect
+	gotest.tools/v3 v3.0.3 // indirect
 )
