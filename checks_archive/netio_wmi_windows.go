@@ -2,6 +2,8 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/StackExchange/wmi"
@@ -82,80 +84,33 @@ type Win32_PerfFormattedData_Tcpip_NetworkInterface struct {
 	Timestamp_Sys100NS              uint64
 }
 
-type MSFT_NetAdapter struct {
-	Name              string
-	Status            string
-	FullDuplex        bool
-	MediaDuplexState  uint32
-	MtuSize           uint32
-	VlanID            uint16
-	TransmitLinkSpeed uint64
-	ReceiveLinkSpeed  uint64
-}
-
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckNet) Run(ctx context.Context) (interface{}, error) {
 	var dst []Win32_NetworkAdapter
-	// Will return Intel(R) Ethernet Connection (2) I219-V as interface names
 	err := wmi.Query("SELECT * FROM Win32_NetworkAdapter", &dst)
 	if err != nil {
 		return nil, err
 	}
 
-	//	var dstTwo []Win32_PerfFormattedData_Tcpip_NetworkInterface
-	//	// Win32_PerfFormattedData_Tcpip_NetworkAdapter is a hidden feature??
-	//	// I cant find any MS docs about
-	//	// Irina found this GitHub issue https://github.com/opserver/Opserver/issues/200#issuecomment-233122437
-	//  // Will return Intel[R] Ethernet Connection [2] I219-V as interface names
-	//  // To merge both toghether we need to remove all with is not a-zA-Z0-9
-	//	err = wmi.Query("SELECT * FROM Win32_PerfFormattedData_Tcpip_NetworkAdapter", &dstTwo)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	js, _ = json.Marshal(dstTwo)
-	//	fmt.Println(string(js))
+	js, _ := json.Marshal(dst)
+	fmt.Println(string(js))
 
-	netResults := make(map[string]*resultNet)
-
-	// Get MTU and Duplex Mode
-	var dstNetAdapter []MSFT_NetAdapter
-	_ = wmi.QueryNamespace("SELECT * FROM MSFT_NetAdapter ", &dstNetAdapter, `Root\StandardCimv2`)
-
-	for _, nic := range dst {
-		// This is the same name as gopsutil and net.Interfaces() use
-		// This may be has to be refactored when switching all to WMI
-		name := nic.NetConnectionID
-
-		if name != "" {
-			duplex := DUPLEX_UNKNOWN
-			var mtu int64 = 0
-
-			for _, mfstNic := range dstNetAdapter {
-				if mfstNic.Name == name {
-					if mfstNic.FullDuplex {
-						duplex = DUPLEX_FULL
-					} else {
-						duplex = DUPLEX_HALF
-					}
-
-					mtu = int64(mfstNic.MtuSize)
-
-				}
-			}
-
-			netResults[name] = &resultNet{
-				Isup:   nic.NetConnectionStatus == 2,
-				MTU:    mtu,
-				Speed:  int64(nic.Speed) / 1000 / 1000, // bits/s to mbits/s
-				Duplex: duplex,
-			}
-		}
-
+	fmt.Println("------")
+	var dstTwo []Win32_PerfFormattedData_Tcpip_NetworkInterface
+	// Win32_PerfFormattedData_Tcpip_NetworkAdapter is a hidden feature??
+	// I cant find any MS docs about
+	// Irina found this GitHub issue https://github.com/opserver/Opserver/issues/200#issuecomment-233122437
+	err = wmi.Query("SELECT * FROM Win32_PerfFormattedData_Tcpip_NetworkAdapter", &dstTwo)
+	if err != nil {
+		return nil, err
 	}
 
+	js, _ = json.Marshal(dstTwo)
+	fmt.Println(string(js))
+
+	netResults := make(map[string]*resultNet)
 	return netResults, nil
 }

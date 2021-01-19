@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -15,6 +16,14 @@ func TestChecksWithDefault(t *testing.T) {
 			t.Error("Invalid name")
 		}
 		r, err := c.Run(context.Background())
+
+		if err != nil {
+			if strings.Contains(err.Error(), "error during connect: This error may") {
+				fmt.Println("Docker not installed or running on this system ???")
+				t.SkipNow()
+			}
+		}
+
 		if err != nil {
 			t.Errorf("Test of check %s failed with error: %s", c.Name(), err)
 			continue

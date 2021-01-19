@@ -3,6 +3,7 @@ package checks
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -12,7 +13,12 @@ func TestChecksCheckDocker(t *testing.T) {
 
 	cr, err := check.Run(context.Background())
 	if err != nil {
+		if strings.Contains(err.Error(), "error during connect: This error may") {
+			fmt.Println("Docker not installed or running on this system ???")
+			t.SkipNow()
+		}
 		t.Fatal(err)
+
 	}
 
 	results, ok := cr.([]*resultDocker)

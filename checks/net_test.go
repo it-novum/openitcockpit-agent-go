@@ -33,6 +33,14 @@ func TestChecksNet(t *testing.T) {
 				}
 			}
 		}
+
+		if runtime.GOOS == "windows" {
+			if strings.Contains("Ethernet ", name) || strings.Contains("VirtualBox", name) {
+				if nic.Speed < 10 && nic.Speed > 0 {
+					t.Fatal("Network connection has less than 10 mbit?")
+				}
+			}
+		}
 	}
 
 }

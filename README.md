@@ -2,8 +2,16 @@
 Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 
 1. [Installation](#Installation)
-2. [Usage](#Usage)
-3. [Join Development](#Join-Development)
+2. [Requirements](#Requirements)
+3. [Usage](#Usage)
+4. [Join Development](#Join-Development)
+
+## Requirements
+
+- Windows Server 2012 or newer
+- Windows 8 or newer
+- macOS 10.14 Mojave or newer
+- Linux
 
 ## Join Development
 

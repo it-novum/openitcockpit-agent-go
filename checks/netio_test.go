@@ -41,13 +41,14 @@ func TestChecksCheckNetIO(t *testing.T) {
 	}
 
 	var newPacketsSent []uint64
+	var js []byte
 	for _, result := range results {
 		fmt.Printf("Nic [Check 2]: %s\n", result.Name)
 		fmt.Printf("Packets sent: %v\n", result.PacketsSent)
 		fmt.Printf("Packets Received: %v\n", result.PacketsReceived)
 
-		js, _ := json.Marshal(result)
-		fmt.Println(string(js))
+		//js, _ = json.Marshal(result)
+		//fmt.Println(string(js))
 
 		newPacketsSent = append(newPacketsSent, result.PacketsSent)
 	}
@@ -62,5 +63,8 @@ func TestChecksCheckNetIO(t *testing.T) {
 	if !wasTrafficOnOneInterface {
 		t.Fatal("No packets send on all interfaces - that's suspicious")
 	}
+
+	js, _ = json.Marshal(results)
+	fmt.Println(string(js))
 
 }

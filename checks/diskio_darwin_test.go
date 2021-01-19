@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -33,7 +36,27 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		}
 	}
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
+
+	file, ioutilErr := ioutil.TempFile("", "makeSomeIops")
+	if ioutilErr != nil {
+		log.Fatal(ioutilErr)
+	}
+	defer os.Remove(file.Name())
+
+	if _, err = file.WriteString("Make some iops on the disk, that the test does not fail"); err != nil {
+		fmt.Println(err)
+	}
+
+	if err = file.Sync(); err != nil {
+		fmt.Println(err)
+	}
+
+	if err = file.Close(); err != nil {
+		fmt.Println(err)
+	}
+
+	time.Sleep(5 * time.Second)
 
 	cr, err = check.Run(context.Background())
 	if err != nil {
