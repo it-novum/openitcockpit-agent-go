@@ -29,6 +29,11 @@ func TestChecksWithDefault(t *testing.T) {
 				fmt.Println("Docker not installed or running on this system ???")
 				t.SkipNow()
 			}
+
+			if strings.Contains(err.Error(), "Got permission denied while trying to connect to the Docker daemon socket") {
+				fmt.Println(err)
+				t.SkipNow()
+			}
 		}
 
 		if err != nil {

@@ -38,8 +38,13 @@ func (c *CheckNet) Run(ctx context.Context) (interface{}, error) {
 			speed = *(nic.Speed)
 		}
 
+		isUp := false
+		if nic.Carrier != nil && *(nic.Carrier) == 1 {
+			isUp = true
+		}
+
 		netResults[nic.Name] = &resultNet{
-			Isup:   *(nic.Carrier) == 1,
+			Isup:   isUp,
 			MTU:    *(nic.MTU),
 			Speed:  speed,
 			Duplex: duplex,

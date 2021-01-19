@@ -28,12 +28,12 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	var oldIops uint64 = 0
 	for _, result := range results {
 		//fmt.Println(result)
-		if strings.HasSuffix(result.Device, "da") {
+		if strings.HasSuffix(result.Device, "da") || strings.HasPrefix(result.Device, "nvme") {
 			fmt.Printf("Device [Check 1]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
-			oldIops = result.TotalIopsPerSecond
+			oldIops = oldIops + result.TotalIopsPerSecond
 		}
 	}
 
@@ -72,12 +72,12 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	var newIops uint64 = 0
 	for _, result := range results {
 		//fmt.Println(result)
-		if strings.HasSuffix(result.Device, "da") {
+		if strings.HasSuffix(result.Device, "da") || strings.HasPrefix(result.Device, "nvme") {
 			fmt.Printf("Device [Check 2]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
-			newIops = result.TotalIopsPerSecond
+			newIops = newIops + result.TotalIopsPerSecond
 		}
 	}
 
