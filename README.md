@@ -122,3 +122,7 @@ Start hacking :)
 
 ## Notes
 - https://github.com/kata-containers/govmm
+- https://github.com/digitalocean/go-qemu
+- https://github.com/cha87de/kvmtop
+- https://github.com/0xef53/go-qmp
+- https://github.com/0xef53/kvmrun
