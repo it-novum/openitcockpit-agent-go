@@ -40,6 +40,7 @@ The installation is completed, as soon as you see `All tools successfully instal
 Press `ctrl` + `shift` + `P` (Windows and Linux) or `cmd` + `shift` + `P` on macOS and type `settings json` and select `Preferences: Open Settings (JSON)`.
 Add the following settings to your JSON.
 ```JS
+    "go.testTimeout": "90s",
     "go.useLanguageServer": true,
     "go.lintTool": "golangci-lint",
     "[go]": {

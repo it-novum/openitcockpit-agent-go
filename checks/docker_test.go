@@ -13,7 +13,13 @@ func TestChecksCheckDocker(t *testing.T) {
 
 	cr, err := check.Run(context.Background())
 	if err != nil {
+		// Windows
 		if strings.Contains(err.Error(), "error during connect: This error may") {
+			fmt.Println("Docker not installed or running on this system ???")
+			t.SkipNow()
+		}
+		// macOS and Linux
+		if strings.Contains(err.Error(), "Is the docker daemon running") {
 			fmt.Println("Docker not installed or running on this system ???")
 			t.SkipNow()
 		}
