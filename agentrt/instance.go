@@ -50,24 +50,31 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 		result[k] = v
 	}
 
-	if data, err := json.Marshal(result); err != nil {
+	data, err := json.Marshal(result)
+	if err != nil {
 		log.Errorln("Internal error: could not serialize check result: ", err)
-	} else {
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-
-			t := time.NewTimer(time.Second * 10)
-			defer t.Stop()
-
-			// we may have to give the webserver some time to think about it
-			select {
-			case a.stateInput <- data:
-			case <-t.C:
-				log.Errorln("Internal error: could not store check result: timeout")
-			}
-		}()
+		errorResult := map[string]string{
+			"error": err.Error(),
+		}
+		data, err = json.Marshal(errorResult)
+		if err != nil {
+			log.Fatalln("Internal error: could also not serialize error result: ", err)
+		}
 	}
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+
+		t := time.NewTimer(time.Second * 10)
+		defer t.Stop()
+
+		// we may have to give the webserver some time to think about it
+		select {
+		case a.stateInput <- data:
+		case <-t.C:
+			log.Errorln("Internal error: could not store check result: timeout")
+		}
+	}()
 }
 
 func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
