@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/prometheus/procfs/blockdevice"
 )
 
@@ -47,26 +48,26 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			ReadBytes := ReadSectors * BytesPerSector
 			WriteBytes := WriteSectors * BytesPerSector
 
-			loadPercent := float64(IoTime) / (IntervalFloat * 1000.0) * 100.0
+			loadPercent := safemaths.DivideFloat64(float64(IoTime), (IntervalFloat*1000.0)) * 100.0
 			if loadPercent >= 100.0 {
 				// Just in case this this has the same bug as Python psutil has^^
 				loadPercent = 100.0
 			}
 
-			readIopsPerSecond := ReadCount / Interval
-			readBytesPerSecond := float64(ReadBytes) / IntervalFloat
-			readAvgWait := float64(ReadTime) / float64(ReadCount)
-			readAvgSize := float64(ReadBytes) / float64(ReadCount)
+			readIopsPerSecond := safemaths.DivideUint64(ReadCount, Interval)
+			readBytesPerSecond := safemaths.DivideFloat64(float64(ReadBytes), IntervalFloat)
+			readAvgWait := safemaths.DivideFloat64(float64(ReadTime), float64(ReadCount))
+			readAvgSize := safemaths.DivideFloat64(float64(ReadBytes), float64(ReadCount))
 
-			writeIopsPerSecond := WriteCount / Interval
-			writeBytesPerSecond := float64(WriteBytes) / IntervalFloat
-			writeAvgWait := float64(WriteTime) / float64(WriteCount)
-			writeAvgSize := float64(WriteBytes) / float64(WriteCount)
+			writeIopsPerSecond := safemaths.DivideUint64(WriteCount, Interval)
+			writeBytesPerSecond := safemaths.DivideFloat64(float64(WriteBytes), IntervalFloat)
+			writeAvgWait := safemaths.DivideFloat64(float64(WriteTime), float64(WriteCount))
+			writeAvgSize := safemaths.DivideFloat64(float64(WriteBytes), float64(WriteCount))
 
 			totIops := ReadCount + WriteCount
 
-			totIopsPerSecond := float64(totIops) / IntervalFloat
-			totalAvgWait := (float64(ReadTime) + float64(WriteTime)) / float64(totIops)
+			totIopsPerSecond := safemaths.DivideFloat64(float64(totIops), IntervalFloat)
+			totalAvgWait := safemaths.DivideFloat64(float64(ReadTime)+float64(WriteTime), float64(totIops))
 
 			diskstats := &resultDiskIo{
 				// Store counter values for next check evaluation
