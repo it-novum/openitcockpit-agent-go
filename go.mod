@@ -30,4 +30,5 @@ require (
 	golang.org/x/text v0.3.2
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
+	libvirt.org/libvirt-go v7.0.0+incompatible
 )

@@ -2,24 +2,32 @@ package safemaths
 
 import "math"
 
-func DivideFloat64(a, b float64) float64 {
-	c := a / b
+func DivideFloat64(numerator, denominator float64) float64 {
+	c := numerator / denominator
 	if math.IsNaN(c) || math.IsInf(c, 0) {
 		return 0.0
 	}
 	return c
 }
 
-func DivideInt(a, b int) int {
-	if b == 0 {
+// "Fix" Division by zero
+func DivideInt(numerator, denominator int) int {
+	if denominator == 0 {
 		return 0
 	}
-	return a / b
+	return numerator / denominator
 }
 
-func DivideUint64(a, b uint64) uint64 {
-	if b == 0 {
+func DivideUint64(numerator, denominator uint64) uint64 {
+	if denominator == 0 {
 		return 0
 	}
-	return a / b
+	return numerator / denominator
+}
+
+func DivideInt64(numerator, denominator int64) int64 {
+	if denominator == 0 {
+		return 0
+	}
+	return numerator / denominator
 }
