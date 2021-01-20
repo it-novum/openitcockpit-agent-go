@@ -25,6 +25,7 @@ func (c *CustomCheckExecutor) Shutdown() {
 }
 
 func (c *CustomCheckExecutor) runCheck(ctx context.Context, timeout time.Duration) {
+	log.Debugln("Begin CustomCheck: ", c.Configuration.Name)
 	result, err := utils.RunCommand(ctx, utils.CommandArgs{
 		Command: c.Configuration.Command,
 		Timeout: timeout,
@@ -41,6 +42,7 @@ func (c *CustomCheckExecutor) runCheck(ctx context.Context, timeout time.Duratio
 	case <-time.After(time.Second * 5):
 		log.Errorln("Internal error: timeout could not save custom check result")
 	}
+	log.Debugln("Finish CustomCheck: ", c.Configuration.Name)
 }
 
 func (c *CustomCheckExecutor) Start(parent context.Context) error {

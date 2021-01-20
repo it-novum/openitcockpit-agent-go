@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/shirou/gopsutil/v3/disk"
 )
 
@@ -31,26 +32,26 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			IoTime := WrapDiffUint64(lastCheckResults.IoTime, iostats.IoTime)             // Time spent doing actual I/Os (in milliseconds)
 			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)            // Time between current and last check (in seconds)
 
-			loadPercent := float64(IoTime) / (float64(Interval) * 1000.0) * 100.0
+			loadPercent := safemaths.DivideFloat64(float64(IoTime), (float64(Interval)*1000.0)) * 100.0
 			if loadPercent >= 100.0 {
 				// Just in case this this has the same bug as Python psutil has^^
 				loadPercent = 100.0
 			}
 
-			readIopsPerSecond := ReadCount / Interval
-			readBytesPerSecond := float64(ReadBytes) / float64(Interval)
-			readAvgWait := float64(ReadTime) / float64(ReadCount)
-			readAvgSize := float64(ReadBytes) / float64(ReadCount)
+			readIopsPerSecond := safemaths.DivideUint64(ReadCount, Interval)
+			readBytesPerSecond := safemaths.DivideFloat64(float64(ReadBytes), float64(Interval))
+			readAvgWait := safemaths.DivideFloat64(float64(ReadTime), float64(ReadCount))
+			readAvgSize := safemaths.DivideFloat64(float64(ReadBytes), float64(ReadCount))
 
-			writeIopsPerSecond := WriteCount / Interval
-			writeBytesPerSecond := float64(WriteBytes) / float64(Interval)
-			writeAvgWait := float64(WriteTime) / float64(WriteCount)
-			writeAvgSize := float64(WriteBytes) / float64(WriteCount)
+			writeIopsPerSecond := safemaths.DivideUint64(WriteCount, Interval)
+			writeBytesPerSecond := safemaths.DivideFloat64(float64(WriteBytes), float64(Interval))
+			writeAvgWait := safemaths.DivideFloat64(float64(WriteTime), float64(WriteCount))
+			writeAvgSize := safemaths.DivideFloat64(float64(WriteBytes), float64(WriteCount))
 
 			totIops := ReadCount + WriteCount
 
-			totIopsPerSecond := float64(totIops) / float64(Interval)
-			totalAvgWait := (float64(ReadTime) + float64(WriteTime)) / float64(totIops)
+			totIopsPerSecond := safemaths.DivideFloat64(float64(totIops), float64(Interval))
+			totalAvgWait := safemaths.DivideFloat64((float64(ReadTime) + float64(WriteTime)), float64(totIops))
 
 			diskstats := &resultDiskIo{
 				// Store counter values for next check evaluation

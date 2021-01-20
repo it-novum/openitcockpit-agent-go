@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/StackExchange/wmi"
+	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 )
 
 // WMI Structs
@@ -140,14 +141,14 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			// nolint:ineffassign
 			var AvgDiskSecPerRead_Us, AvgDiskSecPerRead_Ms float64 = 0.0, 0.0
 			if AvgDiskSecPerReadDiff > 0 {
-				AvgDiskSecPerRead_Us = (float64(AvgDiskSecPerReadDiff) / float64(disk.Frequency_PerfTime)) / float64(AvgDiskSecPerReadBaseDiff)
+				AvgDiskSecPerRead_Us = safemaths.DivideFloat64(safemaths.DivideFloat64(float64(AvgDiskSecPerReadDiff), float64(disk.Frequency_PerfTime)), float64(AvgDiskSecPerReadBaseDiff))
 				AvgDiskSecPerRead_Ms = AvgDiskSecPerRead_Us * 1000.0 // DefaultScale 3 -> DefaultScale is power of 10 -> 10 * 10 * 10 = 1000
 			}
 
 			// nolint:ineffassign
 			var AvgDiskSecPerWrite_Us, AvgDiskSecPerWrite_Ms float64 = 0.0, 0.0
 			if AvgDiskSecPerWriteDiff > 0 {
-				AvgDiskSecPerWrite_Us = (float64(AvgDiskSecPerWriteDiff) / float64(disk.Frequency_PerfTime)) / float64(AvgDiskSecPerWriteBaseDiff)
+				AvgDiskSecPerWrite_Us = safemaths.DivideFloat64(safemaths.DivideFloat64(float64(AvgDiskSecPerWriteDiff), float64(disk.Frequency_PerfTime)), float64(AvgDiskSecPerWriteBaseDiff))
 				AvgDiskSecPerWrite_Ms = AvgDiskSecPerWrite_Us * 1000.0 // DefaultScale 3 -> DefaultScale is power of 10 -> 10 * 10 * 10 = 1000
 			}
 
@@ -160,7 +161,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			PercentDiskTimeDiff := WrapDiffUint64(lastCheckResults.PercentDiskTime, disk.PercentDiskTime)               // N1 - N0
 			PercentDiskTimeBaseDiff := WrapDiffUint64(lastCheckResults.PercentDiskTime_Base, disk.PercentDiskTime_Base) // D1 - D0
 
-			loadPercentage := float64(PercentDiskTimeDiff) / float64(PercentDiskTimeBaseDiff) * 100.0
+			loadPercentage := safemaths.DivideFloat64(float64(PercentDiskTimeDiff), float64(PercentDiskTimeBaseDiff)) * 100.0
 			if loadPercentage >= 100.0 {
 				// In windows disk % time can be gt 100 (yes)
 				// https://docs.microsoft.com/en-us/archive/blogs/askcore/windows-performance-monitor-disk-counters-explained
@@ -177,12 +178,12 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			DiskReadsPerSecDiff := WrapDiffUint32(lastCheckResults.DiskReadsPerSec, disk.DiskReadsPerSec)          // N1 - N0
 			Timestamp_Sys100NSDiff := WrapDiffUint64(lastCheckResults.Timestamp_Sys100NS, disk.Timestamp_Sys100NS) // D1 - D0
 
-			ReadIops := uint64(DiskReadsPerSecDiff) / (Timestamp_Sys100NSDiff / disk.Frequency_PerfTime)
+			ReadIops := safemaths.DivideUint64(uint64(DiskReadsPerSecDiff), safemaths.DivideUint64(Timestamp_Sys100NSDiff, disk.Frequency_PerfTime))
 
 			// Write iops/sec
 			DiskWritesPerSecDiff := WrapDiffUint32(lastCheckResults.DiskWritesPerSec, disk.DiskWritesPerSec) // N1 - N0
 
-			WriteIops := uint64(DiskWritesPerSecDiff) / (Timestamp_Sys100NSDiff / disk.Frequency_PerfTime)
+			WriteIops := safemaths.DivideUint64(uint64(DiskWritesPerSecDiff), safemaths.DivideUint64(Timestamp_Sys100NSDiff, disk.Frequency_PerfTime))
 
 			// Bytes/second read/write
 			// PERF_COUNTER_BULK_COUNT
@@ -191,12 +192,12 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 			// the denominator (D) represent the number of ticks elapsed during the last sample interval, and the variable F is the frequency of the ticks.
 			DiskReadBytesPerSecDiff := WrapDiffUint64(lastCheckResults.DiskReadBytesPerSec, disk.DiskReadBytesPerSec) // D1 - D0
 
-			ReadBytesPerSecond := uint64(DiskReadBytesPerSecDiff) / (Timestamp_Sys100NSDiff / disk.Frequency_PerfTime)
+			ReadBytesPerSecond := safemaths.DivideUint64(uint64(DiskReadBytesPerSecDiff), safemaths.DivideUint64(Timestamp_Sys100NSDiff, disk.Frequency_PerfTime))
 			//var ReadGigabytesPerSecond float64 = float64(ReadBytesPerSecond) / 1024.0 / 1024.0 / 1024.0
 
 			DiskWriteBytesPerSecDiff := WrapDiffUint64(lastCheckResults.DiskWriteBytesPerSec, disk.DiskWriteBytesPerSec) // D1 - D0
 
-			WriteBytesPerSecond := uint64(DiskWriteBytesPerSecDiff) / (Timestamp_Sys100NSDiff / disk.Frequency_PerfTime)
+			WriteBytesPerSecond := safemaths.DivideUint64(uint64(DiskWriteBytesPerSecDiff), safemaths.DivideUint64(Timestamp_Sys100NSDiff, disk.Frequency_PerfTime))
 			//var WriteGigabytesPerSecond float64 = float64(WriteBytesPerSecond) / 1024.0 / 1024.0 / 1024.0
 
 			// Average request size of reads in bytes
@@ -209,7 +210,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 
 			var AvgReadRequestSizeInBytes float64 = 0.0
 			if AvgDiskBytesPerReadBaseDiff > 0.0 {
-				AvgReadRequestSizeInBytes = float64(AvgDiskBytesPerReadDiff) / float64(AvgDiskBytesPerReadBaseDiff)
+				AvgReadRequestSizeInBytes = safemaths.DivideFloat64(float64(AvgDiskBytesPerReadDiff), float64(AvgDiskBytesPerReadBaseDiff))
 			}
 
 			// Writes
@@ -218,7 +219,7 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 
 			var AvgWriteRequestSizeInBytes float64 = 0.0
 			if AvgDiskBytesPerReadBaseDiff > 0.0 {
-				AvgWriteRequestSizeInBytes = float64(AvgDiskBytesPerWriteDiff) / float64(AvgDiskBytesPerWriteBaseDiff)
+				AvgWriteRequestSizeInBytes = safemaths.DivideFloat64(float64(AvgDiskBytesPerWriteDiff), float64(AvgDiskBytesPerWriteBaseDiff))
 			}
 
 			diskstats := &resultDiskIo{
