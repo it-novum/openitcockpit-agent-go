@@ -6,6 +6,7 @@ import (
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/shirou/gopsutil/v3/net"
+	log "github.com/sirupsen/logrus"
 )
 
 // CheckNetIo gathers information about system network interface IO (net_io in the Python version)
@@ -64,6 +65,12 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 			DropIn := WrapDiffUint64(lastCheckResults.DropIn, nic.Dropin)
 			DropOut := WrapDiffUint64(lastCheckResults.DropOut, nic.Dropout)
 			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)
+
+			// prevent divide by zero
+			if Interval == 0 {
+				log.Errorln("NetIO: Interval == 0")
+				return c.lastResults, nil
+			}
 
 			// Just in case this this has the same bug as Python psutil has^^
 			netResults[nic.Name] = &resultNetIo{
