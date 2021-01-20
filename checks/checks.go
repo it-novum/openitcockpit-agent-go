@@ -76,3 +76,19 @@ func WrapDiffUint64(last, curr uint64) uint64 {
 
 	return (math.MaxUint64 - last) + curr
 }
+
+func WrapDiffInt32(last, curr int32) int32 {
+	if last <= curr {
+		return curr - last
+	}
+
+	return (math.MaxInt32 - last) + curr
+}
+
+func WrapDiffInt64(last, curr int64) int64 {
+	if last <= curr {
+		return curr - last
+	}
+
+	return (math.MaxInt64 - last) + curr
+}

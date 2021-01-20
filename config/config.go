@@ -83,6 +83,7 @@ type Configuration struct {
 	SystemdServices bool  `mapstructure:"systemdservices"`
 	LaunchdServices bool  `mapstructure:"launchdservices"`
 	Alfresco        bool  `mapstructure:"alfrescostats"`
+	Libvirt         bool  `mapstructure:"libvirt"`
 
 	// Alfresco
 
@@ -146,6 +147,7 @@ var defaultValue = map[string]interface{}{
 	"wineventlog":          true,
 	"systemdservices":      true,
 	"alfrescostats":        true,
+	"libvirt":              true,
 	"wineventlog-logtypes": "System,Application,Security",
 	"customchecks":         path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
