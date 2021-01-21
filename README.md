@@ -117,6 +117,38 @@ timeout = 10
 enabled = false
 ```
 
+## Build binary
+### Static linked (recommended)
+```
+CGO_ENABLED=0 go build -o agent main.go
+``` 
+
+### Enable libvirt support
+
+Required libvirt-dev
+
+```
+go build -o agent -tags libvirt main.go
+```
+
+check with `ldd agent` 
+
+### Cross compile
+
+#### 32 Bit
+```
+CGO_ENABLED=0 GOARCH=386 go build -o agent main.go
+```
+
+#### Arm64
+```
+CGO_ENABLED=0 GOARCH=arm64 go build -o agent main.go
+```
+
+#### Build darwin on Linux
+```
+CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o agent main.go
+```
 
 Start hacking :)
 

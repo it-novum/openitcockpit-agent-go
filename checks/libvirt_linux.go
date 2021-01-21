@@ -1,4 +1,4 @@
-// +build darwin linux
+// +build libvirt
 
 // sudo apt-get install libvirt-dev
 
