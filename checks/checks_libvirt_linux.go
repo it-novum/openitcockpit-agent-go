@@ -1,4 +1,4 @@
-// +build !libvirt
+// +build libvirt
 
 package checks
 
@@ -18,5 +18,6 @@ func getPlatformChecks() []Check {
 		&CheckSensor{},
 		&CheckDocker{},
 		&CheckSystemd{},
+		&CheckLibvirt{},
 	}
 }

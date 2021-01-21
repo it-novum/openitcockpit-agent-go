@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 	"github.com/leoluk/perflib_exporter/perflib"
 )
@@ -71,7 +72,7 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 				freeDiskSpaceBytes := disk.PercentFreeSpace_Base * 1024 * 1024
 				usedDiskSpaceBytes := totalDiskSpaceBytes - freeDiskSpaceBytes
 
-				freeDiskSpacePercentage := freeDiskSpaceBytes / totalDiskSpaceBytes * 100.0
+				freeDiskSpacePercentage := safemaths.DivideFloat64(float64(freeDiskSpaceBytes), float64(totalDiskSpaceBytes)) * 100.0
 				usedDiskSpacePercentage := 100.0 - freeDiskSpacePercentage
 
 				//Save to struct

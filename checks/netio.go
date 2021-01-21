@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/shirou/gopsutil/v3/net"
+	log "github.com/sirupsen/logrus"
 )
 
 // CheckNetIo gathers information about system network interface IO (net_io in the Python version)
@@ -65,6 +67,12 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 			DropOut := WrapDiffUint64(lastCheckResults.DropOut, nic.Dropout)
 			Interval := uint64(time.Now().Unix() - lastCheckResults.Timestamp)
 
+			// prevent divide by zero
+			if Interval == 0 {
+				log.Errorln("NetIO: Interval == 0")
+				return c.lastResults, nil
+			}
+
 			// Just in case this this has the same bug as Python psutil has^^
 			netResults[nic.Name] = &resultNetIo{
 				Name:                        nic.Name,
@@ -77,14 +85,14 @@ func (c *CheckNetIo) Run(ctx context.Context) (interface{}, error) {
 				ErrorOut:                    nic.Errout,
 				DropIn:                      nic.Dropin,
 				DropOut:                     nic.Dropout,
-				AvgBytesSentPerSecond:       uint64(BytesSent / Interval),
-				AvgBytesReceivedPerSecond:   uint64(BytesRecv / Interval),
-				AvgPacketsSentPerSecond:     uint64(PacketsSent / Interval),
-				AvgPacketsReceivedPerSecond: uint64(PacketsRecv / Interval),
-				AvgErrorInPerSecond:         uint64(ErrorIn / Interval),
-				AvgErrorOutPerSecond:        uint64(ErrorOut / Interval),
-				AvgDropInPerSecond:          uint64(DropIn / Interval),
-				AvgDropOutPerSecond:         uint64(DropOut / Interval),
+				AvgBytesSentPerSecond:       safemaths.DivideUint64(BytesSent, Interval),
+				AvgBytesReceivedPerSecond:   safemaths.DivideUint64(BytesRecv, Interval),
+				AvgPacketsSentPerSecond:     safemaths.DivideUint64(PacketsSent, Interval),
+				AvgPacketsReceivedPerSecond: safemaths.DivideUint64(PacketsRecv, Interval),
+				AvgErrorInPerSecond:         safemaths.DivideUint64(ErrorIn, Interval),
+				AvgErrorOutPerSecond:        safemaths.DivideUint64(ErrorOut, Interval),
+				AvgDropInPerSecond:          safemaths.DivideUint64(DropIn, Interval),
+				AvgDropOutPerSecond:         safemaths.DivideUint64(DropOut, Interval),
 			}
 
 		} else {
