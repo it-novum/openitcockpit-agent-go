@@ -91,7 +91,7 @@ Run -> Open Configurations
 }
 ```
 
-Create a new file in workspace folder -> "config.cnf"
+Create a new file in workspace folder -> "config.ini"
 ```ini
 [default]
 customchecks = ./customchecks.ini
