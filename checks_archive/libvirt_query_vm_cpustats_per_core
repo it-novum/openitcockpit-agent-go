@@ -1,0 +1,44 @@
+		// Get CPU usage (total)
+		// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetCPUStats
+		// https://github.com/virt-manager/virt-manager/blob/b17914591aeefedd50a0a0634f479222a7ff591c/virtManager/lib/statsmanager.py#L149-L190
+
+		if isDomRunning {
+			info, _ := dom.GetInfo()
+
+			//Query current CPU counters for all vCPUs
+			cpus, err := dom.GetCPUStats(0, info.NrVirtCpu, 0)
+			if err == nil {
+
+				var totalCpuTime, totalUserTime, totalSystemTime, totalVcpuTime uint64 = 0, 0, 0, 0
+				for _, cpu := range cpus {
+					totalCpuTime = totalCpuTime + cpu.CpuTime
+					totalUserTime = totalUserTime + cpu.UserTime
+					totalSystemTime = totalSystemTime + cpu.SystemTime
+					totalVcpuTime = totalVcpuTime + cpu.VcpuTime
+
+				}
+
+				// Get last result to calculate cpu usage as percentage
+
+				if lastCheckResults, ok := c.lastCpuResults[uuid]; ok {
+					Interval := time.Now().Unix() - lastCheckResults.Timestamp
+					CpuTimeDiff := WrapDiffUint64(lastCheckResults.CpuTime, totalCpuTime)
+					UserTimeDiff := WrapDiffUint64(lastCheckResults.UserTime, totalUserTime)
+					SystemTimeDiff := WrapDiffUint64(lastCheckResults.SystemTime, totalSystemTime)
+					VcpuTimeDiff := WrapDiffUint64(lastCheckResults.VcpuTime, totalVcpuTime)
+
+					fmt.Printf("%v%v%v%v%v%v", Interval, CpuTimeDiff, UserTimeDiff, SystemTimeDiff, VcpuTimeDiff, nodeCpuCount)
+
+				}
+
+				// Store counter values for next check evaluation
+				c.lastCpuResults[uuid] = &lastCpuResults{
+					Timestamp:  time.Now().Unix(),
+					CpuTime:    totalCpuTime,
+					UserTime:   totalUserTime,
+					SystemTime: totalSystemTime,
+					VcpuTime:   totalVcpuTime,
+				}
+
+			}
+		}

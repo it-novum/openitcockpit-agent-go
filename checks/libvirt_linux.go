@@ -6,9 +6,7 @@ package checks
 
 import (
 	"context"
-	"encoding/json"
-	"encoding/xml"
-	"fmt"
+	"math"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
@@ -20,65 +18,40 @@ import (
 type CheckLibvirt struct {
 	lastNetstatResults   map[string]map[string]*lastNetstatResultsForDelta
 	lastDiskstatsResults map[string]map[string]*lastDiskstatsResultsForDelta
+	lastCpuResults       map[string]*lastCpuResultsForDelta
 }
 
 type lastNetstatResultsForDelta struct {
 	Timestamp int64
-	RxBytes   int64
-	RxPackets int64
-	RxErrs    int64
-	RxDrop    int64
-	TxBytes   int64
-	TxPackets int64
-	TxErrs    int64
-	TxDrop    int64
+	RxBytes   uint64
+	RxPackets uint64
+	RxErrs    uint64
+	RxDrop    uint64
+	TxBytes   uint64
+	TxPackets uint64
+	TxErrs    uint64
+	TxDrop    uint64
 }
 
 type lastDiskstatsResultsForDelta struct {
 	Timestamp int64
-	WrReq     int64
-	RdReq     int64
-	RdBytes   int64
-	WrBytes   int64
+	WrReq     uint64
+	RdReq     uint64
+	RdBytes   uint64
+	WrBytes   uint64
+}
+
+type lastCpuResultsForDelta struct {
+	Timestamp  int64
+	CpuTime    uint64
+	UserTime   uint64
+	SystemTime uint64
+	VcpuTime   uint64
 }
 
 // Name will be used in the response as check name
 func (c *CheckLibvirt) Name() string {
 	return "libvirt"
-}
-
-// This code is highly inspired by
-// https://github.com/feiskyer/go-examples/blob/master/libvirt/libvirt-stats/libvirt.go
-// Many thanks
-type XmlDomain struct {
-	Name    string     `xml:"name"`
-	Uuid    string     `xml:"uuid"`
-	Devices XmlDevices `xml:"devices"`
-}
-
-type XmlDisk struct {
-	Type   string        `xml:"type,attr"`
-	Source XmlDiskSource `xml:"source"`
-	Target XmlDiskTarget `xml:"target"`
-}
-type XmlDiskSource struct {
-	File string `xml:"file,attr"`
-}
-type XmlDiskTarget struct {
-	Dev string `xml:"dev,attr"`
-}
-
-type XmlDevices struct {
-	Disks      []XmlDisk      `xml:"disk"`
-	Interfaces []XmlInterface `xml:"interface"`
-}
-type XmlInterface struct {
-	Type   string
-	Device XmlInterfaceTarget `xml:"target"`
-}
-
-type XmlInterfaceTarget struct {
-	Dev string `xml:"dev,attr"`
 }
 
 type virtMemory struct {
@@ -106,6 +79,7 @@ type resultLibvirtNetwork struct {
 
 type resultLibvirtDiskio struct {
 	Name                string  `json:"name"`
+	Path                string  `json:"path"`
 	ReadIopsPerSecond   uint64  // Number of read iops per second
 	WriteIopsPerSecond  uint64  // Number of write iops per second
 	TotalIopsPerSecond  uint64  // Number of read and write iops per second
@@ -115,13 +89,20 @@ type resultLibvirtDiskio struct {
 	WriteAvgSize        float64 // Average request size of writes in bytes
 }
 
+type resultLibvirtCpuUsage struct {
+	HostPercent  float64 // CPU Usage in % of the Host
+	GuestPercent float64 // CPU Usage in % of the Guest (VM itself)
+}
+
 type resultLibvirtDomain struct {
 	Name              string // Name of the Domain (VM)
 	Uuid              string // UUID of the Domain
+	IsRunning         bool   // Is VM powered on
 	GuestAgentRunning bool
 	Memory            *virtMemory // Memory stats in bytes
 	Interfaces        map[string]*resultLibvirtNetwork
 	Diskio            map[string]*resultLibvirtDiskio
+	CpuUsage          *resultLibvirtCpuUsage
 }
 
 // Run the actual check
@@ -135,12 +116,22 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 	if c.lastDiskstatsResults == nil {
 		c.lastDiskstatsResults = make(map[string]map[string]*lastDiskstatsResultsForDelta)
 	}
+	if c.lastCpuResults == nil {
+		c.lastCpuResults = make(map[string]*lastCpuResultsForDelta)
+	}
 
 	conn, err := libvirt.NewConnect("qemu:///system")
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
+
+	nodeInfo, err := conn.GetNodeInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	nodeCpuCount := nodeInfo.Cpus
 
 	// List active+inactive domains (VMs)
 	var flags libvirt.ConnectListAllDomainsFlags = 0
@@ -150,208 +141,187 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 	}
 
 	libvirtResults := make(map[string]*resultLibvirtDomain)
+	if len(doms) == 0 {
+		return libvirtResults, nil
+	}
+
 	for _, dom := range doms {
+		var statsTypes = libvirt.DOMAIN_STATS_STATE |
+			libvirt.DOMAIN_STATS_CPU_TOTAL |
+			libvirt.DOMAIN_STATS_BALLOON |
+			libvirt.DOMAIN_STATS_VCPU |
+			libvirt.DOMAIN_STATS_INTERFACE |
+			libvirt.DOMAIN_STATS_BLOCK |
+			libvirt.DOMAIN_STATS_PERF |
+			libvirt.DOMAIN_STATS_IOTHREAD |
+			libvirt.DOMAIN_STATS_MEMORY
+
+		var domArr []*libvirt.Domain
+		domArr = append(domArr, &dom)
+		// GetAllDomainStats is not as powerfull as it looks like
+		domStatsArr, err := conn.GetAllDomainStats(domArr, statsTypes, 0)
+		if err != nil {
+			continue
+		}
+
+		domStats := domStatsArr[0]
 		name, _ := dom.GetName()
 		uuid, _ := dom.GetUUIDString()
-
-		var state libvirt.DomainState
-		state, _, _ = dom.GetState()
-
-		isDomRunning := state == libvirt.DOMAIN_RUNNING
+		isDomRunning := domStats.State.State == libvirt.DOMAIN_RUNNING
 
 		result := &resultLibvirtDomain{
-			Name: name,
-			Uuid: uuid,
+			Name:      name,
+			Uuid:      uuid,
+			IsRunning: isDomRunning,
 		}
 
-		// Get XML dump of the VM ()
-		var flags libvirt.DomainXMLFlags = libvirt.DOMAIN_XML_SECURE
-		xmlStr, err := dom.GetXMLDesc(flags)
-		if err != nil {
-			//Todo log error
+		if !isDomRunning {
+			// Add current VM to results list
+			libvirtResults[uuid] = result
 			continue
 		}
 
-		var xmlDomain XmlDomain
-		err = xml.Unmarshal([]byte(xmlStr), &xmlDomain)
-		if err != nil {
-			//Todo log error
-			continue
+		result.Memory = &virtMemory{
+			Total:      domStats.Balloon.Current,
+			Ununsed:    domStats.Balloon.Unused,
+			Available:  domStats.Balloon.Available,
+			Rss:        domStats.Balloon.Rss,
+			SwapIn:     domStats.Balloon.SwapIn,
+			SwapOut:    domStats.Balloon.SwapOut,
+			MinorFault: domStats.Balloon.MinorFault,
+			MajorFault: domStats.Balloon.MajorFault,
 		}
 
-		// Get memory info per VM
-		memory := &virtMemory{}
-		memStats, _ := dom.MemoryStats(uint32(libvirt.DOMAIN_MEMORY_STAT_LAST), 0)
-
-		for _, stat := range memStats {
-			switch int(stat.Tag) {
-			case int(libvirt.DOMAIN_MEMORY_STAT_ACTUAL_BALLOON):
-				memory.Total = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_UNUSED):
-				memory.Ununsed = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_AVAILABLE):
-				memory.Available = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_RSS):
-				memory.Rss = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_SWAP_IN):
-				memory.SwapIn = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_SWAP_OUT):
-				memory.SwapOut = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_MINOR_FAULT):
-				memory.MinorFault = stat.Val
-
-			case int(libvirt.DOMAIN_MEMORY_STAT_MAJOR_FAULT):
-				memory.MajorFault = stat.Val
-			}
-		}
-
-		result.Memory = memory
-
+		// Get net stats
 		// Hash map to store counter values for deltas
 		if _, uuidExists := c.lastNetstatResults[uuid]; !uuidExists {
 			c.lastNetstatResults[uuid] = make(map[string]*lastNetstatResultsForDelta)
 		}
 
-		// Get network stats
-		for _, iface := range xmlDomain.Devices.Interfaces {
+		result.Interfaces = make(map[string]*resultLibvirtNetwork)
+		for _, iface := range domStats.Net {
+			// Get last result to calculate bytes/s packets/s
 
-			if isDomRunning {
-				result.Interfaces = make(map[string]*resultLibvirtNetwork)
-				ifaceStats, err := dom.InterfaceStats(iface.Device.Dev)
-				if err == nil {
+			if lastCheckResults, ok := c.lastNetstatResults[uuid][iface.Name]; ok {
+				Interval := time.Now().Unix() - lastCheckResults.Timestamp
+				RxBytesDiff := WrapDiffUint64(lastCheckResults.RxBytes, iface.RxBytes)
+				RxPacketsDiff := WrapDiffUint64(lastCheckResults.RxPackets, iface.RxPkts)
+				RxErrsDiff := WrapDiffUint64(lastCheckResults.RxErrs, iface.RxErrs)
+				RxDropDiff := WrapDiffUint64(lastCheckResults.RxDrop, iface.RxDrop)
+				TxBytesDiff := WrapDiffUint64(lastCheckResults.TxBytes, iface.TxBytes)
+				TxPacketsDiff := WrapDiffUint64(lastCheckResults.TxPackets, iface.TxPkts)
+				TxErrsDiff := WrapDiffUint64(lastCheckResults.TxErrs, iface.TxErrs)
+				TxDropDiff := WrapDiffUint64(lastCheckResults.TxDrop, iface.TxDrop)
 
-					// Get last result to calculate bytes/s packets/s
-					if lastCheckResults, ok := c.lastNetstatResults[uuid][iface.Device.Dev]; ok {
-						Interval := time.Now().Unix() - lastCheckResults.Timestamp
-						RxBytesDiff := WrapDiffInt64(lastCheckResults.RxBytes, ifaceStats.RxBytes)
-						RxPacketsDiff := WrapDiffInt64(lastCheckResults.RxPackets, ifaceStats.RxPackets)
-						RxErrsDiff := WrapDiffInt64(lastCheckResults.RxErrs, ifaceStats.RxErrs)
-						RxDropDiff := WrapDiffInt64(lastCheckResults.RxDrop, ifaceStats.RxDrop)
-						TxBytesDiff := WrapDiffInt64(lastCheckResults.TxBytes, ifaceStats.TxBytes)
-						TxPacketsDiff := WrapDiffInt64(lastCheckResults.TxPackets, ifaceStats.TxPackets)
-						TxErrsDiff := WrapDiffInt64(lastCheckResults.TxErrs, ifaceStats.TxErrs)
-						TxDropDiff := WrapDiffInt64(lastCheckResults.TxDrop, ifaceStats.TxDrop)
-
-						result.Interfaces[iface.Device.Dev] = &resultLibvirtNetwork{
-							Name:                        iface.Device.Dev,
-							AvgBytesSentPerSecond:       uint64(safemaths.DivideInt64(TxBytesDiff, Interval)),
-							AvgBytesReceivedPerSecond:   uint64(safemaths.DivideInt64(RxBytesDiff, Interval)),
-							AvgPacketsSentPerSecond:     uint64(safemaths.DivideInt64(TxPacketsDiff, Interval)),
-							AvgPacketsReceivedPerSecond: uint64(safemaths.DivideInt64(RxPacketsDiff, Interval)),
-							AvgErrorInPerSecond:         uint64(safemaths.DivideInt64(RxErrsDiff, Interval)),
-							AvgErrorOutPerSecond:        uint64(safemaths.DivideInt64(TxErrsDiff, Interval)),
-							AvgDropInPerSecond:          uint64(safemaths.DivideInt64(RxDropDiff, Interval)),
-							AvgDropOutPerSecond:         uint64(safemaths.DivideInt64(TxDropDiff, Interval)),
-						}
-					}
-
-					// Store counter values for next check evaluation
-					c.lastNetstatResults[uuid][iface.Device.Dev] = &lastNetstatResultsForDelta{
-						Timestamp: time.Now().Unix(),
-						RxBytes:   ifaceStats.RxBytes,
-						RxPackets: ifaceStats.RxPackets,
-						RxErrs:    ifaceStats.RxErrs,
-						RxDrop:    ifaceStats.RxDrop,
-						TxBytes:   ifaceStats.TxBytes,
-						TxPackets: ifaceStats.TxPackets,
-						TxErrs:    ifaceStats.TxErrs,
-						TxDrop:    ifaceStats.TxDrop,
-					}
+				result.Interfaces[iface.Name] = &resultLibvirtNetwork{
+					Name:                        iface.Name,
+					AvgBytesSentPerSecond:       safemaths.DivideUint64(TxBytesDiff, uint64(Interval)),
+					AvgBytesReceivedPerSecond:   safemaths.DivideUint64(RxBytesDiff, uint64(Interval)),
+					AvgPacketsSentPerSecond:     safemaths.DivideUint64(TxPacketsDiff, uint64(Interval)),
+					AvgPacketsReceivedPerSecond: safemaths.DivideUint64(RxPacketsDiff, uint64(Interval)),
+					AvgErrorInPerSecond:         safemaths.DivideUint64(RxErrsDiff, uint64(Interval)),
+					AvgErrorOutPerSecond:        safemaths.DivideUint64(TxErrsDiff, uint64(Interval)),
+					AvgDropInPerSecond:          safemaths.DivideUint64(RxDropDiff, uint64(Interval)),
+					AvgDropOutPerSecond:         safemaths.DivideUint64(TxDropDiff, uint64(Interval)),
 				}
-			} else {
-				// Vm is not running - no traffic
-				c.lastNetstatResults[uuid][iface.Device.Dev] = &lastNetstatResultsForDelta{
-					Timestamp: time.Now().Unix(),
-				}
+			}
+
+			// Store counter values for next check evaluation
+			c.lastNetstatResults[uuid][iface.Name] = &lastNetstatResultsForDelta{
+				Timestamp: time.Now().Unix(),
+				RxBytes:   iface.RxBytes,
+				RxPackets: iface.RxPkts,
+				RxErrs:    iface.RxErrs,
+				RxDrop:    iface.RxDrop,
+				TxBytes:   iface.TxBytes,
+				TxPackets: iface.TxPkts,
+				TxErrs:    iface.TxErrs,
+				TxDrop:    iface.TxDrop,
 			}
 		}
 
+		// Get disk io of block devices
 		// Hash map to store counter values for deltas
 		if _, uuidExists := c.lastDiskstatsResults[uuid]; !uuidExists {
 			c.lastDiskstatsResults[uuid] = make(map[string]*lastDiskstatsResultsForDelta)
 		}
-		for _, disk := range xmlDomain.Devices.Disks {
-			if isDomRunning {
-				result.Diskio = make(map[string]*resultLibvirtDiskio)
-				blockStats, err := dom.BlockStats(disk.Target.Dev)
-				if err == nil {
 
-					// Get last result to calculate bytes/s packets/s
-					if lastCheckResults, ok := c.lastDiskstatsResults[uuid][disk.Target.Dev]; ok {
-						Interval := time.Now().Unix() - lastCheckResults.Timestamp
-						WrReqDiff := WrapDiffInt64(lastCheckResults.WrReq, blockStats.WrReq)
-						RdReqDiff := WrapDiffInt64(lastCheckResults.RdReq, blockStats.RdReq)
-						RdBytesDiff := WrapDiffInt64(lastCheckResults.RdBytes, blockStats.RdBytes)
-						WrBytesDiff := WrapDiffInt64(lastCheckResults.WrBytes, blockStats.WrBytes)
+		result.Diskio = make(map[string]*resultLibvirtDiskio)
+		for _, block := range domStats.Block {
+			if lastCheckResults, ok := c.lastDiskstatsResults[uuid][block.Name]; ok {
+				Interval := time.Now().Unix() - lastCheckResults.Timestamp
+				WrReqDiff := WrapDiffUint64(lastCheckResults.WrReq, block.WrReqs)
+				RdReqDiff := WrapDiffUint64(lastCheckResults.RdReq, block.RdReqs)
+				RdBytesDiff := WrapDiffUint64(lastCheckResults.RdBytes, block.RdBytes)
+				WrBytesDiff := WrapDiffUint64(lastCheckResults.WrBytes, block.WrBytes)
 
-						ReadIopsPerSecond := safemaths.DivideInt64(RdReqDiff, Interval)
-						WriteIopsPerSecond := safemaths.DivideInt64(WrReqDiff, Interval)
-						ReadBytesPerSecond := safemaths.DivideInt64(RdBytesDiff, Interval)
-						WriteBytesPerSecond := safemaths.DivideInt64(WrBytesDiff, Interval)
+				ReadIopsPerSecond := safemaths.DivideUint64(RdReqDiff, uint64(Interval))
+				WriteIopsPerSecond := safemaths.DivideUint64(WrReqDiff, uint64(Interval))
+				ReadBytesPerSecond := safemaths.DivideUint64(RdBytesDiff, uint64(Interval))
+				WriteBytesPerSecond := safemaths.DivideUint64(WrBytesDiff, uint64(Interval))
 
-						ReadAvgSize := safemaths.DivideFloat64(float64(ReadBytesPerSecond), float64(Interval))
-						WriteAvgSize := safemaths.DivideFloat64(float64(WriteBytesPerSecond), float64(Interval))
+				ReadAvgSize := safemaths.DivideFloat64(float64(ReadBytesPerSecond), float64(Interval))
+				WriteAvgSize := safemaths.DivideFloat64(float64(WriteBytesPerSecond), float64(Interval))
 
-						result.Diskio[disk.Target.Dev] = &resultLibvirtDiskio{
-							Name:                disk.Target.Dev,
-							ReadIopsPerSecond:   uint64(ReadIopsPerSecond),
-							WriteIopsPerSecond:  uint64(WriteIopsPerSecond),
-							TotalIopsPerSecond:  uint64(ReadIopsPerSecond + WriteIopsPerSecond),
-							ReadBytesPerSecond:  uint64(ReadBytesPerSecond),
-							WriteBytesPerSecond: uint64(WriteBytesPerSecond),
-							ReadAvgSize:         ReadAvgSize,
-							WriteAvgSize:        WriteAvgSize,
-						}
-					}
-
-					// Store counter values for next check evaluation
-					c.lastDiskstatsResults[uuid][disk.Target.Dev] = &lastDiskstatsResultsForDelta{
-						Timestamp: time.Now().Unix(),
-						WrReq:     blockStats.WrReq,
-						RdReq:     blockStats.RdReq,
-						RdBytes:   blockStats.RdBytes,
-						WrBytes:   blockStats.WrBytes,
-					}
+				result.Diskio[block.Name] = &resultLibvirtDiskio{
+					Name:                block.Name,
+					Path:                block.Path,
+					ReadIopsPerSecond:   uint64(ReadIopsPerSecond),
+					WriteIopsPerSecond:  uint64(WriteIopsPerSecond),
+					TotalIopsPerSecond:  uint64(ReadIopsPerSecond + WriteIopsPerSecond),
+					ReadBytesPerSecond:  uint64(ReadBytesPerSecond),
+					WriteBytesPerSecond: uint64(WriteBytesPerSecond),
+					ReadAvgSize:         ReadAvgSize,
+					WriteAvgSize:        WriteAvgSize,
 				}
-			} else {
-				// Vm is not running - no traffic
-				c.lastDiskstatsResults[uuid][disk.Target.Dev] = &lastDiskstatsResultsForDelta{
-					Timestamp: time.Now().Unix(),
-				}
+			}
+
+			// Store counter values for next check evaluation
+			c.lastDiskstatsResults[uuid][block.Name] = &lastDiskstatsResultsForDelta{
+				Timestamp: time.Now().Unix(),
+				WrReq:     block.WrReqs,
+				RdReq:     block.RdReqs,
+				RdBytes:   block.RdBytes,
+				WrBytes:   block.WrBytes,
 			}
 		}
 
-		// Get CPU usage (total)
-		// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetCPUStats
-		// https://github.com/virt-manager/virt-manager/blob/b17914591aeefedd50a0a0634f479222a7ff591c/virtManager/lib/statsmanager.py#L149-L190
+		// Get cpu usage
+		var vCpuTimeTotal uint64 = 0
+		for _, vCpu := range domStats.Vcpu {
+			vCpuTimeTotal = vCpuTimeTotal + vCpu.Time
+		}
+		if lastCheckResults, ok := c.lastCpuResults[uuid]; ok {
+			Interval := time.Now().Unix() - lastCheckResults.Timestamp
+			CpuTimeDiff := WrapDiffUint64(lastCheckResults.CpuTime, domStats.Cpu.Time)
 
-		// Get CPU Time of host system
-		nparams, err := dom.GetCPUStats(-1, 1, 0)
-		if err != nil {
-			fmt.Println(err)
+			// CpuTime is in nanoseconds - convert interval from seconds to nanoseconds
+			// Credit to:
+			// https://github.com/virt-manager/virt-manager/blob/b17914591aeefedd50a0a0634f479222a7ff591c/virtManager/lib/statsmanager.py#L149-L190
+			percentage_base := (float64(CpuTimeDiff) * 100.0) / (float64(Interval) * 1000.0 * 1000.0 * 1000.0)
+
+			cpuHostPercent := percentage_base / float64(nodeCpuCount)
+
+			guestcpus := len(domStats.Vcpu)
+			cpuGuestPercent := safemaths.DivideFloat64(float64(percentage_base), float64(guestcpus))
+
+			cpuHostPercent = math.Max(0.0, math.Min(100.0, cpuHostPercent))
+			cpuGuestPercent = math.Max(0.0, math.Min(100.0, cpuGuestPercent))
+
+			result.CpuUsage = &resultLibvirtCpuUsage{
+				HostPercent:  cpuHostPercent,
+				GuestPercent: cpuGuestPercent,
+			}
 		}
 
-		nparamsJs, _ := json.Marshal(nparams)
-		fmt.Println("++++begin+++")
-		fmt.Println(string(nparamsJs))
-		fmt.Println("+++end++++")
-
-		// Get network ip addresses stats
-		var src libvirt.DomainInterfaceAddressesSource = libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_ARP
-		interfaces, err := dom.ListAllInterfaceAddresses(src)
-		if err != nil {
-			fmt.Println(err)
-			continue
+		// Store counter values for next check evaluation
+		c.lastCpuResults[uuid] = &lastCpuResultsForDelta{
+			Timestamp:  time.Now().Unix(),
+			CpuTime:    domStats.Cpu.Time,
+			UserTime:   domStats.Cpu.User,
+			SystemTime: domStats.Cpu.System,
+			VcpuTime:   vCpuTimeTotal,
 		}
-
-		ifaceJs, _ := json.Marshal(interfaces)
-		fmt.Println(string(ifaceJs))
 
 		// Add current VM to results list
 		libvirtResults[uuid] = result

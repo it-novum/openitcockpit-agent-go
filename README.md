@@ -42,6 +42,11 @@ Add the following settings to your JSON.
 ```JS
     "go.testTimeout": "90s",
     "go.useLanguageServer": true,
+    
+    // Remove this if you do NOT want to enable libvirt
+    "go.toolsEnvVars": {
+        "GOFLAGS": "-tags=libvirt"
+    },
     "go.lintTool": "golangci-lint",
     "[go]": {
         "editor.formatOnSave": true,
