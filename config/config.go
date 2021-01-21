@@ -40,6 +40,16 @@ type CustomCheckConfiguration struct {
 	Checks []*CustomCheck
 }
 
+type PushConfiguration struct {
+	Push                    bool   `mapstructure:"enabled"`
+	HostUUID                string `mapstructure:"hostuuid"`
+	URL                     string `mapstructure:"url"`
+	Apikey                  string `mapstructure:"apikey"`
+	Proxy                   string `mapstructure:"proxy"`
+	Timeout                 int64  `mapstructure:"timeout"`
+	VerifyServerCertificate bool   `mapstructure:"verify-server-certificate"`
+}
+
 // Configuration with all sub configuration structs
 type Configuration struct {
 	ConfigurationPath string
@@ -101,14 +111,7 @@ type Configuration struct {
 
 	// Push Mode
 
-	OITC struct {
-		Push         bool   `mapstructure:"enabled"`
-		HostUUID     string `mapstructure:"hostuuid"`
-		URL          string `mapstructure:"url"`
-		Apikey       string `mapstructure:"apikey"`
-		Proxy        string `mapstructure:"proxy"`
-		PushInterval int64  `mapstructure:"interval"`
-	} `mapstructure:"oitc"`
+	OITC *PushConfiguration
 
 	// Default is the namespace workaround we need for the configuration file format
 	Default *Configuration
@@ -157,9 +160,7 @@ var defaultValue = map[string]interface{}{
 	"autossl-ca-file":      path.Join(platformpaths.Get().ConfigPath(), "server_ca.crt"),
 }
 
-var oitcDefaultvalue = map[string]interface{}{
-	"interval": 60,
-}
+var oitcDefaultvalue = map[string]interface{}{}
 
 func setConfigurationDefaults(v *viper.Viper) {
 	for key, value := range defaultValue {
@@ -186,10 +187,17 @@ type LoadConfigHint struct {
 func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	cfg := &Configuration{}
 	cfg.Default = cfg
+	cfg.OITC = &PushConfiguration{}
 	if err := v.Unmarshal(cfg); err != nil {
 		return nil, err
 	}
-
+	if cfg.OITC.Push && cfg.OITC.Timeout == 0 {
+		if cfg.CheckInterval <= 1 {
+			cfg.OITC.Timeout = 1
+		} else {
+			cfg.OITC.Timeout = cfg.CheckInterval - 1
+		}
+	}
 	cfg.ConfigurationPath = v.ConfigFileUsed()
 	cfg.viper = v
 	return cfg, nil

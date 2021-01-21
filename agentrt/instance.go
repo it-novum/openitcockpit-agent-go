@@ -10,6 +10,7 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/checkrunner"
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/it-novum/openitcockpit-agent-go/loghandler"
+	"github.com/it-novum/openitcockpit-agent-go/pushclient"
 	"github.com/it-novum/openitcockpit-agent-go/webserver"
 	log "github.com/sirupsen/logrus"
 )
@@ -33,7 +34,8 @@ type AgentInstance struct {
 	configLoaded bool
 	cccLoaded    bool
 
-	stateInput            chan []byte
+	stateWebserver        chan []byte
+	statePushClient       chan []byte
 	checkResult           chan map[string]interface{}
 	customCheckResultChan chan *checkrunner.CustomCheckResult
 
@@ -43,6 +45,7 @@ type AgentInstance struct {
 	webserver          *webserver.Server
 	checkRunner        *checkrunner.CheckRunner
 	customCheckHandler *checkrunner.CustomCheckHandler
+	pushClient         *pushclient.PushClient
 }
 
 func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
@@ -70,11 +73,27 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 
 		// we may have to give the webserver some time to think about it
 		select {
-		case a.stateInput <- data:
+		case a.stateWebserver <- data:
 		case <-t.C:
 			log.Errorln("Internal error: could not store check result: timeout")
 		}
 	}()
+	if a.statePushClient != nil {
+		a.wg.Add(1)
+		go func() {
+			defer a.wg.Done()
+
+			t := time.NewTimer(time.Second * 10)
+			defer t.Stop()
+
+			// we may have to give the push client some time to think about it
+			select {
+			case a.statePushClient <- data:
+			case <-t.C:
+				log.Errorln("Internal error: could not store check result for push client: timeout")
+			}
+		}()
+	}
 }
 
 func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
@@ -97,15 +116,15 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
 		}
 		a.configLoaded = true
 	}
-	if a.stateInput == nil {
-		a.stateInput = make(chan []byte)
+	if a.stateWebserver == nil {
+		a.stateWebserver = make(chan []byte)
 	}
 	if a.checkResult == nil {
 		a.checkResult = make(chan map[string]interface{})
 	}
 	if a.webserver == nil {
 		a.webserver = &webserver.Server{
-			StateInput: a.stateInput,
+			StateInput: a.stateWebserver,
 		}
 		a.webserver.Start(ctx)
 	}
@@ -120,6 +139,19 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
 	}
 	if err := a.checkRunner.Start(ctx); err != nil {
 		log.Fatalln(err)
+	}
+	if a.statePushClient != nil {
+		a.pushClient.Shutdown()
+		a.pushClient = nil
+	}
+	if cfg.Configuration.OITC.Push {
+		a.statePushClient = make(chan []byte)
+		a.pushClient = &pushclient.PushClient{
+			StateInput: a.statePushClient,
+		}
+		if err := a.pushClient.Start(ctx, cfg.Configuration); err != nil {
+			log.Fatalln("Could not load push client: ", err)
+		}
 	}
 }
 
@@ -151,6 +183,10 @@ func (a *AgentInstance) stop() {
 		a.checkRunner.Shutdown()
 		a.checkRunner = nil
 	}
+	if a.pushClient != nil {
+		a.pushClient.Shutdown()
+		a.pushClient = nil
+	}
 }
 
 func (a *AgentInstance) configLoad(cfg *config.Configuration, err error) {
@@ -166,7 +202,7 @@ func (a *AgentInstance) configLoad(cfg *config.Configuration, err error) {
 }
 
 func (a *AgentInstance) Start(parent context.Context) {
-	a.stateInput = make(chan []byte)
+	a.stateWebserver = make(chan []byte)
 	a.checkResult = make(chan map[string]interface{})
 	a.customCheckResultChan = make(chan *checkrunner.CustomCheckResult)
 	a.customCheckResults = map[string]interface{}{}
