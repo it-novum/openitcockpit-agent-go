@@ -332,10 +332,6 @@ func TestAgentVersion1Config(t *testing.T) {
 			t.Error("Push HostUUID expect to be proxy.example.org")
 		}
 
-		if c.OITC.PushInterval != 90 {
-			t.Error("Push Interval expect to be 90")
-		}
-
 		if c.OITC.Push != true {
 			t.Error("Push Mode expect to be true")
 		}
