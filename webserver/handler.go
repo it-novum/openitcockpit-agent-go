@@ -63,8 +63,8 @@ type updateCrtRequest struct {
 }
 
 type handler struct {
-	StateInput <-chan []byte
-
+	StateInput    <-chan []byte
+	Reloader      Reloader
 	Configuration *config.Configuration
 
 	mtx      sync.RWMutex
@@ -114,8 +114,12 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	if err := config.SaveConfiguration(w.Configuration, body); err != nil {
+	if err := w.Configuration.SaveConfiguration(body); err != nil {
 		log.Errorln("Webserver: ", err)
+	}
+
+	if w.Reloader != nil {
+		go w.Reloader.Reload()
 	}
 }
 
@@ -186,7 +190,10 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 	}
 
 	log.Debugln("Webserver: Certificate update successful, start reload")
-	w.Configuration.Reload()
+
+	if w.Reloader != nil {
+		go w.Reloader.Reload()
+	}
 }
 
 // Handler can be used by http.Server to handle http connections

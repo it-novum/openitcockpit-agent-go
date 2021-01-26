@@ -15,6 +15,7 @@ type CheckRunner struct {
 	Configuration *config.Configuration
 	Result        chan map[string]interface{}
 
+	mtx      sync.Mutex
 	wg       sync.WaitGroup
 	shutdown chan struct{}
 }
@@ -25,6 +26,9 @@ func (c *CheckRunner) Shutdown() {
 }
 
 func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, timeout time.Duration) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
 	log.Infoln("Running ", len(checks), "checks")
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
@@ -103,7 +107,7 @@ func (c *CheckRunner) Start(ctx context.Context) error {
 					return
 				}
 			case <-ticker.C:
-				c.runChecks(ctx, checks, checkTimeout)
+				go c.runChecks(ctx, checks, checkTimeout)
 			}
 		}
 	}()

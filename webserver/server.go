@@ -16,6 +16,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Reloader interface {
+	Reload()
+}
+
 type reloadConfig struct {
 	Configuration *config.Configuration
 	// reloadDone will be set by the reload func
@@ -25,6 +29,7 @@ type reloadConfig struct {
 // Server handling for http, should be created by New
 type Server struct {
 	StateInput <-chan []byte
+	Reloader   Reloader
 
 	reload   chan *reloadConfig
 	shutdown chan struct{}
@@ -60,6 +65,7 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	newHandler := &handler{
 		StateInput:    s.StateInput,
 		Configuration: cfg.Configuration,
+		Reloader:      s.Reloader,
 	}
 	newHandler.Start(ctx)
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)

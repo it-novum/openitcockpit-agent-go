@@ -15,12 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type reloadConfig struct {
-	Configuration            *config.Configuration
-	CustomCheckConfiguration []*config.CustomCheck
-	reloadDone               chan struct{}
-}
-
 type AgentInstance struct {
 	ConfigurationPath string
 	LogPath           string
@@ -28,11 +22,9 @@ type AgentInstance struct {
 	Verbose           bool
 	Debug             bool
 
-	wg           sync.WaitGroup
-	shutdown     chan struct{}
-	reload       chan *reloadConfig
-	configLoaded bool
-	cccLoaded    bool
+	wg       sync.WaitGroup
+	shutdown chan struct{}
+	reload   chan chan struct{}
 
 	stateWebserver        chan []byte
 	statePushClient       chan []byte
@@ -96,26 +88,7 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 	}
 }
 
-func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
-	if !a.configLoaded {
-		// first load
-		if cfg.Configuration.CustomchecksConfig != "" {
-			go config.LoadCustomChecks(cfg.Configuration.CustomchecksConfig, func(ccc *config.CustomCheckConfiguration, err error) {
-				if err != nil {
-					if !a.cccLoaded {
-						log.Fatalln(err)
-					} else {
-						log.Errorln("could not reload custom check configuration: ", err)
-					}
-				}
-				if !a.cccLoaded {
-					a.cccLoaded = true
-				}
-				a.ReloadCustomChecks(ccc.Checks)
-			})
-		}
-		a.configLoaded = true
-	}
+func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration) {
 	if a.stateWebserver == nil {
 		a.stateWebserver = make(chan []byte)
 	}
@@ -125,16 +98,17 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
 	if a.webserver == nil {
 		a.webserver = &webserver.Server{
 			StateInput: a.stateWebserver,
+			Reloader:   a,
 		}
 		a.webserver.Start(ctx)
 	}
-	a.webserver.Reload(cfg.Configuration)
+	a.webserver.Reload(cfg)
 
 	if a.checkRunner != nil {
 		a.checkRunner.Shutdown()
 	}
 	a.checkRunner = &checkrunner.CheckRunner{
-		Configuration: cfg.Configuration,
+		Configuration: cfg,
 		Result:        a.checkResult,
 	}
 	if err := a.checkRunner.Start(ctx); err != nil {
@@ -144,26 +118,30 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *reloadConfig) {
 		a.pushClient.Shutdown()
 		a.pushClient = nil
 	}
-	if cfg.Configuration.OITC.Push {
+	if cfg.OITC.Push {
 		a.statePushClient = make(chan []byte)
 		a.pushClient = &pushclient.PushClient{
 			StateInput: a.statePushClient,
 		}
-		if err := a.pushClient.Start(ctx, cfg.Configuration); err != nil {
+		if err := a.pushClient.Start(ctx, cfg); err != nil {
 			log.Fatalln("Could not load push client: ", err)
 		}
 	}
+	a.doCustomCheckReload(ctx, cfg.CustomCheckConfiguration)
 }
 
 func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.CustomCheck) {
 	if a.customCheckHandler != nil {
 		a.customCheckHandler.Shutdown()
+		a.customCheckHandler = nil
 	}
-	a.customCheckHandler = &checkrunner.CustomCheckHandler{
-		Configuration: ccc,
-		ResultOutput:  a.customCheckResultChan,
+	if ccc != nil && len(ccc) > 0 {
+		a.customCheckHandler = &checkrunner.CustomCheckHandler{
+			Configuration: ccc,
+			ResultOutput:  a.customCheckResultChan,
+		}
+		a.customCheckHandler.Start(ctx)
 	}
-	a.customCheckHandler.Start(ctx)
 }
 
 func (a *AgentInstance) stop() {
@@ -189,25 +167,13 @@ func (a *AgentInstance) stop() {
 	}
 }
 
-func (a *AgentInstance) configLoad(cfg *config.Configuration, err error) {
-	if err != nil {
-		if !a.configLoaded {
-			log.Fatalln(err)
-		} else {
-			log.Errorln("could not reload configuration: ", err)
-			return
-		}
-	}
-	a.Reload(cfg)
-}
-
 func (a *AgentInstance) Start(parent context.Context) {
 	a.stateWebserver = make(chan []byte)
 	a.checkResult = make(chan map[string]interface{})
 	a.customCheckResultChan = make(chan *checkrunner.CustomCheckResult)
 	a.customCheckResults = map[string]interface{}{}
 	a.shutdown = make(chan struct{})
-	a.reload = make(chan *reloadConfig)
+	a.reload = make(chan chan struct{})
 	a.logHandler = &loghandler.LogHandler{
 		Verbose:       a.Verbose,
 		Debug:         a.Debug,
@@ -216,11 +182,10 @@ func (a *AgentInstance) Start(parent context.Context) {
 		DefaultWriter: os.Stderr,
 	}
 
+	ctx, cancel := context.WithCancel(parent)
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
-
-		ctx, cancel := context.WithCancel(parent)
 		defer cancel()
 
 		a.logHandler.Start(ctx)
@@ -235,14 +200,15 @@ func (a *AgentInstance) Start(parent context.Context) {
 				if !ok {
 					return
 				}
-			case cfg := <-a.reload:
-				if cfg.Configuration != nil {
-					a.doReload(ctx, cfg)
+			case done := <-a.reload:
+				cfg, err := config.Load(ctx, &config.LoadConfigHint{
+					ConfigFile: a.ConfigurationPath,
+				})
+				if err != nil {
+					log.Fatalln("could not load configuration: ", err)
 				}
-				if cfg.CustomCheckConfiguration != nil {
-					a.doCustomCheckReload(ctx, cfg.CustomCheckConfiguration)
-				}
-				cfg.reloadDone <- struct{}{}
+				a.doReload(ctx, cfg)
+				done <- struct{}{}
 			case res := <-a.checkResult:
 				a.processCheckResult(res)
 			case res := <-a.customCheckResultChan:
@@ -251,26 +217,13 @@ func (a *AgentInstance) Start(parent context.Context) {
 		}
 	}()
 
-	config.Load(a.configLoad, &config.LoadConfigHint{
-		ConfigFile: a.ConfigurationPath,
-	})
+	a.Reload()
 }
 
-func (a *AgentInstance) Reload(cfg *config.Configuration) {
+func (a *AgentInstance) Reload() {
 	done := make(chan struct{})
-	a.reload <- &reloadConfig{
-		Configuration: cfg,
-		reloadDone:    done,
-	}
-	<-done
-}
 
-func (a *AgentInstance) ReloadCustomChecks(ccc []*config.CustomCheck) {
-	done := make(chan struct{})
-	a.reload <- &reloadConfig{
-		CustomCheckConfiguration: ccc,
-		reloadDone:               done,
-	}
+	a.reload <- (done)
 	<-done
 }
 
