@@ -141,7 +141,9 @@ func (p *PushClient) Start(ctx context.Context, cfg *config.Configuration) error
 	p.shutdown = make(chan struct{})
 	p.configuration = *cfg.OITC
 
-	p.readAuthConfig()
+	if err := p.readAuthConfig(); err != nil {
+		return err
+	}
 
 	//if p.configuration.PushInterval < 2 {
 	//	return fmt.Errorf("Push Client: interval must be higher than 1")
