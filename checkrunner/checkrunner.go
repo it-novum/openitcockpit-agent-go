@@ -96,9 +96,8 @@ func (c *CheckRunner) Start(ctx context.Context) error {
 		ticker := time.NewTicker(time.Duration(c.Configuration.CheckInterval) * time.Second)
 		defer ticker.Stop()
 
+		go c.runChecks(ctx, checks, checkTimeout)
 		for {
-			c.runChecks(ctx, checks, checkTimeout)
-
 			select {
 			case <-ctx.Done():
 				return
