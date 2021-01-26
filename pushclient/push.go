@@ -13,20 +13,28 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
+
+type authConfiguration struct {
+	UUID     string `json:"uuid"`
+	Password string `json:"password"`
+}
 
 type PushClient struct {
 	StateInput chan []byte
 
-	shutdown      chan struct{}
-	wg            sync.WaitGroup
-	configuration config.PushConfiguration
-	client        http.Client
-	url           *url.URL
-	apiKeyHeader  string
-	timeout       time.Duration
+	shutdown          chan struct{}
+	wg                sync.WaitGroup
+	configuration     config.PushConfiguration
+	authConfiguration authConfiguration
+	client            http.Client
+	url               *url.URL
+	apiKeyHeader      string
+	timeout           time.Duration
 
 	state string
 }
@@ -34,6 +42,37 @@ type PushClient struct {
 type pushData struct {
 	CheckData string `json:"checkdata"`
 	HostUUID  string `json:"hostuuid"`
+	AgentUUID string `json:"agentuuid"`
+	Password  string `json:"password"`
+}
+
+func (p *PushClient) saveAuthConfig() error {
+	data, err := json.Marshal(&p.authConfiguration)
+	if err != nil {
+		return fmt.Errorf("could not write push client auth file: %s", err)
+	}
+	if err := ioutil.WriteFile(p.configuration.AuthFile, data, 0600); err != nil {
+		return fmt.Errorf("could not write push client auth file: %s", err)
+	}
+	return nil
+}
+
+func (p *PushClient) readAuthConfig() error {
+	if utils.FileExists(p.configuration.AuthFile) {
+		data, err := ioutil.ReadFile(p.configuration.AuthFile)
+		if err != nil {
+			return fmt.Errorf("could not read push client auth file: %s", err)
+		}
+		if err := json.Unmarshal(data, &p.authConfiguration); err != nil {
+			return fmt.Errorf("could not read push client auth file: %s", err)
+		}
+	}
+
+	if p.authConfiguration.UUID == "" {
+		p.authConfiguration.UUID = uuid.NewString()
+		return p.saveAuthConfig()
+	}
+	return nil
 }
 
 func (p *PushClient) doRequest(parent context.Context) {
@@ -51,6 +90,8 @@ func (p *PushClient) doRequest(parent context.Context) {
 	data, err := json.Marshal(&pushData{
 		CheckData: state,
 		HostUUID:  p.configuration.HostUUID,
+		AgentUUID: p.authConfiguration.UUID,
+		Password:  p.authConfiguration.Password,
 	})
 	if err != nil {
 		log.Errorln("Push Client: Could not serialize data for request: ", err)
@@ -99,6 +140,8 @@ func (p *PushClient) Start(ctx context.Context, cfg *config.Configuration) error
 	log.Debugln("Push Client: Starting")
 	p.shutdown = make(chan struct{})
 	p.configuration = *cfg.OITC
+
+	p.readAuthConfig()
 
 	//if p.configuration.PushInterval < 2 {
 	//	return fmt.Errorf("Push Client: interval must be higher than 1")

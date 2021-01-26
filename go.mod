@@ -13,6 +13,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/iamacarpet/go-win64api v0.0.0-20200715182619-8cbc936e1a5a
 	github.com/leoluk/perflib_exporter v0.1.0
