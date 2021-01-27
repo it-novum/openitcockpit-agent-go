@@ -29,15 +29,34 @@ func TestPlatformRegistryRead(t *testing.T) {
 	if err := key.SetStringValue(wpp.registryName, "test"); err != nil {
 		t.Fatal("could not set registry test value: ", err)
 	}
+	if err := key.SetStringValue("Verbose", "1"); err != nil {
+		t.Fatal("could not set registry Verbose value: ", err)
+	}
+	// test if invalid type crashes program, this should just be logged and ignored later
+	if err := key.SetDWordValue("Debug", 1); err != nil {
+		t.Fatal("could not set registry Debug value: ", err)
+	}
 	if err := key.Close(); err != nil {
 		closed = true
 		t.Fatal("could not close registry key: ", err)
 	}
 	closed = true
 
-	wpp.Init()
+	if err := wpp.Init(); err != nil {
+		t.Error(err)
+	}
 	test := wpp.LogPath()
 	if test != "test/agent.log" {
-		t.Error("platformLogFile did not return correct registry value: ", test)
+		t.Error("PlatformPath did not return correct registry value: ", test)
+	}
+	testVerbose, ok := wpp.AdditionalData()["Verbose"]
+	if !ok {
+		t.Error("PlatformPath could not fetch Verbose from registry")
+	} else if testVerbose != "1" {
+		t.Error("PlatformPath did not return correct registry value for Verbose: ", testVerbose)
+	}
+	testDebug, ok := wpp.AdditionalData()["Debug"]
+	if ok {
+		t.Error("PlatformPath did return registry value for Debug but should ignore it: ", testDebug)
 	}
 }
