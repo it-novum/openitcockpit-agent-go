@@ -180,6 +180,14 @@ There you can add the following additional configuration keys. All keys must be 
 | Verbose | 0 | 0 - 1 |
 | Debug | 0 | 0 -1 |
 
+## Windows ARM Support
+
+Windows ARM devices have to use 386 Version for now. Several libraries we're depending on require changes.
+
+* github.com/go-ole/go-ole
+* github.com/shirou/gopsutil/v3
+
+We could also do this, as the changes should be minor, but we don't have any test devices for this right now.
 
 ## Notes
 - https://github.com/kata-containers/govmm

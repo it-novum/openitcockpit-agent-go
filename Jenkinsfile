@@ -99,6 +99,7 @@ pipeline {
                 build_binary()
             }
         }
+        /*
         stage("Build windows/arm") {
             agent {
                 docker { 
@@ -115,6 +116,7 @@ pipeline {
                 build_binary()
             }
         }
+        */
         stage("Build darwin/amd64") {
             agent {
                 docker { 
