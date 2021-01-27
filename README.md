@@ -89,20 +89,22 @@ Run -> Open Configurations
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "env": {},
+            "env": {
+                "OITC_AGENT_DEBUG": "1",
+            },
             "args": ["-c", ".\\config.cnf", "--disable-logfile", "--debug"]
         }
     ]
 }
 ```
 
-Create a new file in workspace folder -> "config.ini"
+Create a new file in workspace folder -> "config.cnf"
 ```ini
 [default]
-customchecks = ./customchecks.ini
+customchecks = ./customchecks.cnf
 ```
 
-Create a new file in workspace folder -> "customchecks.ini" (Windows)
+Create a new file in workspace folder -> "customchecks.cnf" (Windows)
 
 ```ini
 [check_Windows_Services_Status_OSS]
@@ -112,7 +114,7 @@ timeout = 10
 enabled = false
 ```
 
-Create a new file in workspace folder -> "customchecks.ini" (Linux/Mac)
+Create a new file in workspace folder -> "customchecks.cnf" (Linux/Mac)
 
 ```ini
 [check_echo]
@@ -121,6 +123,10 @@ interval = 15
 timeout = 10
 enabled = false
 ```
+
+## Windows development notes
+
+By default the agent will assume to be run as Windows Service. If you set OITC_AGENT_DEBUG it will run the default cmd like on linux.
 
 ## Build binary
 ### Static linked (recommended)
@@ -156,6 +162,24 @@ CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o agent main.go
 ```
 
 Start hacking :)
+
+## Windows Service Configuration
+
+Several settings can't be configured via config.cnf but as a CLI parameter. On Windows we run the agent usually as a service. You can set the following parameters via the Windows Registry.
+
+Path: HKEY_LOCAL_MACHINE\SOFTWARE\it-novum\InstalledProducts\openitcockpit-agent
+
+There you can add the following additional configuration keys. All keys must be of type string, even when they are numbers!
+
+| Key | Default | Possible|
+| ----|---------| --------|
+| InstallLocation |  | Never change this |
+| ConfigurationPath | InstallLocation/config.cnf | Any valid path |
+| LogPath | InstallLocation/agent.log | Any valid path |
+| LogRotate | 3 | 0 - N (0 == disable) |
+| Verbose | 0 | 0 - 1 |
+| Debug | 0 | 0 -1 |
+
 
 ## Notes
 - https://github.com/kata-containers/govmm
