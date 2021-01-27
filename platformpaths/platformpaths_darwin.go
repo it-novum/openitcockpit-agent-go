@@ -19,6 +19,10 @@ func (p *darwinPlatformPath) ConfigPath() string {
 	return p.basePath
 }
 
+func (p *darwinPlatformPath) AdditionalData() map[string]string {
+	return map[string]string{}
+}
+
 func getPlatformPath() PlatformPath {
 	return &darwinPlatformPath{}
 }

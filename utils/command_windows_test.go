@@ -71,7 +71,7 @@ func TestWindowsShells(t *testing.T) {
 
 	writeCommand := func(command, suffix string) string {
 		res := path.Join(tempDir, fmt.Sprintf("testcommand.%s", suffix))
-		if err := ioutil.WriteFile(res, []byte(command), 0666); err != nil {
+		if err := ioutil.WriteFile(res, []byte(command), 0600); err != nil {
 			t.Fatal(err)
 		}
 		return res

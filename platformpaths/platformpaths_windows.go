@@ -1,16 +1,18 @@
 package platformpaths
 
 import (
+	"errors"
 	"path"
 
 	"golang.org/x/sys/windows/registry"
 )
 
 type windowsPlatformPath struct {
-	basePath     string
-	registryKey  registry.Key
-	registryPath string
-	registryName string
+	basePath       string
+	registryKey    registry.Key
+	registryPath   string
+	registryName   string
+	additionalData map[string]string
 }
 
 func (p *windowsPlatformPath) Init() error {
@@ -25,6 +27,23 @@ func (p *windowsPlatformPath) Init() error {
 		return err
 	}
 	p.basePath = s
+
+	keyNames, err := k.ReadValueNames(0)
+	if err != nil {
+		return err
+	}
+
+	p.additionalData = map[string]string{}
+	for _, keyName := range keyNames {
+		if s, _, err := k.GetStringValue(keyName); err != nil {
+			if !errors.Is(err, registry.ErrUnexpectedType) {
+				return err
+			}
+		} else {
+			p.additionalData[keyName] = s
+		}
+	}
+
 	return nil
 }
 
@@ -34,6 +53,10 @@ func (p *windowsPlatformPath) LogPath() string {
 
 func (p *windowsPlatformPath) ConfigPath() string {
 	return p.basePath
+}
+
+func (p *windowsPlatformPath) AdditionalData() map[string]string {
+	return p.additionalData
 }
 
 func getPlatformPath() PlatformPath {

@@ -248,7 +248,7 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 }
 
 func (c *Configuration) SaveConfiguration(config []byte) error {
-	if err := ioutil.WriteFile(c.ConfigurationPath, config, 0666); err != nil {
+	if err := ioutil.WriteFile(c.ConfigurationPath, config, 0600); err != nil {
 		return err
 	}
 	return nil

@@ -16,11 +16,12 @@ import (
 )
 
 type AgentInstance struct {
-	ConfigurationPath string
-	LogPath           string
-	LogRotate         int
-	Verbose           bool
-	Debug             bool
+	ConfigurationPath  string
+	LogPath            string
+	LogRotate          int
+	Verbose            bool
+	Debug              bool
+	DisableErrorOutput bool
 
 	wg       sync.WaitGroup
 	shutdown chan struct{}
@@ -135,7 +136,7 @@ func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.C
 		a.customCheckHandler.Shutdown()
 		a.customCheckHandler = nil
 	}
-	if ccc != nil && len(ccc) > 0 {
+	if len(ccc) > 0 {
 		a.customCheckHandler = &checkrunner.CustomCheckHandler{
 			Configuration: ccc,
 			ResultOutput:  a.customCheckResultChan,
@@ -175,17 +176,19 @@ func (a *AgentInstance) Start(parent context.Context) {
 	a.shutdown = make(chan struct{})
 	a.reload = make(chan chan struct{})
 	a.logHandler = &loghandler.LogHandler{
-		Verbose:       a.Verbose,
-		Debug:         a.Debug,
-		LogPath:       a.LogPath,
-		LogRotate:     a.LogRotate,
-		DefaultWriter: os.Stderr,
+		Verbose:              a.Verbose,
+		Debug:                a.Debug,
+		LogPath:              a.LogPath,
+		LogRotate:            a.LogRotate,
+		DefaultWriter:        os.Stderr,
+		DisableDefaultWriter: a.DisableErrorOutput,
 	}
 
-	ctx, cancel := context.WithCancel(parent)
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
+
+		ctx, cancel := context.WithCancel(parent)
 		defer cancel()
 
 		a.logHandler.Start(ctx)

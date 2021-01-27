@@ -20,9 +20,12 @@ type LogHandler struct {
 	// value < 1 will disable logrotate
 	LogRotate int
 	// usually os.Stderr
-	DefaultWriter io.Writer
-	Verbose       bool
-	Debug         bool
+	DefaultWriter        io.Writer
+	Verbose              bool
+	Debug                bool
+	DisableDefaultWriter bool
+
+	devNull io.WriteCloser
 
 	wg       sync.WaitGroup
 	logFile  *os.File
@@ -32,7 +35,7 @@ type LogHandler struct {
 func (h *LogHandler) openLogFile() {
 	log.Infoln("LogHandler: create/open log file")
 
-	fl, err := os.OpenFile(h.LogPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	fl, err := os.OpenFile(h.LogPath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
 		log.Fatal("LogHandler: could not open/create log file: ", err)
 	}
@@ -92,8 +95,17 @@ var midnight = func() time.Duration {
 func (h *LogHandler) Start(parent context.Context) {
 	h.shutdown = make(chan struct{})
 
-	if h.DefaultWriter == nil {
+	if h.DefaultWriter == nil && !h.DisableDefaultWriter {
 		log.Fatalln("internal error: require default log writer")
+	}
+
+	if h.DisableDefaultWriter {
+		fh, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatalln("could not open dev null: ", err)
+		}
+		h.DefaultWriter = fh
+		h.devNull = fh
 	}
 
 	log.SetOutput(h.DefaultWriter)
@@ -112,6 +124,10 @@ func (h *LogHandler) Start(parent context.Context) {
 	h.wg.Add(1)
 	go func() {
 		defer h.wg.Done()
+
+		if h.devNull != nil {
+			defer h.devNull.Close()
+		}
 
 		ctx, cancel := context.WithCancel(parent)
 		defer cancel()

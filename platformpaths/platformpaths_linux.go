@@ -15,6 +15,10 @@ func (p *linuxPlatformPath) ConfigPath() string {
 	return "/etc/openitcockpit-agent/"
 }
 
+func (p *linuxPlatformPath) AdditionalData() map[string]string {
+	return map[string]string{}
+}
+
 func getPlatformPath() PlatformPath {
 	return &linuxPlatformPath{}
 }

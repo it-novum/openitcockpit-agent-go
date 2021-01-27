@@ -305,7 +305,7 @@ func encodeAndSaveKey(dest string, key *rsa.PrivateKey) error {
 	}); err != nil {
 		return fmt.Errorf("encode private key failed: %s", err)
 	}
-	if err := ioutil.WriteFile(dest, buf.Bytes(), 0666); err != nil {
+	if err := ioutil.WriteFile(dest, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("write key to file failed: %s", err)
 	}
 	return nil
@@ -319,7 +319,7 @@ func encodeAndSaveCert(dest string, derCert []byte) error {
 	}); err != nil {
 		return fmt.Errorf("encode certificate failed: %s", err)
 	}
-	if err := ioutil.WriteFile(dest, buf.Bytes(), 0666); err != nil {
+	if err := ioutil.WriteFile(dest, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("write certificate to file failed: %s", err)
 	}
 	return nil

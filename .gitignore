@@ -27,9 +27,10 @@ Thumbs.db
 # vendor/
 
 /.vscode
-/config.ini
-/customchecks.ini
+/config.cnf
+/customchecks.cnf
 /__debug_bin
+/agent.log
 
 # VSCode local history
 .history

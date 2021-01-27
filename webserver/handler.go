@@ -138,7 +138,7 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 		return
 	}
 	log.Infoln("Webserver: CSR generated")
-	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0666); err != nil {
+	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0600); err != nil {
 		log.Infoln("Webserver: could not store csr: ", err)
 	}
 	js, err := json.Marshal(csrResponse{Csr: string(csr)})

@@ -27,6 +27,10 @@ func (p *testPlatformPath) ConfigPath() string {
 	return p.configPath
 }
 
+func (p *testPlatformPath) AdditionalData() map[string]string {
+	return map[string]string{}
+}
+
 func (p *testPlatformPath) close() {
 	os.RemoveAll(p.tempPath)
 }

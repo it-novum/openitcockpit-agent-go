@@ -8,12 +8,14 @@ import (
 
 // PlatformPath represents the default paths for specific directory and files
 type PlatformPath interface {
-	// Init will be called Get()
+	// Init will be automatically called by Get()
 	Init() error
 	// LogPath for this system
 	LogPath() string
 	// ConfigPath for this system
 	ConfigPath() string
+	// AdditionalData for this plattform (only on windows)
+	AdditionalData() map[string]string
 }
 
 var (

@@ -58,14 +58,14 @@ func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if !r.disableLog {
-		fl, err := os.OpenFile(r.logPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		fl, err := os.OpenFile(r.logPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 		if err != nil {
 			return fmt.Errorf("Could not open/create log file: %s", err)
 		}
 		fl.Close()
 		if !r.disableLogRotate {
 			testPath := path.Join(path.Dir(r.logPath), "agent.log.test")
-			fl, err := os.OpenFile(testPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			fl, err := os.OpenFile(testPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 			defer func() {
 				fl.Close()
 				os.Remove(testPath)
