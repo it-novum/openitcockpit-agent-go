@@ -131,22 +131,6 @@ pipeline {
                 build_binary()
             }
         }
-        stage("Build darwin/386") {
-            agent {
-                docker { 
-                    image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
-                }
-            }
-            environment {
-                GOOS = 'darwin'
-                GOARCH = '386'
-                BINNAME = 'agent'
-            }
-            steps {
-                build_binary()
-            }
-        }
     }
 }
 
