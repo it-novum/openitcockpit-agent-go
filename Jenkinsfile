@@ -67,8 +67,8 @@ pipeline {
 
 def build_binary() {
     try {
-        sh script: "mkdir -p release/$GOOS/$GOARCH" label: "mkdir -p release/$GOOS/$GOARCH"
-        sh script: "go build -o release/$GOOS/$GOARCH/$BINNAME main.go" label: "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
+        sh "mkdir -p release/$GOOS/$GOARCH"
+        sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
     } catch (err) {
         echo "Caught: ${err}"
         currentBuild.result = 'FAILURE'
