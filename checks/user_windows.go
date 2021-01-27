@@ -3,7 +3,7 @@ package checks
 import (
 	"context"
 
-	wapi "github.com/iamacarpet/go-win64api"
+	wapi "github.com/it-novum/openitcockpit-agent-go/winapi"
 )
 
 // Run the actual check
