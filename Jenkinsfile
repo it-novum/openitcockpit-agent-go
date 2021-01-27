@@ -6,6 +6,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
+                    args '-u root --privileged'
                 }
             }
             environment {
