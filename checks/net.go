@@ -24,5 +24,5 @@ type resultNet struct {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckNet) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.Netstats, nil
 }

@@ -22,5 +22,5 @@ type resultUser struct {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckUser) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.User, nil
 }

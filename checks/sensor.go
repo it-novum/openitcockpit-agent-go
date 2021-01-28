@@ -81,5 +81,5 @@ func (c *CheckSensor) Run(ctx context.Context) (interface{}, error) {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckSensor) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.Sensors, nil
 }

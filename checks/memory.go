@@ -49,5 +49,5 @@ func (c *CheckMem) Run(ctx context.Context) (interface{}, error) {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckMem) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.Memory, nil
 }

@@ -46,7 +46,7 @@ type PushConfiguration struct {
 
 // Configuration with all sub configuration structs
 type Configuration struct {
-	ConfigurationPath string
+	ConfigurationPath string `json:"-" mapstructure:"-"`
 	viper             *viper.Viper
 
 	// TLS
@@ -77,11 +77,16 @@ type Configuration struct {
 	Docker          bool  `mapstructure:"dockerstats"`
 	Qemu            bool  `mapstructure:"qemustats"`
 	CPU             bool  `mapstructure:"cpustats"`
+	Load            bool  `mapstructure:"load"`
+	Memory          bool  `mapstructure:"memory"`
 	Processes       bool  `mapstructure:"processstats"`
 	Netstats        bool  `mapstructure:"netstats"`
 	NetIo           bool  `mapstructure:"netio"`
+	Sensors         bool  `mapstructure:"sensors"`
 	Diskstats       bool  `mapstructure:"diskstats"`
 	DiskIo          bool  `mapstructure:"diskio"`
+	Swap            bool  `mapstructure:"swap"`
+	User            bool  `mapstructure:"userstats"`
 	WindowsServices bool  `mapstructure:"winservices"`
 	WindowsEventLog bool  `mapstructure:"wineventlog"`
 	SystemdServices bool  `mapstructure:"systemdservices"`
@@ -105,12 +110,12 @@ type Configuration struct {
 
 	// Push Mode
 
-	OITC *PushConfiguration
+	OITC *PushConfiguration `json:"oitc"`
 
 	// Default is the namespace workaround we need for the configuration file format
-	Default *Configuration
+	Default *Configuration `json:"-"`
 
-	CustomCheckConfiguration []*CustomCheck
+	CustomCheckConfiguration []*CustomCheck `json:"customchecks_configuration" mapstructure:"-"`
 }
 
 var defaultValue = map[string]interface{}{
@@ -118,11 +123,16 @@ var defaultValue = map[string]interface{}{
 	"interval":             30,
 	"qemustats":            true,
 	"cpustats":             true,
+	"load":                 true,
+	"memory":               true,
 	"processstats":         true,
 	"netstats":             true,
 	"netio":                true,
+	"sensors":              true,
 	"diskstats":            true,
 	"diskio":               true,
+	"swap":                 true,
+	"userstats":            true,
 	"winservices":          true,
 	"wineventlog":          true,
 	"systemdservices":      true,
