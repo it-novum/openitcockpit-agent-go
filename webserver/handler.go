@@ -102,10 +102,33 @@ func (w *handler) handleStatus(response http.ResponseWriter, request *http.Reque
 }
 
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
+	defer request.Body.Close()
+
+	if !w.Configuration.ConfigUpdate {
+		http.Error(response, "config update is disabled", http.StatusForbidden)
+		return
+	}
+
+	data, err := ioutil.ReadFile(w.Configuration.ConfigurationPath)
+	if err != nil {
+		log.Errorln("Webserver: Could not read configuration file: ", err)
+		http.Error(response, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	if _, err := response.Write(data); err != nil {
+		log.Errorln("Webserver: ", err)
+	}
 }
 
 func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
+
+	if !w.Configuration.ConfigUpdate {
+		http.Error(response, "config update is disabled", http.StatusForbidden)
+		return
+	}
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
@@ -224,7 +247,6 @@ func (w *handler) Handler() *mux.Router {
 		}
 		routes.Path("/").Methods("GET").HandlerFunc(w.handleStatus)
 		routes.Path("/config").Methods("GET").HandlerFunc(w.handleConfigRead)
-		// TODO disable if not need
 		routes.Path("/config").Methods("POST").HandlerFunc(w.handleConfigPush)
 		routes.Path("/getCsr").Methods("GET").HandlerFunc(w.handlerCsr)
 		routes.Path("/updateCrt").Methods("POST").HandlerFunc(w.handlerUpdateCert)
