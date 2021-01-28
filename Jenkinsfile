@@ -6,7 +6,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -22,7 +22,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -38,7 +38,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -54,7 +54,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -71,7 +71,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -87,7 +87,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -104,7 +104,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
@@ -121,7 +121,7 @@ pipeline {
             agent {
                 docker { 
                     image 'golang:buster'
-                    args "-u root --privileged -v agentgocache:/root/go"
+                    args "-u root --privileged -v agentgocache:/go"
                 }
             }
             environment {
