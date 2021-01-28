@@ -157,6 +157,8 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 	c.Stderr = errorBuf
 	c.Stdin = stdinBuf
 
+	c.SysProcAttr = commandSysproc
+
 	// Do not hang forever
 	// https://github.com/golang/go/issues/18874
 	// https://github.com/golang/go/issues/22610
@@ -167,13 +169,13 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 			if c.Process != nil {
 				//Kill process because of timeout
 				// nolint:errcheck
-				c.Process.Kill()
+				killProcessGroup(c.Process)
 			}
 		case context.Canceled:
 			//Process exited gracefully
 			if c.Process != nil {
 				// nolint:errcheck
-				c.Process.Kill()
+				killProcessGroup(c.Process)
 			}
 		}
 	}()
