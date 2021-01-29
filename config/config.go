@@ -269,9 +269,21 @@ func (c *Configuration) SaveConfiguration(config []byte) error {
 	return nil
 }
 
+func (c *Configuration) ReadConfigurationFile() ([]byte, error) {
+	return ioutil.ReadFile(c.ConfigurationPath)
+}
+
 func (c *Configuration) SaveCustomCheckConfiguration(config []byte) error {
 	if err := ioutil.WriteFile(c.CustomchecksFilePath, config, 0600); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c *Configuration) ReadCustomCheckConfiguration() []byte {
+	data, err := ioutil.ReadFile(c.CustomchecksFilePath)
+	if err != nil {
+		data = []byte{}
+	}
+	return data
 }

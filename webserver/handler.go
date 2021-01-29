@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -101,6 +102,11 @@ func (w *handler) handleStatus(response http.ResponseWriter, request *http.Reque
 	}
 }
 
+type configurationPush struct {
+	Configuration            string `json:"configuration"`
+	CustomCheckConfiguration string `json:"customcheck_configuration"`
+}
+
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
 
@@ -109,14 +115,27 @@ func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	data, err := ioutil.ReadFile(w.Configuration.ConfigurationPath)
+	r := configurationPush{}
+
+	data, err := w.Configuration.ReadConfigurationFile()
 	if err != nil {
 		log.Errorln("Webserver: Could not read configuration file: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	r.Configuration = base64.StdEncoding.EncodeToString(data)
 
-	response.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	data = w.Configuration.ReadCustomCheckConfiguration()
+	r.CustomCheckConfiguration = base64.StdEncoding.EncodeToString(data)
+
+	data, err = json.Marshal(&r)
+	if err != nil {
+		log.Errorln("Webserver: Could not create json for configuration read: ", err)
+		http.Error(response, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
 	if _, err := response.Write(data); err != nil {
 		log.Errorln("Webserver: ", err)
 	}
@@ -137,7 +156,38 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	if err := w.Configuration.SaveConfiguration(body); err != nil {
+	r := configurationPush{}
+	if err := json.Unmarshal(body, &r); err != nil {
+		log.Errorln("Webserver: Could not parse json for configuration push: ", err)
+		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
+		return
+	}
+
+	cfgData, err := base64.StdEncoding.DecodeString(r.Configuration)
+	if err != nil {
+		log.Errorln("Webserver: Could not decode configuration string for configuration push: ", err)
+		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
+		return
+	}
+
+	cccData, err := base64.StdEncoding.DecodeString(r.CustomCheckConfiguration)
+	if err != nil {
+		log.Errorln("Webserver: Could not decode custom check configuration string for configuration push: ", err)
+		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
+		return
+	}
+
+	if len(cfgData) == 0 {
+		log.Errorln("Webserver: received empty configuration for configuration push: ", err)
+		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
+		return
+	}
+
+	if err := w.Configuration.SaveConfiguration(cfgData); err != nil {
+		log.Errorln("Webserver: ", err)
+	}
+
+	if err := w.Configuration.SaveConfiguration(cccData); err != nil {
 		log.Errorln("Webserver: ", err)
 	}
 

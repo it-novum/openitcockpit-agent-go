@@ -222,6 +222,7 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	if res, err := c.Do(req); err != nil {
 		t.Error(err)
 	} else {
+		defer res.Body.Close()
 		if body, err := ioutil.ReadAll(res.Body); err != nil {
 			t.Error(body)
 		} else {
