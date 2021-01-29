@@ -57,21 +57,25 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 			log.Fatalln("Internal error: could also not serialize error result: ", err)
 		}
 	}
-	a.wg.Add(1)
-	go func() {
-		defer a.wg.Done()
 
-		t := time.NewTimer(time.Second * 10)
-		defer t.Stop()
+	if a.webserver != nil {
+		a.wg.Add(1)
+		go func() {
+			defer a.wg.Done()
 
-		// we may have to give the webserver some time to think about it
-		select {
-		case a.stateWebserver <- data:
-		case <-t.C:
-			log.Errorln("Internal error: could not store check result: timeout")
-		}
-	}()
-	if a.statePushClient != nil {
+			t := time.NewTimer(time.Second * 10)
+			defer t.Stop()
+
+			// we may have to give the webserver some time to think about it
+			select {
+			case a.stateWebserver <- data:
+			case <-t.C:
+				log.Errorln("Internal error: could not store check result for webserver: timeout")
+			}
+		}()
+	}
+
+	if a.pushClient != nil {
 		a.wg.Add(1)
 		go func() {
 			defer a.wg.Done()
@@ -96,14 +100,25 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 	if a.checkResult == nil {
 		a.checkResult = make(chan map[string]interface{})
 	}
-	if a.webserver == nil {
+
+	// we do not stop the webserver on every reload for better availability during the wizard setup
+
+	if cfg.OITC.Push && !cfg.OITC.EnableWebserver && a.webserver != nil {
+		a.webserver.Shutdown()
+		a.webserver = nil
+	}
+
+	if a.webserver == nil && (!cfg.OITC.Push || (cfg.OITC.Push && cfg.OITC.EnableWebserver)) {
 		a.webserver = &webserver.Server{
 			StateInput: a.stateWebserver,
 			Reloader:   a,
 		}
 		a.webserver.Start(ctx)
 	}
-	a.webserver.Reload(cfg)
+
+	if a.webserver != nil {
+		a.webserver.Reload(cfg)
+	}
 
 	if a.checkRunner != nil {
 		a.checkRunner.Shutdown()
@@ -115,12 +130,11 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 	if err := a.checkRunner.Start(ctx); err != nil {
 		log.Fatalln(err)
 	}
-	if a.statePushClient != nil {
+	if a.pushClient != nil {
 		a.pushClient.Shutdown()
 		a.pushClient = nil
 	}
 	if cfg.OITC.Push {
-		a.statePushClient = make(chan []byte)
 		a.pushClient = &pushclient.PushClient{
 			StateInput: a.statePushClient,
 		}
@@ -170,6 +184,7 @@ func (a *AgentInstance) stop() {
 
 func (a *AgentInstance) Start(parent context.Context) {
 	a.stateWebserver = make(chan []byte)
+	a.statePushClient = make(chan []byte)
 	a.checkResult = make(chan map[string]interface{})
 	a.customCheckResultChan = make(chan *checkrunner.CustomCheckResult)
 	a.customCheckResults = map[string]interface{}{}
