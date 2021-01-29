@@ -298,8 +298,8 @@ func (w *handler) Handler() *mux.Router {
 		routes.Path("/").Methods("GET").HandlerFunc(w.handleStatus)
 		routes.Path("/config").Methods("GET").HandlerFunc(w.handleConfigRead)
 		routes.Path("/config").Methods("POST").HandlerFunc(w.handleConfigPush)
-		routes.Path("/getCsr").Methods("GET").HandlerFunc(w.handlerCsr)
-		routes.Path("/updateCrt").Methods("POST").HandlerFunc(w.handlerUpdateCert)
+		routes.Path("/autotls").Methods("GET").HandlerFunc(w.handlerCsr)
+		routes.Path("/autotls").Methods("POST").HandlerFunc(w.handlerUpdateCert)
 		w.router = routes
 	}
 	return w.router

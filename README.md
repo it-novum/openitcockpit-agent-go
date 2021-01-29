@@ -214,7 +214,7 @@ Expects a JSON with the same format of GET /config
 
 The base64 will be decoded and written to the current configuration paths.
 
-#### GET /getCsr
+#### GET /autotls
 
 Returns a certificate request for Auto-TLS. This will generate a new private key if there's none.
 
@@ -224,7 +224,7 @@ Returns a certificate request for Auto-TLS. This will generate a new private key
 }
 ```
 
-#### POST /updateCrt
+#### POST /autotls
 
 Stores a new ssl certificate and CA certificate for Auto-TLS.
 
