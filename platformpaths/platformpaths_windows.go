@@ -2,7 +2,7 @@ package platformpaths
 
 import (
 	"errors"
-	"path"
+	"path/filepath"
 
 	"golang.org/x/sys/windows/registry"
 )
@@ -48,7 +48,7 @@ func (p *windowsPlatformPath) Init() error {
 }
 
 func (p *windowsPlatformPath) LogPath() string {
-	return path.Join(p.basePath, "agent.log")
+	return filepath.Join(p.basePath, "agent.log")
 }
 
 func (p *windowsPlatformPath) ConfigPath() string {

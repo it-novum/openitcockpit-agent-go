@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -26,7 +26,7 @@ func TestLogHandler(t *testing.T) {
 	stderr := bytes.Buffer{}
 
 	lh := &LogHandler{
-		LogPath:       path.Join(tempDir, "agent.log"),
+		LogPath:       filepath.Join(tempDir, "agent.log"),
 		Debug:         true,
 		Verbose:       true,
 		LogRotate:     2,
@@ -61,7 +61,7 @@ func TestLogHandlerRotate(t *testing.T) {
 	stderr := bytes.Buffer{}
 
 	lh := &LogHandler{
-		LogPath:       path.Join(tempDir, "agent.log"),
+		LogPath:       filepath.Join(tempDir, "agent.log"),
 		Debug:         true,
 		Verbose:       true,
 		LogRotate:     2,
@@ -82,11 +82,11 @@ outerfor:
 		case <-timeout:
 			t.Fatal("timeout for log rotate")
 		case <-ticker:
-			name1 := path.Join(tempDir, fmt.Sprintf("%s.%d", "agent.log", 1))
-			name2 := path.Join(tempDir, fmt.Sprintf("%s.%d", "agent.log", 2))
+			name1 := filepath.Join(tempDir, fmt.Sprintf("%s.%d", "agent.log", 1))
+			name2 := filepath.Join(tempDir, fmt.Sprintf("%s.%d", "agent.log", 2))
 			if _, err := os.Stat(name1); !os.IsNotExist(err) {
 				if _, err := os.Stat(name2); !os.IsNotExist(err) {
-					if _, err := os.Stat(path.Join(tempDir, "agent.log")); !os.IsNotExist(err) {
+					if _, err := os.Stat(filepath.Join(tempDir, "agent.log")); !os.IsNotExist(err) {
 						break outerfor
 					}
 				}
@@ -122,7 +122,7 @@ func TestLogHandlerCancel(t *testing.T) {
 	lh := &LogHandler{
 		Debug:         true,
 		Verbose:       true,
-		LogPath:       path.Join(tempDir, "agent.log"),
+		LogPath:       filepath.Join(tempDir, "agent.log"),
 		LogRotate:     2,
 		DefaultWriter: &stderr,
 	}

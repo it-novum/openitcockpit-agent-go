@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -62,8 +63,8 @@ func (h *LogHandler) doRotate() {
 		dirName := path.Dir(h.LogPath)
 		if h.LogRotate > 1 {
 			for i := h.LogRotate - 1; i >= 1; i-- {
-				curName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, i))
-				nextName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, i+1))
+				curName := filepath.Join(dirName, fmt.Sprintf("%s.%d", baseName, i))
+				nextName := filepath.Join(dirName, fmt.Sprintf("%s.%d", baseName, i+1))
 				if utils.FileExists(curName) {
 					log.Infoln("LogHandler: rotate log file ", curName, " -> ", nextName)
 					if err := os.Rename(curName, nextName); err != nil {
@@ -74,7 +75,7 @@ func (h *LogHandler) doRotate() {
 		}
 		h.closeLogFile()
 		if utils.FileExists(h.LogPath) {
-			nextName := path.Join(dirName, fmt.Sprintf("%s.%d", baseName, 1))
+			nextName := filepath.Join(dirName, fmt.Sprintf("%s.%d", baseName, 1))
 			log.Infoln("LogHandler: rotate log file ", h.LogPath, " -> ", nextName)
 			if err := os.Rename(h.LogPath, nextName); err != nil {
 				log.Errorln("LogHandler: could not rename log file: ", err)

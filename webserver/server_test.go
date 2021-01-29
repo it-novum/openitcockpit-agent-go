@@ -15,7 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -467,13 +467,13 @@ func generateTestCertificates(autoTLS bool) (*certs, error) {
 			os.RemoveAll(tmpDir)
 		}
 	}()
-	crt.certPath = path.Join(tmpDir, "server.crt")
-	crt.keyPath = path.Join(tmpDir, "server.key")
+	crt.certPath = filepath.Join(tmpDir, "server.crt")
+	crt.keyPath = filepath.Join(tmpDir, "server.key")
 	if autoTLS {
-		crt.caCertPath = path.Join(tmpDir, "ca.crt")
-		crt.caKeyPath = path.Join(tmpDir, "ca.key")
-		crt.certClientPath = path.Join(tmpDir, "client.crt")
-		crt.keyClientPath = path.Join(tmpDir, "client.key")
+		crt.caCertPath = filepath.Join(tmpDir, "ca.crt")
+		crt.caKeyPath = filepath.Join(tmpDir, "ca.key")
+		crt.certClientPath = filepath.Join(tmpDir, "client.crt")
+		crt.keyClientPath = filepath.Join(tmpDir, "client.key")
 		if err := generateCASignedCertificate(crt.certPath, crt.keyPath, crt.certClientPath, crt.keyClientPath, crt.caCertPath, crt.caKeyPath); err != nil {
 			return nil, err
 		}

@@ -79,7 +79,7 @@ type resultLibvirtNetwork struct {
 
 type resultLibvirtDiskio struct {
 	Name                string  `json:"name"`
-	Path                string  `json:"path"`
+	Path                string  `json:"path/filepath"`
 	ReadIopsPerSecond   uint64  // Number of read iops per second
 	WriteIopsPerSecond  uint64  // Number of write iops per second
 	TotalIopsPerSecond  uint64  // Number of read and write iops per second

@@ -187,7 +187,7 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		log.Errorln("Webserver: ", err)
 	}
 
-	if err := w.Configuration.SaveConfiguration(cccData); err != nil {
+	if err := w.Configuration.SaveCustomCheckConfiguration(cccData); err != nil {
 		log.Errorln("Webserver: ", err)
 	}
 

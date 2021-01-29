@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
@@ -140,16 +140,16 @@ var defaultValue = map[string]interface{}{
 	"alfrescostats":        true,
 	"libvirt":              true,
 	"wineventlog-logtypes": "System,Application,Security",
-	"customchecks":         path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
+	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
-	"autossl-csr-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
-	"autossl-crt-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
-	"autossl-key-file":     path.Join(platformpaths.Get().ConfigPath(), "agent.key"),
-	"autossl-ca-file":      path.Join(platformpaths.Get().ConfigPath(), "server_ca.crt"),
+	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
+	"autossl-crt-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
+	"autossl-key-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.key"),
+	"autossl-ca-file":      filepath.Join(platformpaths.Get().ConfigPath(), "server_ca.crt"),
 }
 
 var oitcDefaultvalue = map[string]interface{}{
-	"authfile": path.Join(platformpaths.Get().ConfigPath(), "auth.cnf"),
+	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.cnf"),
 }
 
 func setConfigurationDefaults(v *viper.Viper) {
@@ -214,10 +214,10 @@ func Load(ctx context.Context, configHint *LoadConfigHint) (*Configuration, erro
 		if configHint.ConfigFile != "" {
 			v.SetConfigFile(configHint.ConfigFile)
 		} else {
-			v.SetConfigFile(path.Join(configHint.SearchPath, "config.cnf"))
+			v.SetConfigFile(filepath.Join(configHint.SearchPath, "config.cnf"))
 		}
 	} else {
-		v.SetConfigFile(path.Join(platformpath.ConfigPath(), "config.cnf"))
+		v.SetConfigFile(filepath.Join(platformpath.ConfigPath(), "config.cnf"))
 	}
 	v.SetConfigType("ini")
 

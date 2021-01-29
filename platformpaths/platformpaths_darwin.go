@@ -1,6 +1,6 @@
 package platformpaths
 
-import "path"
+import "path/filepath"
 
 type darwinPlatformPath struct {
 	basePath string
@@ -12,7 +12,7 @@ func (p *darwinPlatformPath) Init() error {
 }
 
 func (p *darwinPlatformPath) LogPath() string {
-	return path.Join(p.basePath, "agent.log")
+	return filepath.Join(p.basePath, "agent.log")
 }
 
 func (p *darwinPlatformPath) ConfigPath() string {

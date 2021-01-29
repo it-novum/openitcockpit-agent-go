@@ -1,16 +1,19 @@
 package webserver
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
-	"strings"
+	"path/filepath"
 	"testing"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,6 +21,10 @@ const (
 	testBasicAuthPassword = "test"
 	testBasicAuth         = "user:test"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
 
 func TestWebserverHandler(t *testing.T) {
 	stateInput := make(chan []byte)
@@ -141,12 +148,13 @@ func TestWebserverHandlerConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpdir)
-	cfgPath := path.Join(tmpdir, "config.ini")
+	cfgPath := filepath.Join(tmpdir, "config.cnf")
 
 	w := &handler{
 		StateInput: state,
 		Configuration: &config.Configuration{
 			ConfigurationPath: cfgPath,
+			ConfigUpdate:      true,
 		},
 	}
 
@@ -156,8 +164,15 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	result := ""
 	w.Start(ctx)
 
-	cfg := "someconfig"
-	resp, err := http.Post(ts.URL+"/config", "text/plain", strings.NewReader(cfg))
+	data, err := json.Marshal(&configurationPush{
+		Configuration:            base64.StdEncoding.EncodeToString([]byte(`[default]`)),
+		CustomCheckConfiguration: "",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Post(ts.URL+"/config", "application/json", bytes.NewReader(data))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,9 +188,36 @@ func TestWebserverHandlerConfig(t *testing.T) {
 		t.Error(err)
 	} else {
 		result = string(d)
-		if result != cfg {
-			t.Error("unexpected result")
+		if result != `[default]` {
+			t.Error("unexpected result ([default]): ", result)
 		}
+	}
+
+	resp, err = http.Get(ts.URL + "/config")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 200 {
+		t.Error("Status code is not 200")
+	}
+
+	cp := &configurationPush{}
+	if err := json.Unmarshal(body, cp); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := base64.StdEncoding.DecodeString(cp.Configuration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(cfg) != "[default]" {
+		t.Fatal("unexpected response for configuration get")
 	}
 
 	w.Shutdown()

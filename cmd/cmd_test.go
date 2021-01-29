@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -53,16 +53,16 @@ func newTestPath(t *testing.T, invalidLogDir bool) *testPlatformPath {
 		}
 	}()
 	if invalidLogDir {
-		tpp.logPath = path.Join(tpp.tempPath, "nonexistent", "agent.log")
+		tpp.logPath = filepath.Join(tpp.tempPath, "nonexistent", "agent.log")
 	} else {
-		tpp.logPath = path.Join(tpp.tempPath, "agent.log")
+		tpp.logPath = filepath.Join(tpp.tempPath, "agent.log")
 	}
-	fl, err := os.Create(path.Join(tpp.tempPath, "config.ini"))
+	fl, err := os.Create(filepath.Join(tpp.tempPath, "config.ini"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	fl.Close()
-	tpp.configPath = path.Join(tpp.tempPath, "config.ini")
+	tpp.configPath = filepath.Join(tpp.tempPath, "config.ini")
 	ok = true
 	return tpp
 }

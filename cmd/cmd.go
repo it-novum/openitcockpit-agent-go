@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/it-novum/openitcockpit-agent-go/agentrt"
@@ -64,7 +65,7 @@ func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 		}
 		fl.Close()
 		if !r.disableLogRotate {
-			testPath := path.Join(path.Dir(r.logPath), "agent.log.test")
+			testPath := filepath.Join(path.Dir(r.logPath), "agent.log.test")
 			fl, err := os.OpenFile(testPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 			defer func() {
 				fl.Close()

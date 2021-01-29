@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -70,7 +70,7 @@ func TestWindowsShells(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	writeCommand := func(command, suffix string) string {
-		res := path.Join(tempDir, fmt.Sprintf("testcommand.%s", suffix))
+		res := filepath.Join(tempDir, fmt.Sprintf("testcommand.%s", suffix))
 		if err := ioutil.WriteFile(res, []byte(command), 0600); err != nil {
 			t.Fatal(err)
 		}

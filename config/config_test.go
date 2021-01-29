@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -191,7 +191,7 @@ func saveTempConfig(config string, customchecks bool) string {
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(path.Join(tmpDir, filename), []byte(config), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, filename), []byte(config), 0600); err != nil {
 		panic(err)
 	}
 	return tmpDir
@@ -202,10 +202,10 @@ func saveTempConfigWithCC(config string, customchecks string) string {
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(path.Join(tmpDir, "config.cnf"), []byte(fmt.Sprintf(config, path.Join(tmpDir, "customchecks.cnf"))), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "config.cnf"), []byte(fmt.Sprintf(config, filepath.Join(tmpDir, "customchecks.cnf"))), 0600); err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(path.Join(tmpDir, "customchecks.cnf"), []byte(customchecks), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "customchecks.cnf"), []byte(customchecks), 0600); err != nil {
 		panic(err)
 	}
 	return tmpDir
@@ -265,8 +265,8 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.CustomchecksFilePath != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
-		t.Error("WebServer port expect to be: ", path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
+	if c.CustomchecksFilePath != filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
+		t.Error("WebServer port expect to be: ", filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
 	}
 
 	if c.CPU != true {
@@ -386,7 +386,7 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1Config, true)
 	defer os.RemoveAll(cfgdir)
 
-	ccc, err := unmarshalCustomChecks(path.Join(cfgdir, "customchecks.cnf"))
+	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +414,7 @@ func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigEmptyCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := unmarshalCustomChecks(path.Join(cfgdir, "customchecks.cnf"))
+	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -428,7 +428,7 @@ func TestReadCustomChecksConfigAgentVersion1MissingCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigMissingCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := unmarshalCustomChecks(path.Join(cfgdir, "customchecks.cnf"))
+	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -442,7 +442,7 @@ func TestReadCustomChecksConfigEmpty(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentEmptyConfig, true)
 	defer os.RemoveAll(cfgdir)
 
-	ccc, err := unmarshalCustomChecks(path.Join(cfgdir, "customchecks.cnf"))
+	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
