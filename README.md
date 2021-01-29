@@ -189,6 +189,56 @@ Windows ARM devices have to use 386 Version for now. Several libraries we're dep
 
 We could also do this, as the changes should be minor, but we don't have any test devices for this right now.
 
+## Webserver API
+
+### Endpoints
+
+#### GET /
+
+Check results in json format. The result could be {} if the checks did not finish correctly or couldn't be serialized.
+
+#### GET /config
+
+If config push mode is enabled it will return the following JSON
+
+```json
+{
+    "configuration": "base64 string of the configuration file",
+    "customcheck_configuration": "base64 string of the custom check configuration file or empty string if it does not exist"
+}
+```
+
+#### POST /config
+
+Expects a JSON with the same format of GET /config
+
+The base64 will be decoded and written to the current configuration paths.
+
+#### GET /getCsr
+
+Returns a certificate request for Auto-TLS. This will generate a new private key if there's none.
+
+```json
+{
+    "csr": "contents of the CSR in PEM format"
+}
+```
+
+#### POST /updateCrt
+
+Stores a new ssl certificate and CA certificate for Auto-TLS.
+
+```json
+{
+    "signed": "",
+    "ca": ""
+}
+```
+
+### Auto-TLS
+
+After Auto-TLS has been established further certificate updates are only possible from the OITC server, because it is then required to use a valid https connection. You can also enable basic auth if you want additional security for the first "handshake".
+
 ## Notes
 - https://github.com/kata-containers/govmm
 - https://github.com/digitalocean/go-qemu
