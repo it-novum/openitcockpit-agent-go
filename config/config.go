@@ -68,8 +68,8 @@ type Configuration struct {
 
 	// Config Misc
 
-	ConfigUpdate       bool   `mapstructure:"config-update-mode"`
-	CustomchecksConfig string `mapstructure:"customchecks"`
+	ConfigUpdate         bool   `mapstructure:"config-update-mode"`
+	CustomchecksFilePath string `mapstructure:"customchecks"`
 
 	// Default Checks
 
@@ -184,16 +184,21 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	cfg.ConfigurationPath = v.ConfigFileUsed()
 	cfg.viper = v
 
-	if cfg.CustomchecksConfig != "" {
-		if utils.FileExists(cfg.CustomchecksConfig) {
-			if ccc, err := unmarshalCustomChecks(cfg.CustomchecksConfig); err != nil {
+	if cfg.CustomchecksFilePath != "" {
+		if utils.FileExists(cfg.CustomchecksFilePath) {
+			if ccc, err := unmarshalCustomChecks(cfg.CustomchecksFilePath); err != nil {
 				log.Errorln("Configuration: could not load custom checks: ", err)
 			} else {
 				cfg.CustomCheckConfiguration = ccc
 			}
 		} else {
-			log.Errorln("Configuration: custom check configuration does not exist")
+			log.Errorln("Configuration: custom check configuration does not exist: ", cfg.CustomchecksFilePath)
 		}
+	}
+
+	// we have to set at least an empty array if we don't load any configuration
+	if cfg.CustomCheckConfiguration == nil {
+		cfg.CustomCheckConfiguration = []*CustomCheck{}
 	}
 
 	return cfg, nil
@@ -259,6 +264,13 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 
 func (c *Configuration) SaveConfiguration(config []byte) error {
 	if err := ioutil.WriteFile(c.ConfigurationPath, config, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Configuration) SaveCustomCheckConfiguration(config []byte) error {
+	if err := ioutil.WriteFile(c.CustomchecksFilePath, config, 0600); err != nil {
 		return err
 	}
 	return nil

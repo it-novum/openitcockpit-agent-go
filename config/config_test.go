@@ -115,6 +115,15 @@ interval = 90
 
 var agentVersion1ConfigEmpty = ""
 
+var agentConfigWithCustomCheck string = `[default]
+customchecks = "%s"
+`
+
+var agentConfigWithCustomCheck2 string = `[default]
+interval = 5
+customchecks = "%s"
+`
+
 var customChecksAgentVersion1Config string = `[default]
   # max_worker_threads should be increased with increasing number of custom checks
   # but consider: each thread needs (a bit) memory
@@ -188,6 +197,20 @@ func saveTempConfig(config string, customchecks bool) string {
 	return tmpDir
 }
 
+func saveTempConfigWithCC(config string, customchecks string) string {
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	if err != nil {
+		panic(err)
+	}
+	if err := ioutil.WriteFile(path.Join(tmpDir, "config.cnf"), []byte(fmt.Sprintf(config, path.Join(tmpDir, "customchecks.cnf"))), 0600); err != nil {
+		panic(err)
+	}
+	if err := ioutil.WriteFile(path.Join(tmpDir, "customchecks.cnf"), []byte(customchecks), 0600); err != nil {
+		panic(err)
+	}
+	return tmpDir
+}
+
 func TestAgentVersion1BlankConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigBlank, false)
 	defer os.RemoveAll(cfgdir)
@@ -205,7 +228,7 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.CustomchecksConfig != "/etc/openitcockpit-agent/customcnf" {
+	if c.CustomchecksFilePath != "/etc/openitcockpit-agent/customcnf" {
 		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customcnf")
 	}
 
@@ -242,7 +265,7 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.CustomchecksConfig != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
+	if c.CustomchecksFilePath != path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
 		t.Error("WebServer port expect to be: ", path.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
 	}
 
@@ -304,7 +327,7 @@ func TestAgentVersion1Config(t *testing.T) {
 		t.Error("TLS AutoSslCaFile expect to be /etc/autossl/server_ca.ca")
 	}
 
-	if c.CustomchecksConfig != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
+	if c.CustomchecksFilePath != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
 		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf")
 	}
 
@@ -351,7 +374,7 @@ func TestAgentVersion1Config(t *testing.T) {
 
 func TestReadConfigFromFile(t *testing.T) {
 	dir, _ := os.Getwd()
-	configPath := fmt.Sprintf("%s%s../config_example.cnf", dir, string(os.PathSeparator))
+	configPath := fmt.Sprintf("%s%s../example/config_example.cnf", dir, string(os.PathSeparator))
 	_, err := Load(context.Background(), &LoadConfigHint{ConfigFile: configPath})
 	if err != nil {
 		t.Fatal(err)
@@ -412,5 +435,68 @@ func TestReadCustomChecksConfigAgentVersion1MissingCommandline(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "missing command") {
 		t.Fatal("unxpected error: ", err)
+	}
+}
+
+func TestReadCustomChecksConfigEmpty(t *testing.T) {
+	cfgdir := saveTempConfig(customChecksAgentEmptyConfig, true)
+	defer os.RemoveAll(cfgdir)
+
+	ccc, err := unmarshalCustomChecks(path.Join(cfgdir, "customchecks.cnf"))
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+
+	if len(ccc) != 0 {
+		t.Fatal("unexpected number of custom checks (0): ", len(ccc))
+	}
+}
+
+func TestReadAgentConfigWithCC(t *testing.T) {
+	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
+	defer os.RemoveAll(cfgdir)
+
+	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ccc := c.CustomCheckConfiguration
+
+	if len(ccc) < 1 {
+		t.Fatal("unexpected number of custom checks (>0): ", len(ccc))
+	}
+}
+
+func TestReadAgentConfigWithCCAndNewConfig(t *testing.T) {
+	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
+	defer os.RemoveAll(cfgdir)
+
+	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ccc := c.CustomCheckConfiguration
+
+	if len(ccc) < 1 {
+		t.Fatal("unexpected number of custom checks (>0): ", len(ccc))
+	}
+
+	if err := c.SaveCustomCheckConfiguration([]byte(customChecksAgentEmptyConfig)); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.SaveConfiguration([]byte(agentConfigWithCustomCheck2)); err != nil {
+		t.Fatal(err)
+	}
+	c, err = Load(context.Background(), &LoadConfigHint{ConfigFile: c.ConfigurationPath})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ccc = c.CustomCheckConfiguration
+
+	if c.CheckInterval != 5 {
+		t.Error("reload did not work, unexpected check interval (5): ", c.CheckInterval)
+	}
+	if len(ccc) != 0 {
+		t.Error("reload did not work, unexpected number of custom checks (0): ", len(ccc))
 	}
 }
