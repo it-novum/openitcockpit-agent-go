@@ -2,13 +2,13 @@ package checks
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestChecksCheckDiskIO(t *testing.T) {
@@ -37,27 +37,21 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		}
 	}
 
-	time.Sleep(5 * time.Second)
-
-	file, ioutilErr := ioutil.TempFile("", "makeSomeIops")
-	if ioutilErr != nil {
-		log.Fatal(ioutilErr)
+	file, err := ioutil.TempFile(os.TempDir(), "makeSomeIops")
+	if err != nil {
+		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
-
-	if _, err = file.WriteString("Make some iops on the disk, that the test does not fail"); err != nil {
-		fmt.Println(err)
+	if _, err := io.CopyN(file, rand.Reader, 8192); err != nil {
+		t.Fatal(err)
 	}
-
 	if err = file.Sync(); err != nil {
-		fmt.Println(err)
+		t.Fatal(err)
 	}
-
 	if err = file.Close(); err != nil {
-		fmt.Println(err)
+		t.Fatal(err)
 	}
-
-	time.Sleep(5 * time.Second)
+	os.Remove(file.Name())
 
 	cr, err = check.Run(context.Background())
 	if err != nil {

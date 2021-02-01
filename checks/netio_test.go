@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
-	"time"
 )
 
 func TestChecksCheckNetIO(t *testing.T) {
@@ -29,7 +29,8 @@ func TestChecksCheckNetIO(t *testing.T) {
 		oldPacketsSent = append(oldPacketsSent, result.PacketsSent)
 	}
 
-	time.Sleep(10 * time.Second)
+	// nolint:errcheck
+	http.Get("http://example.com")
 
 	cr, err = check.Run(context.Background())
 	if err != nil {
