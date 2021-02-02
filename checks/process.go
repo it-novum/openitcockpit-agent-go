@@ -57,6 +57,7 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 	// TODO log errors
 	for _, pid := range pids {
 		p, err := process.NewProcessWithContext(ctx, pid)
+
 		if err != nil {
 			// We ignore errors, because we the process just might have stopped or
 			// is inaccessible in some way
@@ -65,6 +66,7 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 		result := &resultProcess{
 			Pid: p.Pid,
 		}
+		result.Name, _ = p.NameWithContext(ctx)
 		result.Username, _ = p.UsernameWithContext(ctx)
 		result.CPUPercent, _ = p.CPUPercentWithContext(ctx)
 		result.MemoryPercent, _ = p.MemoryPercentWithContext(ctx)
