@@ -8,6 +8,29 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 )
 
+var devToIgnore = map[string]bool{
+	"sysfs":       true,
+	"proc":        true,
+	"udev":        true,
+	"devpts":      true,
+	"tmpfs":       true,
+	"securityfs":  true,
+	"cgroup":      true,
+	"pstore":      true,
+	"debugfs":     true,
+	"hugetlbfs":   true,
+	"systemd-1":   true,
+	"mqueue":      true,
+	"sunrpc":      true,
+	"nfsd":        true,
+	"nsfs":        true,
+	"fusectl":     true,
+	"configfs":    true,
+	"overlay":     true,
+	"shm":         true,
+	"binfmt_misc": true,
+}
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
@@ -21,6 +44,10 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 	diskResults := make([]*resultDisk, 0, len(disks))
 
 	for _, device := range disks {
+		if devToIgnore[device.Device] {
+			continue
+		}
+
 		usage, _ := disk.UsageWithContext(ctx, device.Mountpoint)
 
 		result := &resultDisk{}

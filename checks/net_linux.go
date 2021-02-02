@@ -17,7 +17,7 @@ func (c *CheckNet) Run(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	netClass, _ := fs.NewNetClass()
+	netClass, _ := fs.NetClass()
 
 	netResults := make(map[string]*resultNet)
 	for _, nic := range netClass {
