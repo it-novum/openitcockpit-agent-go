@@ -152,6 +152,8 @@ Required libvirt-dev
 go build -o agent main.go
 ```
 
+check with `otool -L agent`
+
 ### Cross compile
 
 #### 32 Bit
