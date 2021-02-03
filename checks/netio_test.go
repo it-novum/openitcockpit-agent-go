@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestChecksCheckNetIO(t *testing.T) {
@@ -31,6 +32,8 @@ func TestChecksCheckNetIO(t *testing.T) {
 
 	// nolint:errcheck
 	http.Get("http://example.com")
+
+	time.Sleep(1 * time.Second)
 
 	cr, err = check.Run(context.Background())
 	if err != nil {
