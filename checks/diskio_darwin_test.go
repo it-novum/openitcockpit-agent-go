@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestChecksCheckDiskIO(t *testing.T) {
@@ -51,6 +52,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Remove(file.Name())
+	time.Sleep(1 * time.Second)
 
 	cr, err = check.Run(context.Background())
 	if err != nil {
@@ -59,7 +61,6 @@ func TestChecksCheckDiskIO(t *testing.T) {
 	results, ok = cr.(map[string]*resultDiskIo)
 	if !ok {
 		t.Fatal("False type")
-
 	}
 
 	var newIops uint64 = 0

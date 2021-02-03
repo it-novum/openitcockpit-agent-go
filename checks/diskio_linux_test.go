@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestChecksCheckDiskIO(t *testing.T) {
@@ -52,6 +53,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Remove(file.Name())
+	time.Sleep(1 * time.Second)
 
 	cr, err = check.Run(context.Background())
 	if err != nil {

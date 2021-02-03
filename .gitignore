@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+agent
 
 # OS generated files #
 ######################
@@ -28,7 +29,9 @@ Thumbs.db
 
 /.vscode
 /config.cnf
+/config.ini
 /customchecks.cnf
+/customchecks.ini
 /__debug_bin
 /agent.log
 
