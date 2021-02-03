@@ -21,12 +21,78 @@ pipeline {
                                 GOARCH = 'amd64'
                             }
                             steps {
+                                test_windows()
+                            }
+                        }
+                        stage('386') {
+                            environment {
+                                GOARCH = '386'
+                            }
+                            steps {
+                                test_windows()
+                            }
+                        }
+                    }
+                }
+                stage('linux') {
+                    agent {
+                        docker { 
+                            image 'golang:buster'
+                            args "-u root --privileged -v agentgocache:/go"
+                            label 'linux'
+                        }
+                    }
+                    environment {
+                        GOOS = 'linux'
+                        BINNAME = 'agent'
+                    }
+                    stages {
+                        stage('amd64') {
+                            environment {
+                                GOARCH = 'amd64'
+                            }
+                            steps {
+                                test()
+                            }
+                        }
+                        stage('386') {
+                            environment {
+                                GOARCH = '386'
+                            }
+                            steps {
+                                test()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Build') {
+            parallel {
+                stage('windows') {
+                    agent {
+                        docker { 
+                            image 'golang:windowsservercore'
+                            args '-v agentgocache:C:\\cache'
+                            label 'windows'
+                        }
+                    }
+                    environment {
+                        GOOS = 'windows'
+                        BINNAME = 'agent.exe'
+                    }
+                    stages {
+                        stage('amd64') {
+                            environment {
+                                GOARCH = 'amd64'
+                            }
+                            steps {
                                 build_windows_binary()
                             }
                         }
                         stage('386') {
                             environment {
-                                GOARCH = 'amd64'
+                                GOARCH = '386'
                             }
                             steps {
                                 build_windows_binary()
