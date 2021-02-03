@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Test') {
             environment {
-                CGO_ENABLED: '0'
+                CGO_ENABLED = '0'
             }
             parallel {
                 stage('windows') {
@@ -117,7 +117,7 @@ pipeline {
                     environment {
                         GOOS = 'linux'
                         BINNAME = 'agent'
-                        CGO_ENABLED: '0'
+                        CGO_ENABLED = '0'
                     }
                     stages {
                         stage('cleanup') {
