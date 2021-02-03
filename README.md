@@ -144,6 +144,14 @@ go build -o agent -tags libvirt main.go
 
 check with `ldd agent` 
 
+### Enable diskio support on macOS
+
+Required libvirt-dev
+
+```
+go build -o agent main.go
+```
+
 ### Cross compile
 
 #### 32 Bit
