@@ -2,6 +2,9 @@ pipeline {
     agent any
     stages {
         stage('Test') {
+            environment {
+                CGO_ENABLED: '0'
+            }
             parallel {
                 stage('windows') {
                     agent {
@@ -82,6 +85,9 @@ pipeline {
                         BINNAME = 'agent.exe'
                     }
                     stages {
+                        stage('cleanup') {
+                            bat "if exist release\\$GOOS rmdir release\\$GOOS /q /s"
+                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
@@ -111,8 +117,12 @@ pipeline {
                     environment {
                         GOOS = 'linux'
                         BINNAME = 'agent'
+                        CGO_ENABLED: '0'
                     }
                     stages {
+                        stage('cleanup') {
+                            sh "rm -rf release/$GOOS"
+                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
@@ -161,6 +171,9 @@ pipeline {
                         BINNAME = 'agent'
                     }
                     stages {
+                        stage('cleanup') {
+                            sh "rm -rf release/$GOOS"
+                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
