@@ -86,7 +86,9 @@ pipeline {
                     }
                     stages {
                         stage('cleanup') {
-                            bat "if exist release\\$GOOS rmdir release\\$GOOS /q /s"
+                            steps {
+                                bat "if exist release\\$GOOS rmdir release\\$GOOS /q /s"
+                            }
                         }
                         stage('amd64') {
                             environment {
@@ -121,7 +123,9 @@ pipeline {
                     }
                     stages {
                         stage('cleanup') {
-                            sh "rm -rf release/$GOOS"
+                            steps {
+                                sh "rm -rf release/$GOOS"
+                            }
                         }
                         stage('amd64') {
                             environment {
@@ -172,7 +176,9 @@ pipeline {
                     }
                     stages {
                         stage('cleanup') {
-                            sh "rm -rf release/$GOOS"
+                            steps {
+                                sh "rm -rf release/$GOOS"
+                            }
                         }
                         stage('amd64') {
                             environment {
