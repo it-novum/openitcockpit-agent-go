@@ -181,7 +181,7 @@ def test_windows() {
     try {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
-        bat "go.exe test -coverprofile=cover.out -timeout=120 ./**"
+        bat "go.exe test -coverprofile=cover.out -timeout=120 ./..."
         bat 'gocover-cobertura.exe < cover.out > coverage.xml'
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     } catch (err) {
@@ -193,7 +193,7 @@ def test_windows() {
 def test() {
     try {
         sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
-        sh "go test -coverprofile=cover.out -timeout=120 ./**"
+        sh "go test -coverprofile=cover.out -timeout=120 ./..."
         sh 'gocover-cobertura < cover.out > coverage.xml'
     } catch (err) {
         echo "Caught: ${err}"
