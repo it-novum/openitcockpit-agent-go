@@ -209,8 +209,8 @@ pipeline {
                 stage('Linux') {
                     agent {
                         dockerfile {
-                            filename 'build/docker/linux.Dockerfile'
-                            dir 'build/scripts'
+                            filename 'linux.Dockerfile'
+                            dir 'build/docker'
                             label 'linux'
                         }
                     }
@@ -295,7 +295,7 @@ def build_windows_binary() {
         bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     }
-    archiveArtifacts artifacts: 'release/**', fingerprint: true
+    archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
     stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
@@ -304,7 +304,7 @@ def build_binary() {
         sh "mkdir -p release/$GOOS/$GOARCH"
         sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
     }
-    archiveArtifacts artifacts: 'release/**', fingerprint: true
+    archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
     stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
