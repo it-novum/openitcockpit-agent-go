@@ -33,14 +33,22 @@ func (c *CheckSystemd) Run(ctx context.Context) (interface{}, error) {
 }
 
 func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*resultSystemdServices, error) {
-	conn, err := dbus.New()
+	conn, err := dbus.NewWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
-	units, err := conn.ListUnits()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	units, err := conn.ListUnitsContext(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 

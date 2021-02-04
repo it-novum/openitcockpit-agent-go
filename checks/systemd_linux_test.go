@@ -5,36 +5,48 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 func TestChecksCheckSystemdServices(t *testing.T) {
-	checks := []Check{
-		&CheckSystemd{},
+	if utils.FileNotExists("/run/systemd/private") {
+		t.SkipNow()
 	}
 
-	for _, c := range checks {
-		if c.Name() == "" {
-			t.Error("Invalid name")
-		}
-		r, err := c.Run(context.Background())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if r == nil {
-			t.Fatal("invalid result")
-		}
-		js, err := json.Marshal(r)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Println(string(js))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	c := &CheckSystemd{}
+	if c.Name() == "" {
+		t.Error("Invalid name")
 	}
+	r, err := c.Run(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r == nil {
+		t.Fatal("invalid result")
+	}
+	js, err := json.Marshal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(js))
 }
 
 func TestGetServiceListFromDbus(t *testing.T) {
+	if utils.FileNotExists("/run/systemd/private") {
+		t.SkipNow()
+	}
 
 	check := &CheckSystemd{}
-	results, err := check.getServiceListViaDbus(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	results, err := check.getServiceListViaDbus(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,5 +72,19 @@ func TestGetServiceListFromDbus(t *testing.T) {
 	if foundNeedle == false {
 		t.Fatal("Needle not found: " + needle)
 	}
+}
 
+func TestGetServiceNoSystemd(t *testing.T) {
+	if utils.FileExists("/run/systemd/private") {
+		t.SkipNow()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+
+	c := &CheckSystemd{}
+	_, err := c.Run(ctx)
+	if err == nil {
+		t.Fatal("expected check to fail if systemd doesn't run")
+	}
 }
