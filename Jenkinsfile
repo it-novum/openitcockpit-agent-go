@@ -5,6 +5,28 @@ pipeline {
         ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer 17.7\\bin\\x86\\advinst.exe\""
     }
     stages {
+        stage('Cleanup') {
+            stages {
+                stage('linux') {
+                    agent {
+                        label 'linux'
+                    }
+                    steps {
+                        sh 'git clean -f -x'
+                    }
+                }
+                /*
+                stage('windows') {
+                    agent {
+                        label 'windows'
+                    }
+                    steps {
+                        sh 'git.exe clean -f -x'
+                    }
+                }
+                */
+            }
+        }
         stage('Test') {
             environment {
                 CGO_ENABLED = '0'
@@ -130,11 +152,6 @@ pipeline {
                         CGO_ENABLED = '0'
                     }
                     stages {
-                        stage('cleanup') {
-                            steps {
-                                sh "rm -rf release/$GOOS"
-                            }
-                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
@@ -224,12 +241,6 @@ pipeline {
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
-                        stage('cleanup') {
-                            steps {
-                                sh 'rm -rf package'
-                                sh 'rm -rf release'
-                            }
-                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
