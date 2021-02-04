@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 	"time"
-
-	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 func TestChecksCheckSystemdServices(t *testing.T) {
-	if utils.FileNotExists("/run/systemd/private") {
+	if os.Getenv("CIBUILD") != "" {
 		t.SkipNow()
 	}
 
@@ -37,7 +36,7 @@ func TestChecksCheckSystemdServices(t *testing.T) {
 }
 
 func TestGetServiceListFromDbus(t *testing.T) {
-	if utils.FileNotExists("/run/systemd/private") {
+	if os.Getenv("CIBUILD") != "" {
 		t.SkipNow()
 	}
 
@@ -71,20 +70,5 @@ func TestGetServiceListFromDbus(t *testing.T) {
 
 	if foundNeedle == false {
 		t.Fatal("Needle not found: " + needle)
-	}
-}
-
-func TestGetServiceNoSystemd(t *testing.T) {
-	if utils.FileExists("/run/systemd/private") {
-		t.SkipNow()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
-	defer cancel()
-
-	c := &CheckSystemd{}
-	_, err := c.Run(ctx)
-	if err == nil {
-		t.Fatal("expected check to fail if systemd doesn't run")
 	}
 }
