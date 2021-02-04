@@ -4,10 +4,6 @@
   # https://www.monitoring-plugins.org/doc/guidelines.html
   # So you can use all monitoring plugins that work with: Naemon, Nagios, Shinken, Icinga 1 and Sensu
 
-  # max_worker_threads should be increased with increasing number of custom checks
-  # but consider: each thread needs (a bit) memory
-  max_worker_threads = 8
-
 [check_whoami]
   command = /usr/bin/whoami
   interval = 60
@@ -30,10 +26,50 @@
 #  timeout = 5
 #  enabled = true
 
+#[check_shell]
+   # Run a check script directly via bash on a Linux, Unix or macOS system
+#  command = echo hallo welt
+#  shell = /bin/bash
+#  interval = 60
+#  timeout = 5
+#  enabled = true
+
+#[check_windows]
+   # This example shows the execution of a executable on Windows
+   # The command will not executed through a shell.
+#  command = C:\example.exe -w 5 -c 10
+#  interval = 60
+#  timeout = 10
+#  enabled = true
+
 #[check_powershell_script]
    # This example shows the execution of a PowerShell Script on Windows
-   # The command will net get executed through a shell.
-#  command = powershell.exe -File "C:\example_script.ps1"
+#  command = "C:\example_script.ps1"
+#  shell = powershell
+#  interval = 60
+#  timeout = 10
+#  enabled = true
+
+#[check_powershell_command]
+   # This example shows the execution of a PowerShell Script on Windows
+#  command = "Write-Host test"
+#  shell = powershell_command
+#  interval = 60
+#  timeout = 10
+#  enabled = true
+
+#[check_vbs]
+   # This example shows the execution of a VBS Script on Windows
+#  command = "C:\example_script.vbs"
+#  shell = vbs
+#  interval = 60
+#  timeout = 10
+#  enabled = true
+
+#[check_bat]
+   # This example shows the execution of a bat Script on Windows
+#  command = "C:\example_script.bat"
+#  shell = bat
 #  interval = 60
 #  timeout = 10
 #  enabled = true
