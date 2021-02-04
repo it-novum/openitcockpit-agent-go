@@ -313,8 +313,8 @@ def package_linux() {
     unstash name: "release-$GOOS-$GOARCH"
 
     sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
-    sh 'cp example_config.cnf package/etc/openitcockpit-agent/config.cnf'
-    sh 'cp example_customchecks.cnf package/etc/openitcockpit-agent/customchecks.cnf'
+    sh 'cp example/example_config.cnf package/etc/openitcockpit-agent/config.cnf'
+    sh 'cp example/example_customchecks.cnf package/etc/openitcockpit-agent/customchecks.cnf'
     sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
     sh "chmod +x usr/bin/$BINNAME"
     sh "fpm -s dir -t deb -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
