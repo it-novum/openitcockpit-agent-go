@@ -4,20 +4,14 @@ go 1.15
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
-	github.com/Microsoft/hcsshim v0.8.14 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
 	github.com/containerd/containerd v1.4.3 // indirect
-	github.com/containerd/continuity v0.0.0-20201208142359-180525291bb7 // indirect
-	github.com/containerd/fifo v0.0.0-20210129194248-f8e8fdba47ef // indirect
-	github.com/containerd/ttrpc v1.0.2 // indirect
-	github.com/containerd/typeurl v1.0.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.1.1-0.20201123092900-87511f396ae9
 	github.com/distatus/battery v0.10.0
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.3+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-ole/go-ole v1.2.5 // indirect
@@ -35,8 +29,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/opencontainers/runc v0.1.1 // indirect
-	github.com/opencontainers/selinux v1.8.0 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/prometheus/client_golang v1.9.0 // indirect
 	github.com/prometheus/common v0.15.0
@@ -50,7 +42,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
