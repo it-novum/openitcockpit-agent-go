@@ -2,9 +2,12 @@ package checks
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 
 	"github.com/distatus/battery"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
@@ -49,8 +52,15 @@ func (c *CheckSensor) Run(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 	for _, sensor := range sensors {
+		label := sensor.SensorKey
+		if runtime.GOOS == "darwin" {
+			if smcName, ok := utils.SmcSensorNames[sensor.SensorKey]; ok {
+				label = fmt.Sprintf("%v (%v)", smcName, sensor.SensorKey)
+			}
+		}
+
 		sensorResult := &temperatureSensor{
-			Label:    sensor.SensorKey,
+			Label:    label,
 			Current:  sensor.Temperature,
 			High:     sensor.High,
 			Critical: sensor.Critical}
