@@ -12,7 +12,7 @@ require (
 	github.com/containerd/fifo v0.0.0-20210129194248-f8e8fdba47ef // indirect
 	github.com/containerd/ttrpc v1.0.2 // indirect
 	github.com/containerd/typeurl v1.0.1 // indirect
-	github.com/coreos/go-systemd/v22 v22.1.0
+	github.com/coreos/go-systemd/v22 v22.1.1-0.20201123092900-87511f396ae9
 	github.com/distatus/battery v0.10.0
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.3+incompatible
