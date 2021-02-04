@@ -1,3 +1,5 @@
+// +build libvirt
+
 package checks
 
 import (
