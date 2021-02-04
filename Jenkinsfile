@@ -197,50 +197,38 @@ pipeline {
 
 
 def test_windows() {
-    try {
+    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
         bat "go.exe test -coverprofile=cover.out -timeout=120s ./..."
         bat 'gocover-cobertura.exe < cover.out > coverage.xml'
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
-    } catch (err) {
-        echo "Caught: ${err}"
-        currentBuild.result = 'FAILURE'
     }
 }
 
 def test() {
-    try {
+    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
         sh "go test -coverprofile=cover.out -timeout=120s ./..."
         sh 'gocover-cobertura < cover.out > coverage.xml'
-    } catch (err) {
-        echo "Caught: ${err}"
-        currentBuild.result = 'FAILURE'
     }
 }
 
 
 def build_windows_binary() {
-    try {
+    catchError(buildResult: null, stageResult: 'FAILURE') {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat "mkdir release\\$GOOS\\$GOARCH"
         bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
-    } catch (err) {
-        echo "Caught: ${err}"
-        currentBuild.result = 'FAILURE'
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
 }
 
 def build_binary() {
-    try {
+    catchError(buildResult: null, stageResult: 'FAILURE') {
         sh "mkdir -p release/$GOOS/$GOARCH"
         sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
-    } catch (err) {
-        echo "Caught: ${err}"
-        currentBuild.result = 'FAILURE'
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
 }
