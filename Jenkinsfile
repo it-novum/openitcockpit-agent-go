@@ -296,7 +296,7 @@ def build_windows_binary() {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
-    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH"
+    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
 def build_binary() {
@@ -305,7 +305,7 @@ def build_binary() {
         sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
-    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH"
+    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
 def package_linux() {
