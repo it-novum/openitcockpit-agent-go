@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        CIBUILD = "1"
+    }
     stages {
         stage('Test') {
             environment {
