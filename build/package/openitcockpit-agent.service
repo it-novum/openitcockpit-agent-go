@@ -1,0 +1,15 @@
+[Unit]
+Description=openITCOCKPIT Monitoring Agent
+Documentation=https://openitcockpit.io
+After=network.target
+
+[Service]
+User=root
+Type=simple
+Restart=on-failure
+ExecStart=/usr/bin/openitcockpit-agent --config /etc/openitcockpit-agent/config.cnf
+StandardOutput=journal
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

@@ -6,6 +6,7 @@ pipeline {
                 CGO_ENABLED = '0'
             }
             parallel {
+                /*
                 stage('windows') {
                     agent {
                         docker { 
@@ -16,7 +17,7 @@ pipeline {
                     }
                     environment {
                         GOOS = 'windows'
-                        BINNAME = 'agent.exe'
+                        BINNAME = 'openitcockpit-agent.exe'
                     }
                     stages {
                         stage('amd64') {
@@ -37,6 +38,7 @@ pipeline {
                         }
                     }
                 }
+                */
                 stage('linux') {
                     agent {
                         docker { 
@@ -47,7 +49,7 @@ pipeline {
                     }
                     environment {
                         GOOS = 'linux'
-                        BINNAME = 'agent'
+                        BINNAME = 'openitcockpit-agent'
                     }
                     stages {
                         stage('amd64') {
@@ -72,6 +74,7 @@ pipeline {
         }
         stage('Build') {
             parallel {
+                /*
                 stage('windows') {
                     agent {
                         docker { 
@@ -82,7 +85,7 @@ pipeline {
                     }
                     environment {
                         GOOS = 'windows'
-                        BINNAME = 'agent.exe'
+                        BINNAME = 'openitcockpit-agent.exe'
                     }
                     stages {
                         stage('cleanup') {
@@ -108,6 +111,7 @@ pipeline {
                         }
                     }
                 }
+                */
                 stage('linux') {
                     agent {
                         docker { 
@@ -118,7 +122,7 @@ pipeline {
                     }
                     environment {
                         GOOS = 'linux'
-                        BINNAME = 'agent'
+                        BINNAME = 'openitcockpit-agent'
                         CGO_ENABLED = '0'
                     }
                     stages {
@@ -162,6 +166,7 @@ pipeline {
                         }
                     }
                 }
+                /*
                 stage('darwin') {
                     agent {
                         docker { 
@@ -172,7 +177,7 @@ pipeline {
                     }
                     environment {
                         GOOS = 'darwin'
-                        BINNAME = 'agent'
+                        BINNAME = 'openitcockpit-agent'
                     }
                     stages {
                         stage('cleanup') {
@@ -190,11 +195,79 @@ pipeline {
                         }
                     }
                 }
+                */
+            }
+        }
+        stage('Package') {
+            environment {
+                VERSION = sh(
+                    returnStdout: true,
+                    script: 'cat VERSION'
+                ).trim()
+            }
+            parallel {
+                stage('Linux') {
+                    agent {
+                        dockerfile {
+                            filename 'build/docker/linux.Dockerfile'
+                            dir 'build/scripts'
+                            label 'linux'
+                        }
+                    }
+                    environment {
+                        GOOS = 'linux'
+                        BINNAME = 'openitcockpit-agent'
+                    }
+                    stages {
+                        stage('cleanup') {
+                            steps {
+                                sh 'rm -rf package'
+                                sh 'rm -rf release'
+                            }
+                        }
+                        stage('amd64') {
+                            environment {
+                                GOARCH = 'amd64'
+                            }
+                            steps {
+                                package_linux()
+                            }
+                        }
+                        stage('386') {
+                            environment {
+                                GOARCH = '386'
+                            }
+                            steps {
+                                package_linux()
+                            }
+                        }
+                        stage('arm64') {
+                            environment {
+                                GOARCH = 'arm64'
+                            }
+                            steps {
+                                package_linux()
+                            }
+                        }
+                        stage('arm') {
+                            environment {
+                                GOARCH = 'arm'
+                            }
+                            steps {
+                                package_linux()
+                            }
+                        }
+                        stage('archive') {
+                            steps {
+                                archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
-
 
 def test_windows() {
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -223,6 +296,7 @@ def build_windows_binary() {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
+    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH"
 }
 
 def build_binary() {
@@ -231,4 +305,19 @@ def build_binary() {
         sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
     }
     archiveArtifacts artifacts: 'release/**', fingerprint: true
+    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH"
+}
+
+def package_linux() {
+    unstash name: "release-$GOOS-$GOARCH"
+
+    sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
+    sh 'cp example_config.cnf package/etc/openitcockpit-agent/config.cnf'
+    sh 'cp example_customchecks.cnf package/etc/openitcockpit-agent/customchecks.cnf'
+    sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
+    sh "chmod +x usr/bin/$BINNAME"
+    sh "fpm -s dir -t deb -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
+    sh "fpm -s dir -t rpm -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
+    sh "fpm -s dir -t pacman -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
+    sh "mv openitcockpit-agent*.{deb,rpm,pkg.tar.xz} release/packages/$GOOS"
 }
