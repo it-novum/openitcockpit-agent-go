@@ -212,6 +212,7 @@ pipeline {
                             filename 'linux.Dockerfile'
                             dir 'build/docker'
                             label 'linux'
+                            args "-u root --privileged"
                         }
                     }
                     environment {
