@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         CIBUILD = "1"
+        ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer 17.7\\bin\\x86\\advinst.exe\""
     }
     stages {
         stage('Test') {
@@ -324,4 +325,11 @@ def package_linux() {
     sh "fpm -s dir -t rpm -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
     sh "fpm -s dir -t pacman -C package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $GOARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
     sh "mv openitcockpit-agent*.{deb,rpm,pkg.tar.xz} release/packages/$GOOS"
+}
+
+def package_windows() {
+    unstash name: "release-$GOOS-$GOARCH"
+
+    bat "$ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
+    bat "$ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
 }
