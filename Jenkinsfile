@@ -27,12 +27,12 @@ pipeline {
                 */
             }
         }
+        /*
         stage('Test') {
             environment {
                 CGO_ENABLED = '0'
             }
             parallel {
-                /*
                 stage('windows') {
                     agent {
                         docker { 
@@ -64,7 +64,6 @@ pipeline {
                         }
                     }
                 }
-                */
                 stage('linux') {
                     agent {
                         docker { 
@@ -98,6 +97,7 @@ pipeline {
                 }
             }
         }
+        */
         stage('Build') {
             parallel {
                 /*
@@ -243,6 +243,7 @@ pipeline {
                     stages {
                         stage('amd64') {
                             environment {
+                                GOARCH = 'amd64'
                                 ARCH = 'amd64'
                             }
                             steps {
@@ -251,6 +252,7 @@ pipeline {
                         }
                         stage('386') {
                             environment {
+                                GOARCH = '386'
                                 ARCH = 'i386'
                             }
                             steps {
@@ -259,6 +261,7 @@ pipeline {
                         }
                         stage('arm64') {
                             environment {
+                                GOARCH = 'arm64'
                                 ARCH = 'arm64'
                             }
                             steps {
@@ -267,6 +270,7 @@ pipeline {
                         }
                         stage('arm') {
                             environment {
+                                GOARCH = 'arm'
                                 ARCH = 'arm'
                             }
                             steps {
