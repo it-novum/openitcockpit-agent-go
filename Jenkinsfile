@@ -5,28 +5,6 @@ pipeline {
         ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer 17.7\\bin\\x86\\advinst.exe\""
     }
     stages {
-        stage('Cleanup') {
-            stages {
-                stage('linux') {
-                    agent {
-                        label 'linux'
-                    }
-                    steps {
-                        sh 'git clean -f -x'
-                    }
-                }
-                /*
-                stage('windows') {
-                    agent {
-                        label 'windows'
-                    }
-                    steps {
-                        sh 'git.exe clean -f -x'
-                    }
-                }
-                */
-            }
-        }
         /*
         stage('Test') {
             environment {
@@ -114,11 +92,6 @@ pipeline {
                         BINNAME = 'openitcockpit-agent.exe'
                     }
                     stages {
-                        stage('cleanup') {
-                            steps {
-                                bat "if exist release\\$GOOS rmdir release\\$GOOS /q /s"
-                            }
-                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
@@ -201,11 +174,6 @@ pipeline {
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
-                        stage('cleanup') {
-                            steps {
-                                sh "rm -rf release/$GOOS"
-                            }
-                        }
                         stage('amd64') {
                             environment {
                                 GOARCH = 'amd64'
@@ -279,7 +247,7 @@ pipeline {
                         }
                         stage('archive') {
                             steps {
-                                archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+                                
                             }
                         }
                     }
@@ -289,7 +257,17 @@ pipeline {
     }
 }
 
+def cleanup_windows() {
+    bat 'git.exe clean -f -x'
+}
+
+def cleanup() {
+    sh 'git clean -f -x'
+}
+
 def test_windows() {
+    cleanup_windows()
+
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
@@ -300,6 +278,8 @@ def test_windows() {
 }
 
 def test() {
+    cleanup()
+
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
         sh "go test -coverprofile=cover.out -timeout=120s ./..."
@@ -309,6 +289,8 @@ def test() {
 
 
 def build_windows_binary() {
+    cleanup_windows()
+
     catchError(buildResult: null, stageResult: 'FAILURE') {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat "mkdir release\\$GOOS\\$GOARCH"
@@ -320,6 +302,8 @@ def build_windows_binary() {
 }
 
 def build_binary() {
+    cleanup()
+
     catchError(buildResult: null, stageResult: 'FAILURE') {
         sh "mkdir -p release/$GOOS/$GOARCH"
         sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
@@ -329,6 +313,8 @@ def build_binary() {
 }
 
 def package_linux() {
+    cleanup()
+
     unstash name: "release-$GOOS-$GOARCH"
 
     sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
@@ -360,9 +346,13 @@ def package_linux() {
         --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
         --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
         --version '$VERSION'"""
+
+    archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
 }
 
 def package_windows() {
+    cleanup_windows()
+
     unstash name: "release-$GOOS-$GOARCH"
 
     bat "$ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
