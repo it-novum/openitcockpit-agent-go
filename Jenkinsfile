@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         CIBUILD = "1"
-        ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer 17.7\\bin\\x86\\advinst.exe\""
+        ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer\\bin\\x86\\advinst.exe\""
     }
     stages {
         /*
