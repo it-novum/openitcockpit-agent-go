@@ -109,6 +109,7 @@ func (p *PushClient) doRequest(parent context.Context) {
 	res, err := p.client.Do(req)
 	if err != nil {
 		log.Errorln("Push Client: request error: ", err)
+		return
 	}
 	defer res.Body.Close()
 	bodyStr := ""
