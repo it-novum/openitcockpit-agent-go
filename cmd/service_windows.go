@@ -267,7 +267,7 @@ func PlatformMain() {
 }
 
 func windows_service_main() {
-	const svcName = "oitcAgentSvc"
+	const svcName = "openITCOCKPITAgent"
 
 	inService, err := svc.IsWindowsService()
 	if err != nil {

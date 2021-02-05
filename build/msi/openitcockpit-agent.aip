@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<DOCUMENT Type="Advanced Installer" CreateVersion="17.6" version="17.6" Modules="professional" RootPath="." Language="de" Id="{E9288F5E-2AE7-47CD-B0B1-6A57BBA9B105}">
+<DOCUMENT Type="Advanced Installer" CreateVersion="17.6" version="17.9" Modules="professional" RootPath="." Language="de" Id="{E9288F5E-2AE7-47CD-B0B1-6A57BBA9B105}">
   <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0"/>
     <ROW Property="AI_PRODUCTNAME_ARP" Value="[|DISPLAYNAME]"/>
@@ -47,22 +47,26 @@
     <ROW Component="InstalledProducts" ComponentId="{CA7D6B09-12ED-49E8-90CF-F0DCA6B33BA0}" Directory_="APPDIR" Attributes="260" KeyPath="InstalledProducts"/>
     <ROW Component="ProductInformation" ComponentId="{DF0372D3-6549-4A5C-B7F4-467C370BD2FE}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
     <ROW Component="example_config.cnf" ComponentId="{48535BA8-61E9-469A-B9D2-3CBC7088A9E3}" Directory_="APPDIR" Attributes="144" KeyPath="example_config.cnf" Type="0"/>
-    <ROW Component="openitcockpitagentpython3.exe" ComponentId="{D5E8D582-87FB-4292-8CC7-6A36CEB4CBA1}" Directory_="APPDIR" Attributes="256" KeyPath="openitcockpitagentpython3.exe"/>
+    <ROW Component="openitcockpitagent.exe" ComponentId="{38146C11-69B3-4543-98EE-4A2758B5BFA6}" Directory_="APPDIR" Attributes="256" KeyPath="openitcockpitagent.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
     <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="openitcockpitagentpython3.exe" Component_="openitcockpitagentpython3.exe" FileName="OPENIT~1.EXE|openitcockpit-agent-python3.exe" Attributes="0" SourcePath="..\executables\openitcockpit-agent-python3.exe" SelfReg="false" DigSign="true"/>
-    <ROW File="example_config.cnf" Component_="example_config.cnf" FileName="config.cnf" Attributes="0" SourcePath="..\example_config.cnf" SelfReg="false"/>
-    <ROW File="example_customchecks.cnf" Component_="example_config.cnf" FileName="CUSTOM~1.CNF|customchecks.cnf" Attributes="0" SourcePath="..\example_customchecks.cnf" SelfReg="false"/>
+    <ROW File="example_config.cnf" Component_="example_config.cnf" FileName="config.cnf" Attributes="0" SourcePath="..\..\example\config_example.cnf" SelfReg="false"/>
+    <ROW File="example_customchecks.cnf" Component_="example_config.cnf" FileName="CUSTOM~1.CNF|customchecks.cnf" Attributes="0" SourcePath="..\..\example\customchecks_example.cnf" SelfReg="false"/>
+    <ROW File="openitcockpitagent.exe" Component_="openitcockpitagent.exe" FileName="OPENIT~1.EXE|openitcockpit-agent.exe" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\..\release\windows\amd64\openitcockpit-agent.exe" SelfReg="false" DigSign="true"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.AiPersistentDataComponent">
+    <ROW PersistentRow="example_config.cnf" Type="0" Condition="1"/>
+    <ROW PersistentRow="example_customchecks.cnf" Type="0" Condition="1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
-    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="1" PackageFolder="..\executables" PackageFileName="openitcockpit-agent-[|ProductVersion]-amd64" Languages="de;en" LangOpt="1" InstallationType="4" UseLargeSchema="true" Unicode="true" MsiPackageType="x64" UACExecutionLevel="2"/>
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="1" PackageFolder="..\..\release\packages\windows" PackageFileName="openitcockpit-agent-[|ProductVersion]-amd64" Languages="de;en" LangOpt="1" InstallationType="4" UseLargeSchema="true" Unicode="true" MsiPackageType="x64" UACExecutionLevel="2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
     <ROW Path="&lt;AI_DICTS&gt;ui.ail"/>
@@ -84,10 +88,18 @@
     <ROW Fragment="VerifyRepairDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\VerifyRepairDlg.aip"/>
     <ROW Fragment="WelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\WelcomeDlg.aip"/>
   </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiActionTextComponent">
+    <ROW Action="AI_AiBackupImmediate" Description="Vorbereiten der Sicherung" DescriptionLocId="ActionText.Description.AI_AiBackupImmediate" Template="Pfad: [1]" TemplateLocId="ActionText.Template.AI_AiBackupImmediate"/>
+    <ROW Action="AI_AiBackupRollback" Description="Rollback Sicherung" DescriptionLocId="ActionText.Description.AI_AiBackupRollback" Template="Pfad: [1]" TemplateLocId="ActionText.Template.AI_AiBackupRollback"/>
+    <ROW Action="AI_AiRestoreDeferred" Description="Wiederherstellungsvorgang ausführen" DescriptionLocId="ActionText.Description.AI_AiRestoreDeferred" Template="Pfad: [1]" TemplateLocId="ActionText.Template.AI_AiRestoreDeferred"/>
+    <ROW Action="AI_AiRestoreDeferredImpersonate" Description="Wiederherstellungsvorgang ausführen" DescriptionLocId="ActionText.Description.AI_AiRestoreDeferred" Template="Pfad: [1]" TemplateLocId="ActionText.Template.AI_AiRestoreDeferred"/>
+    <ROW Action="AI_AiRestoreRollback" Description="Rollback Wiederherstellung" DescriptionLocId="ActionText.Description.AI_AiRestoreRollback" Template="Pfad: [1]" TemplateLocId="ActionText.Template.AI_AiRestoreRollback"/>
+  </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
     <ROW Name="BannerTop.bmp" SourcePath="images\BannerTop.bmp"/>
     <ROW Name="Dialog.bmp" SourcePath="images\Dialog.bmp"/>
     <ROW Name="PowerShellScriptLauncher.dll" SourcePath="&lt;AI_CUSTACTS&gt;PowerShellScriptLauncher.dll"/>
+    <ROW Name="ResourceCleaner.dll" SourcePath="&lt;AI_CUSTACTS&gt;ResourceCleaner.dll"/>
     <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
@@ -118,13 +130,21 @@
     <ROW Dialog_="LicenseAgreementDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
     <ROW Dialog_="VerifyReadyDlg" Control_="Install" Event="EndDialog" Argument="Return" Condition="AI_PATCH" Ordering="199"/>
     <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="203"/>
+    <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_AiBackupCleanup" Condition="1" Ordering="102"/>
+    <ROW Dialog_="UserExit" Control_="Finish" Event="DoAction" Argument="AI_AiBackupCleanup" Condition="1" Ordering="101"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
     <ROW Directory_="APPDIR" Component_="APPDIR" ManualDelete="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_AiBackupCleanup" Type="1" Source="ResourceCleaner.dll" Target="OnAiBackupCleanup" WithoutSeq="true"/>
+    <ROW Action="AI_AiBackupImmediate" Type="1" Source="ResourceCleaner.dll" Target="OnAiBackupImmediate"/>
+    <ROW Action="AI_AiBackupRollback" Type="11521" Source="ResourceCleaner.dll" Target="OnAiBackupRollback"/>
+    <ROW Action="AI_AiRestoreDeferred" Type="11265" Source="ResourceCleaner.dll" Target="OnAiRestoreDeferred"/>
+    <ROW Action="AI_AiRestoreDeferredImpersonate" Type="9217" Source="ResourceCleaner.dll" Target="OnAiRestoreDeferredImpersonate"/>
+    <ROW Action="AI_AiRestoreRollback" Type="11521" Source="ResourceCleaner.dll" Target="OnAiRestoreRollback" WithoutSeq="true"/>
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
-    <ROW Action="AI_DATA_SETTER" Type="51" Source="CustomActionData" Target="AEQAaQBnAGkAdABhAGwAbAB5AFMAaQBnAG4AUwBjAHIAaQBwAHQAAgABAEYAbABhAGcAcwACADYAAQBQAGEAcgBhAG0AcwACAC0AQQBQAFAARABJAFIAIAAiAFsAQQBQAFAARABJAFIAXQAiAAEAUwBjAHIAaQBwAHQAAgAjACAAQgBsAG8AYwBrACAAZgBvAHIAIABkAGUAYwBsAGEAcgBpAG4AZwAgAHQAaABlACAAcwBjAHIAaQBwAHQAIABwAGEAcgBhAG0AZQB0AGUAcgBzAC4ADQAKAFAAYQByAGEAbQAoACQAQQBQAFAARABJAFIAKQANAAoADQAKAGkAZgAgACgAJABBAFAAUABEAEkAUgAgAC0AbgBvAHQAbQBhAHQAYwBoACAAJwBcAFwAJAAnACkADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAJABBAFAAUABEAEkAUgAgACsAPQAgACcAXAAnAA0ACgBbAFwAfQBdAA0ACgANAAoAJABhAGcAZQBuAHQAQgBpAG4AIAA9ACAAJABBAFAAUABEAEkAUgAgACsAIAAnAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBwAHkAdABoAG8AbgAzAC4AZQB4AGUAJwANAAoADQAKAHcAcgBpAHQAZQAtAGgAbwBzAHQAIAAiAEMAaABlAGMAawBpAG4AZwAgAGYAbwByACAAJwBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AaQBuACcAIABmAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACIADQAKAGkAZgAgACgAJAAoAEcAZQB0AC0ATgBlAHQARgBpAHIAZQB3AGEAbABsAFIAdQBsAGUAICATAE4AYQBtAGUAIAAiAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBpAG4AIgApACkADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAdwByAGkAdABlAC0AaABvAHMAdAAgACIARgBpAHIAZQB3AGEAbABsACAAcgB1AGwAZQAgAGYAbwByACAAJwBvAHAAZQBuAEkAVABDAE8AQwBLAFAASQBUACAATQBvAG4AaQB0AG8AcgBpAG4AZwAgAEEAZwBlAG4AdAAgAEkAbgAnACAAYQBsAHIAZQBhAGQAeQAgAGUAeABpAHMAdABzACIADQAKAFsAXAB9AF0ADQAKAGUAbABzAGUADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAdwByAGkAdABlAC0AaABvAHMAdAAgACIARgBpAHIAZQB3AGEAbABsACAAcgB1AGwAZQAgAGYAbwByACAAJwBvAHAAZQBuAEkAVABDAE8AQwBLAFAASQBUACAATQBvAG4AaQB0AG8AcgBpAG4AZwAgAEEAZwBlAG4AdAAgAEkAbgAnACAAZABvAGUAcwAgAG4AbwB0ACAAZQB4AGkAcwB0ACIADQAKACAAIAAgACAATgBlAHcALQBOAGUAdABGAGkAcgBlAHcAYQBsAGwAUgB1AGwAZQAgAC0ATgBhAG0AZQAgACIAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAGkAbgAiACAALQBEAGkAcwBwAGwAYQB5AE4AYQBtAGUAIAAiAG8AcABlAG4ASQBUAEMATwBDAEsAUABJAFQAIABNAG8AbgBpAHQAbwByAGkAbgBnACAAQQBnAGUAbgB0ACAASQBuACIAIAAtAEQAaQByAGUAYwB0AGkAbwBuACAASQBuAGIAbwB1AG4AZAAgAC0AUAByAG8AZgBpAGwAZQAgAEQAbwBtAGEAaQBuACwAUAByAGkAdgBhAHQAZQAsAFAAdQBiAGwAaQBjACAALQBBAGMAdABpAG8AbgAgAEEAbABsAG8AdwAgAC0AUAByAG8AdABvAGMAbwBsACAAVABDAFAAIAAtAFAAcgBvAGcAcgBhAG0AIAAiACQAYQBnAGUAbgB0AEIAaQBuACIAIAAtAFIAZQBtAG8AdABlAEEAZABkAHIAZQBzAHMAIABBAG4AeQAgAC0ARQBuAGEAYgBsAGUAZAAgAFQAcgB1AGUADQAKAFsAXAB9AF0ADQAKAA0ACgB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBDAGgAZQBjAGsAaQBuAGcAIABmAG8AcgAgACcAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAG8AdQB0ACcAIABmAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACIADQAKAGkAZgAgACgAJAAoAEcAZQB0AC0ATgBlAHQARgBpAHIAZQB3AGEAbABsAFIAdQBsAGUAICATAE4AYQBtAGUAIAAiAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBvAHUAdAAiACkAKQANAAoAWwBcAHsAXQANAAoAIAAgACAAIAB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBGAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACAAZgBvAHIAIAAnAG8AcABlAG4ASQBUAEMATwBDAEsAUABJAFQAIABNAG8AbgBpAHQAbwByAGkAbgBnACAAQQBnAGUAbgB0ACAATwB1AHQAJwAgAGEAbAByAGUAYQBkAHkAIABlAHgAaQBzAHQAcwAiAA0ACgBbAFwAfQBdAA0ACgBlAGwAcwBlAA0ACgBbAFwAewBdAA0ACgAgACAAIAAgAHcAcgBpAHQAZQAtAGgAbwBzAHQAIAAiAEYAaQByAGUAdwBhAGwAbAAgAHIAdQBsAGUAIABmAG8AcgAgACcAbwBwAGUAbgBJAFQAQwBPAEMASwBQAEkAVAAgAE0AbwBuAGkAdABvAHIAaQBuAGcAIABBAGcAZQBuAHQAIABPAHUAdAAnACAAZABvAGUAcwAgAG4AbwB0ACAAZQB4AGkAcwB0ACIADQAKACAAIAAgACAATgBlAHcALQBOAGUAdABGAGkAcgBlAHcAYQBsAGwAUgB1AGwAZQAgAC0ATgBhAG0AZQAgACIAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAG8AdQB0ACIAIAAtAEQAaQBzAHAAbABhAHkATgBhAG0AZQAgACIAbwBwAGUAbgBJAFQAQwBPAEMASwBQAEkAVAAgAE0AbwBuAGkAdABvAHIAaQBuAGcAIABBAGcAZQBuAHQAIABPAHUAdAAiACAALQBEAGkAcgBlAGMAdABpAG8AbgAgAE8AdQB0AGIAbwB1AG4AZAAgAC0AUAByAG8AZgBpAGwAZQAgAEQAbwBtAGEAaQBuACwAUAByAGkAdgBhAHQAZQAsAFAAdQBiAGwAaQBjACAALQBBAGMAdABpAG8AbgAgAEEAbABsAG8AdwAgAC0AUAByAG8AdABvAGMAbwBsACAAVABDAFAAIAAtAFAAcgBvAGcAcgBhAG0AIAAiACQAYQBnAGUAbgB0AEIAaQBuACIAIAAtAFIAZQBtAG8AdABlAEEAZABkAHIAZQBzAHMAIABBAG4AeQAgAC0ARQBuAGEAYgBsAGUAZAAgAFQAcgB1AGUADQAKAFsAXAB9AF0="/>
+    <ROW Action="AI_DATA_SETTER" Type="51" Source="CustomActionData" Target="AEQAaQBnAGkAdABhAGwAbAB5AFMAaQBnAG4AUwBjAHIAaQBwAHQAAgABAEYAbABhAGcAcwACADYAAQBQAGEAcgBhAG0AcwACAC0AQQBQAFAARABJAFIAIAAiAFsAQQBQAFAARABJAFIAXQAiAAEAUwBjAHIAaQBwAHQAAgAjACAAQgBsAG8AYwBrACAAZgBvAHIAIABkAGUAYwBsAGEAcgBpAG4AZwAgAHQAaABlACAAcwBjAHIAaQBwAHQAIABwAGEAcgBhAG0AZQB0AGUAcgBzAC4ADQAKAFAAYQByAGEAbQAoACQAQQBQAFAARABJAFIAKQANAAoADQAKAGkAZgAgACgAJABBAFAAUABEAEkAUgAgAC0AbgBvAHQAbQBhAHQAYwBoACAAJwBcAFwAJAAnACkADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAJABBAFAAUABEAEkAUgAgACsAPQAgACcAXAAnAA0ACgBbAFwAfQBdAA0ACgANAAoAJABhAGcAZQBuAHQAQgBpAG4AIAA9ACAAJABBAFAAUABEAEkAUgAgACsAIAAnAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALgBlAHgAZQAnAA0ACgANAAoAdwByAGkAdABlAC0AaABvAHMAdAAgACIAQwBoAGUAYwBrAGkAbgBnACAAZgBvAHIAIAAnAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBpAG4AJwAgAGYAaQByAGUAdwBhAGwAbAAgAHIAdQBsAGUAIgANAAoAaQBmACAAKAAkACgARwBlAHQALQBOAGUAdABGAGkAcgBlAHcAYQBsAGwAUgB1AGwAZQAgIBMATgBhAG0AZQAgACIAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAGkAbgAiACkAKQANAAoAWwBcAHsAXQANAAoAIAAgACAAIAB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBGAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACAAZgBvAHIAIAAnAG8AcABlAG4ASQBUAEMATwBDAEsAUABJAFQAIABNAG8AbgBpAHQAbwByAGkAbgBnACAAQQBnAGUAbgB0ACAASQBuACcAIABhAGwAcgBlAGEAZAB5ACAAZQB4AGkAcwB0AHMAIgANAAoAWwBcAH0AXQANAAoAZQBsAHMAZQANAAoAWwBcAHsAXQANAAoAIAAgACAAIAB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBGAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACAAZgBvAHIAIAAnAG8AcABlAG4ASQBUAEMATwBDAEsAUABJAFQAIABNAG8AbgBpAHQAbwByAGkAbgBnACAAQQBnAGUAbgB0ACAASQBuACcAIABkAG8AZQBzACAAbgBvAHQAIABlAHgAaQBzAHQAIgANAAoAIAAgACAAIABOAGUAdwAtAE4AZQB0AEYAaQByAGUAdwBhAGwAbABSAHUAbABlACAALQBOAGEAbQBlACAAIgBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AaQBuACIAIAAtAEQAaQBzAHAAbABhAHkATgBhAG0AZQAgACIAbwBwAGUAbgBJAFQAQwBPAEMASwBQAEkAVAAgAE0AbwBuAGkAdABvAHIAaQBuAGcAIABBAGcAZQBuAHQAIABJAG4AIgAgAC0ARABpAHIAZQBjAHQAaQBvAG4AIABJAG4AYgBvAHUAbgBkACAALQBQAHIAbwBmAGkAbABlACAARABvAG0AYQBpAG4ALABQAHIAaQB2AGEAdABlACwAUAB1AGIAbABpAGMAIAAtAEEAYwB0AGkAbwBuACAAQQBsAGwAbwB3ACAALQBQAHIAbwB0AG8AYwBvAGwAIABUAEMAUAAgAC0AUAByAG8AZwByAGEAbQAgACIAJABhAGcAZQBuAHQAQgBpAG4AIgAgAC0AUgBlAG0AbwB0AGUAQQBkAGQAcgBlAHMAcwAgAEEAbgB5ACAALQBFAG4AYQBiAGwAZQBkACAAVAByAHUAZQANAAoAWwBcAH0AXQANAAoADQAKAHcAcgBpAHQAZQAtAGgAbwBzAHQAIAAiAEMAaABlAGMAawBpAG4AZwAgAGYAbwByACAAJwBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AbwB1AHQAJwAgAGYAaQByAGUAdwBhAGwAbAAgAHIAdQBsAGUAIgANAAoAaQBmACAAKAAkACgARwBlAHQALQBOAGUAdABGAGkAcgBlAHcAYQBsAGwAUgB1AGwAZQAgIBMATgBhAG0AZQAgACIAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAG8AdQB0ACIAKQApAA0ACgBbAFwAewBdAA0ACgAgACAAIAAgAHcAcgBpAHQAZQAtAGgAbwBzAHQAIAAiAEYAaQByAGUAdwBhAGwAbAAgAHIAdQBsAGUAIABmAG8AcgAgACcAbwBwAGUAbgBJAFQAQwBPAEMASwBQAEkAVAAgAE0AbwBuAGkAdABvAHIAaQBuAGcAIABBAGcAZQBuAHQAIABPAHUAdAAnACAAYQBsAHIAZQBhAGQAeQAgAGUAeABpAHMAdABzACIADQAKAFsAXAB9AF0ADQAKAGUAbABzAGUADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAdwByAGkAdABlAC0AaABvAHMAdAAgACIARgBpAHIAZQB3AGEAbABsACAAcgB1AGwAZQAgAGYAbwByACAAJwBvAHAAZQBuAEkAVABDAE8AQwBLAFAASQBUACAATQBvAG4AaQB0AG8AcgBpAG4AZwAgAEEAZwBlAG4AdAAgAE8AdQB0ACcAIABkAG8AZQBzACAAbgBvAHQAIABlAHgAaQBzAHQAIgANAAoAIAAgACAAIABOAGUAdwAtAE4AZQB0AEYAaQByAGUAdwBhAGwAbABSAHUAbABlACAALQBOAGEAbQBlACAAIgBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AbwB1AHQAIgAgAC0ARABpAHMAcABsAGEAeQBOAGEAbQBlACAAIgBvAHAAZQBuAEkAVABDAE8AQwBLAFAASQBUACAATQBvAG4AaQB0AG8AcgBpAG4AZwAgAEEAZwBlAG4AdAAgAE8AdQB0ACIAIAAtAEQAaQByAGUAYwB0AGkAbwBuACAATwB1AHQAYgBvAHUAbgBkACAALQBQAHIAbwBmAGkAbABlACAARABvAG0AYQBpAG4ALABQAHIAaQB2AGEAdABlACwAUAB1AGIAbABpAGMAIAAtAEEAYwB0AGkAbwBuACAAQQBsAGwAbwB3ACAALQBQAHIAbwB0AG8AYwBvAGwAIABUAEMAUAAgAC0AUAByAG8AZwByAGEAbQAgACIAJABhAGcAZQBuAHQAQgBpAG4AIgAgAC0AUgBlAG0AbwB0AGUAQQBkAGQAcgBlAHMAcwAgAEEAbgB5ACAALQBFAG4AYQBiAGwAZQBkACAAVAByAHUAZQANAAoAWwBcAH0AXQ=="/>
     <ROW Action="AI_DATA_SETTER_1" Type="51" Source="CustomActionData" Target="AEQAaQBnAGkAdABhAGwAbAB5AFMAaQBnAG4AUwBjAHIAaQBwAHQAAgABAEYAbABhAGcAcwACADYAAQBQAGEAcgBhAG0AcwACAC0AQQBQAFAARABJAFIAIAAiAFsAQQBQAFAARABJAFIAXQAiAAEAUwBjAHIAaQBwAHQAAgAjACAAQgBsAG8AYwBrACAAZgBvAHIAIABkAGUAYwBsAGEAcgBpAG4AZwAgAHQAaABlACAAcwBjAHIAaQBwAHQAIABwAGEAcgBhAG0AZQB0AGUAcgBzAC4ADQAKAFAAYQByAGEAbQAoACQAQQBQAFAARABJAFIAKQANAAoADQAKAHcAcgBpAHQAZQAtAGgAbwBzAHQAIAAiAEMAaABlAGMAawBpAG4AZwAgAGYAbwByACAAJwBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AaQBuACcAIABmAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACIADQAKAGkAZgAgACgAJAAoAEcAZQB0AC0ATgBlAHQARgBpAHIAZQB3AGEAbABsAFIAdQBsAGUAICATAE4AYQBtAGUAIAAiAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBpAG4AIgApACkADQAKAFsAXAB7AF0ADQAKACAAIAAgACAAdwByAGkAdABlAC0AaABvAHMAdAAgACIARgBpAHIAZQB3AGEAbABsACAAcgB1AGwAZQAgAGYAbwByACAAJwBvAHAAZQBuAEkAVABDAE8AQwBLAFAASQBUACAATQBvAG4AaQB0AG8AcgBpAG4AZwAgAEEAZwBlAG4AdAAgAEkAbgAnACAAZQB4AGkAcwB0AHMAIgANAAoAIAAgACAAIABSAGUAbQBvAHYAZQAtAE4AZQB0AEYAaQByAGUAdwBhAGwAbABSAHUAbABlACAALQBOAGEAbQBlACAAIgBvAHAAZQBuAGkAdABjAG8AYwBrAHAAaQB0AC0AYQBnAGUAbgB0AC0AaQBuACIADQAKAFsAXAB9AF0ADQAKAA0ACgB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBDAGgAZQBjAGsAaQBuAGcAIABmAG8AcgAgACcAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAG8AdQB0ACcAIABmAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACIADQAKAGkAZgAgACgAJAAoAEcAZQB0AC0ATgBlAHQARgBpAHIAZQB3AGEAbABsAFIAdQBsAGUAICATAE4AYQBtAGUAIAAiAG8AcABlAG4AaQB0AGMAbwBjAGsAcABpAHQALQBhAGcAZQBuAHQALQBvAHUAdAAiACkAKQANAAoAWwBcAHsAXQANAAoAIAAgACAAIAB3AHIAaQB0AGUALQBoAG8AcwB0ACAAIgBGAGkAcgBlAHcAYQBsAGwAIAByAHUAbABlACAAZgBvAHIAIAAnAG8AcABlAG4ASQBUAEMATwBDAEsAUABJAFQAIABNAG8AbgBpAHQAbwByAGkAbgBnACAAQQBnAGUAbgB0ACAATwB1AHQAJwAgAGUAeABpAHMAdABzACIADQAKACAAIAAgACAAUgBlAG0AbwB2AGUALQBOAGUAdABGAGkAcgBlAHcAYQBsAGwAUgB1AGwAZQAgAC0ATgBhAG0AZQAgACIAbwBwAGUAbgBpAHQAYwBvAGMAawBwAGkAdAAtAGEAZwBlAG4AdAAtAG8AdQB0ACIADQAKAFsAXAB9AF0ADQAK"/>
     <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
@@ -148,10 +168,10 @@
     <ROW Feature_="MainFeature" Component_="APPDIR"/>
     <ROW Feature_="MainFeature" Component_="ProductInformation"/>
     <ROW Feature_="MainFeature" Component_="AI_CustomARPName"/>
-    <ROW Feature_="MainFeature" Component_="openitcockpitagentpython3.exe"/>
     <ROW Feature_="MainFeature" Component_="example_config.cnf"/>
     <ROW Feature_="MainFeature" Component_="InstalledProducts"/>
     <ROW Feature_="MainFeature" Component_="InstallLocation"/>
+    <ROW Feature_="MainFeature" Component_="openitcockpitagent.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
     <ROW Name="app.exe" SourcePath="images\app.ico" Index="0"/>
@@ -159,15 +179,19 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
     <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
     <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
-    <ROW Action="AI_STORE_LOCATION" Condition="(Not Installed) OR REINSTALL" Sequence="1501"/>
+    <ROW Action="AI_STORE_LOCATION" Condition="(Not Installed) OR REINSTALL" Sequence="1502"/>
     <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1397"/>
     <ROW Action="AI_ResolveKnownFolders" Sequence="52"/>
     <ROW Action="AI_EnableDebugLog" Sequence="51"/>
-    <ROW Action="AI_GetArpIconPath" Sequence="1401"/>
+    <ROW Action="AI_GetArpIconPath" Sequence="1402"/>
     <ROW Action="Create_Firewall" Condition="( ( NOT Installed ) OR ( Installed AND REMOVE &lt;&gt; &quot;ALL&quot; AND AI_INSTALL_MODE &lt;&gt; &quot;Remove&quot; ) ) AND ( (VersionNT &gt; 501) OR (VersionNT = 501 AND ServicePackLevel &gt;= 2) )" Sequence="6404"/>
     <ROW Action="AI_DATA_SETTER" Condition="( ( NOT Installed ) OR ( Installed AND REMOVE &lt;&gt; &quot;ALL&quot; AND AI_INSTALL_MODE &lt;&gt; &quot;Remove&quot; ) ) AND ( (VersionNT &gt; 501) OR (VersionNT = 501 AND ServicePackLevel &gt;= 2) )" Sequence="6403"/>
     <ROW Action="Remove_Firewall" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) ) AND ( (VersionNT &gt; 501) OR (VersionNT = 501 AND ServicePackLevel &gt;= 2) )" Sequence="6402"/>
     <ROW Action="AI_DATA_SETTER_1" Condition="( Installed AND ( REMOVE = &quot;ALL&quot; OR AI_INSTALL_MODE = &quot;Remove&quot; ) ) AND ( (VersionNT &gt; 501) OR (VersionNT = 501 AND ServicePackLevel &gt;= 2) )" Sequence="6401"/>
+    <ROW Action="AI_AiBackupImmediate" Sequence="1401"/>
+    <ROW Action="AI_AiBackupRollback" Sequence="1501"/>
+    <ROW Action="AI_AiRestoreDeferredImpersonate" Sequence="6598"/>
+    <ROW Action="AI_AiRestoreDeferred" Sequence="6599"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
     <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
@@ -215,10 +239,10 @@
     <ROW MsiServiceConfig="DienstName" Name="openITCOCKPITAgent" Event="1" ConfigType="3" Argument="1" Component_="APPDIR"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiServCtrlComponent">
-    <ROW ServiceControl="openitcockpitagentpython3.exe" Name="openITCOCKPITAgent" Event="161" Wait="1" Component_="openitcockpitagentpython3.exe"/>
+    <ROW ServiceControl="openitcockpitagent.exe" Name="openITCOCKPITAgent" Event="161" Wait="1" Component_="openitcockpitagent.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiServInstComponent">
-    <ROW ServiceInstall="openitcockpitagentpython3.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" Component_="openitcockpitagentpython3.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
+    <ROW ServiceInstall="openitcockpitagent.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" StartName="LocalService" Component_="openitcockpitagent.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
     <ATTRIBUTE name="UsedTheme" value="classic"/>
