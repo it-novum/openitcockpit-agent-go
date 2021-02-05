@@ -64,6 +64,7 @@ func (c *CustomCheckExecutor) Start(parent context.Context) error {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
+		c.runCheck(ctx, timeout)
 		for {
 			select {
 			case <-ctx.Done():

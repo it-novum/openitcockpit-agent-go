@@ -108,8 +108,8 @@ func TestCommandNotFound(t *testing.T) {
 		t.Error("there was no error")
 	}
 
-	if result.Stderr[0:14] != "Unknown error:" || result.RC != 3 {
-		t.Errorf("Unexpected output '%s' or return code: %d", result.Stderr, result.RC)
+	if result.Stdout[0:14] != "Unknown error:" || result.RC != 3 {
+		t.Errorf("Unexpected output '%s' or return code: %d", result.Stdout, result.RC)
 	}
 
 	js, err := json.Marshal(result)
