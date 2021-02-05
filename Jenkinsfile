@@ -309,7 +309,7 @@ def test() {
 
 
 def build_windows_binary() {
-    cleanup_windows()
+    //cleanup_windows()
 
     catchError(buildResult: null, stageResult: 'FAILURE') {
         bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
