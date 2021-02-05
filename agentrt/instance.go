@@ -42,8 +42,10 @@ type AgentInstance struct {
 }
 
 func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
-	for k, v := range a.customCheckResults {
-		result[k] = v
+	if a.customCheckResults == nil {
+		result["customchecks"] = map[string]interface{}{}
+	} else {
+		result["customchecks"] = a.customCheckResults
 	}
 
 	data, err := json.Marshal(result)
