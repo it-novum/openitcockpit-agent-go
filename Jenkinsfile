@@ -78,7 +78,6 @@ pipeline {
         */
         stage('Build') {
             parallel {
-                /*
                 stage('windows') {
                     agent {
                         docker { 
@@ -110,7 +109,6 @@ pipeline {
                         }
                     }
                 }
-                */
                 stage('linux') {
                     agent {
                         docker { 
@@ -243,6 +241,33 @@ pipeline {
                             }
                             steps {
                                 package_linux()
+                            }
+                        }
+                    }
+                }
+                stage('windows') {
+                    agent {
+                        label 'windows'
+                    }
+                    environment {
+                        GOOS = 'windows'
+                        BINNAME = 'openitcockpit-agent.exe'
+                    }
+                    stages {
+                        stage('amd64') {
+                            environment {
+                                GOARCH = 'amd64'
+                            }
+                            steps {
+                                package_windows()
+                            }
+                        }
+                        stage('386') {
+                            environment {
+                                GOARCH = '386'
+                            }
+                            steps {
+                                package_windows()
                             }
                         }
                     }
