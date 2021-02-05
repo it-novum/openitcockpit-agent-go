@@ -18,9 +18,10 @@ import (
 
 // CommandResult to return the information
 type CommandResult struct {
-	Stdout string
-	Stderr string
-	RC     int
+	Stdout    string
+	Stderr    string
+	RC        int
+	Timestamp time.Time
 }
 
 // Unified exit codes
@@ -135,7 +136,10 @@ func parseCommand(command, shell string) ([]string, string, error) {
 
 // RunCommand in shell style with timeout on every platform
 func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, error) {
-	result := &CommandResult{}
+	result := &CommandResult{
+		Timestamp: time.Now(),
+	}
+
 	ctxTimeout, cancel := context.WithTimeout(ctx, commandArgs.Timeout)
 	defer cancel()
 
