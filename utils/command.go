@@ -18,10 +18,9 @@ import (
 
 // CommandResult to return the information
 type CommandResult struct {
-	Stdout    string
-	Stderr    string
-	RC        int
-	Timestamp time.Time
+	Stdout                    string `json:"stdout"`
+	RC                        int    `json:"rc"`
+	ExecutionUnixTimestampSec int64  `json:"execution_unix_timestamp_sec"`
 }
 
 // Unified exit codes
@@ -137,28 +136,25 @@ func parseCommand(command, shell string) ([]string, string, error) {
 // RunCommand in shell style with timeout on every platform
 func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, error) {
 	result := &CommandResult{
-		Timestamp: time.Now(),
+		ExecutionUnixTimestampSec: time.Now().Unix(),
 	}
-
 	ctxTimeout, cancel := context.WithTimeout(ctx, commandArgs.Timeout)
 	defer cancel()
 
 	args, stdin, err := parseCommand(commandArgs.Command, commandArgs.Shell)
 	if err != nil {
 		result.RC = Unknown
-		result.Stderr = err.Error()
 		result.Stdout = err.Error()
 
 		return result, err
 	}
 
 	outputBuf := &bytes.Buffer{}
-	errorBuf := &bytes.Buffer{}
 	stdinBuf := bytes.NewBufferString(stdin)
 
 	c := exec.CommandContext(ctxTimeout, args[0], args[1:]...)
 	c.Stdout = outputBuf
-	c.Stderr = errorBuf
+	c.Stderr = outputBuf
 	c.Stdin = stdinBuf
 
 	c.SysProcAttr = commandSysproc
@@ -187,7 +183,6 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 
 	if ctxTimeout.Err() == context.DeadlineExceeded {
 		result.Stdout = fmt.Sprintf("Custom check %s timed out after %s seconds", strings.Join(args, " "), commandArgs.Timeout.String())
-		result.Stderr = fmt.Sprintf("Custom check %s timed out after %s seconds", strings.Join(args, " "), commandArgs.Timeout.String())
 		result.RC = Timeout
 		return result, err
 	}
@@ -197,13 +192,10 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 		switch rc {
 		case NotFound:
 			result.Stdout = fmt.Sprintf("No such file or directory: '%s'", strings.Join(args, " "))
-			result.Stderr = fmt.Sprintf("No such file or directory: '%s'", strings.Join(args, " "))
 		case NotExecutable:
 			result.Stdout = fmt.Sprintf("File not executable: '%s'", strings.Join(args, " "))
-			result.Stderr = fmt.Sprintf("File not executable: '%s'", strings.Join(args, " "))
 		default:
 			result.Stdout = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
-			result.Stderr = fmt.Sprintf("Unknown error: %s Command: '%s'", err.Error(), strings.Join(args, " "))
 		}
 		result.RC = rc
 		return result, err
@@ -211,7 +203,6 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 
 	//No errors on command execution
 	result.Stdout = outputBuf.String()
-	result.Stderr = errorBuf.String()
 	result.RC = Unknown
 
 	state := c.ProcessState
