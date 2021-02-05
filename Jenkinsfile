@@ -245,11 +245,6 @@ pipeline {
                                 package_linux()
                             }
                         }
-                        stage('archive') {
-                            steps {
-                                
-                            }
-                        }
                     }
                 }
             }
