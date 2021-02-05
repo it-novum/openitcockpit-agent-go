@@ -278,7 +278,7 @@ pipeline {
 }
 
 def cleanup_windows() {
-    bat 'git.exe clean -f -d -x'
+    powershell '& git.exe clean -f -d -x'
 }
 
 def cleanup() {
