@@ -336,9 +336,30 @@ def package_linux() {
     sh 'cp example/customchecks_example.cnf package/etc/openitcockpit-agent/customchecks.cnf'
     sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
     sh "chmod +x package/usr/bin/$BINNAME"
-    sh "cd release/packages/$GOOS && fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
-    sh "cd release/packages/$GOOS && fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
-    sh "cd release/packages/$GOOS && fpm -s dir -t pacman -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' --url 'https://openitcockpit.io' --before-install build/package/preinst.sh --after-install build/package/postinst.sh --before-remove build/package/prerm.sh --version '$VERSION'"
+    sh """cd release/packages/$GOOS &&
+        fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+        --version '$VERSION'"""
+    sh """cd release/packages/$GOOS &&
+        fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+        --version '$VERSION'"""
+    sh """cd release/packages/$GOOS &&
+        fpm -s dir -t pacman -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+        --version '$VERSION'"""
 }
 
 def package_windows() {
