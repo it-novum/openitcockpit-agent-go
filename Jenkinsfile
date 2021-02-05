@@ -253,11 +253,11 @@ pipeline {
 }
 
 def cleanup_windows() {
-    bat 'git.exe clean -f -x'
+    bat 'git.exe clean -f -d -x'
 }
 
 def cleanup() {
-    sh 'git clean -f -x'
+    sh 'git clean -f -d -x'
 }
 
 def test_windows() {
