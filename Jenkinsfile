@@ -70,7 +70,6 @@ pipeline {
                 }
             }
         }
-        */
         stage('Build') {
             parallel {
                 stage('windows') {
