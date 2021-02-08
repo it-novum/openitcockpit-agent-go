@@ -130,7 +130,7 @@ By default the agent will assume to be run as Windows Service. If you set OITC_A
 
 ```powershell
 $env:OITC_AGENT_DEBUG="1"
-.\agent.exe
+.\agent.exe -c C:\git\openitcockpit-agent-go\config.ini -l "$env:TEMP\agent.log"
 ```
 
 ## Build binary
