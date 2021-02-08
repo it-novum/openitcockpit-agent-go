@@ -128,6 +128,11 @@ enabled = false
 
 By default the agent will assume to be run as Windows Service. If you set OITC_AGENT_DEBUG it will run the default cmd like on linux.
 
+```powershell
+$env:OITC_AGENT_DEBUG="1"
+.\agent.exe
+```
+
 ## Build binary
 ### Static linked (recommended)
 ```
