@@ -425,9 +425,9 @@ def package_darwin() {
 
         sh "mkdir -p package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
-        cp "example/example_config.cnf package/Applications/openitcockpit-agent/config.cnf"
-        cp "example/example_customchecks.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
-        cp "build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
+        sh "cp example/example_config.cnf package/Applications/openitcockpit-agent/config.cnf"
+        sh "cp example/example_customchecks.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
+        sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license "Apache License Version 2.0" --config-files Applications/openitcockpit-agent \\
