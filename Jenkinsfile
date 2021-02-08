@@ -274,92 +274,104 @@ def cleanup() {
 }
 
 def test_windows() {
-    cleanup_windows()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup_windows()
 
-    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
-        bat "go.exe test -coverprofile=cover.out -timeout=120s ./..."
-        bat 'gocover-cobertura.exe < cover.out > coverage.xml'
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
+            bat "go.exe test -coverprofile=cover.out -timeout=120s ./..."
+            bat 'gocover-cobertura.exe < cover.out > coverage.xml'
+        }
     }
 }
 
 def test() {
-    cleanup()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup()
 
-    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
-        sh "go test -coverprofile=cover.out -timeout=120s ./..."
-        sh 'gocover-cobertura < cover.out > coverage.xml'
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
+            sh "go test -coverprofile=cover.out -timeout=120s ./..."
+            sh 'gocover-cobertura < cover.out > coverage.xml'
+        }
     }
 }
 
 
 def build_windows_binary() {
-    cleanup_windows()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup_windows()
 
-    catchError(buildResult: null, stageResult: 'FAILURE') {
-        bat "mkdir release\\$GOOS\\$GOARCH"
-        bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
+        catchError(buildResult: null, stageResult: 'FAILURE') {
+            bat "mkdir release\\$GOOS\\$GOARCH"
+            bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
+        }
+        archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
+        stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
     }
-    archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
-    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
 def build_binary() {
-    cleanup()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup()
 
-    catchError(buildResult: null, stageResult: 'FAILURE') {
-        sh "mkdir -p release/$GOOS/$GOARCH"
-        sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
+        catchError(buildResult: null, stageResult: 'FAILURE') {
+            sh "mkdir -p release/$GOOS/$GOARCH"
+            sh "go build -o release/$GOOS/$GOARCH/$BINNAME main.go"
+        }
+        archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
+        stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
     }
-    archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
-    stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
 }
 
 def package_linux() {
-    cleanup()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup()
 
-    unstash name: "release-$GOOS-$GOARCH"
+        unstash name: "release-$GOOS-$GOARCH"
 
-    sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
-    sh 'cp example/config_example.cnf package/etc/openitcockpit-agent/config.cnf'
-    sh 'cp example/customchecks_example.cnf package/etc/openitcockpit-agent/customchecks.cnf'
-    sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
-    sh "chmod +x package/usr/bin/$BINNAME"
-    sh """cd release/packages/$GOOS &&
-        fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
-        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
-        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
-        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
-        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
-        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
-        --version '$VERSION'"""
-    sh """cd release/packages/$GOOS &&
-        fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
-        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
-        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
-        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
-        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
-        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
-        --version '$VERSION'"""
-    sh """cd release/packages/$GOOS &&
-        fpm -s dir -t pacman -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
-        --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
-        --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
-        --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
-        --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
-        --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
-        --version '$VERSION'"""
+        sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
+        sh 'cp example/config_example.cnf package/etc/openitcockpit-agent/config.cnf'
+        sh 'cp example/customchecks_example.cnf package/etc/openitcockpit-agent/customchecks.cnf'
+        sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
+        sh "chmod +x package/usr/bin/$BINNAME"
+        sh """cd release/packages/$GOOS &&
+            fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+            --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+            --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+            --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+            --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+            --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+            --version '$VERSION'"""
+        sh """cd release/packages/$GOOS &&
+            fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+            --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+            --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+            --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+            --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+            --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+            --version '$VERSION'"""
+        sh """cd release/packages/$GOOS &&
+            fpm -s dir -t pacman -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+            --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
+            --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+            --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
+            --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
+            --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
+            --version '$VERSION'"""
 
-    archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+    }
 }
 
 def package_windows() {
-    cleanup_windows()
+    timeout(time: 30, unit: 'MINUTES') {
+        cleanup_windows()
 
-    unstash name: "release-$GOOS-$GOARCH"
+        unstash name: "release-$GOOS-$GOARCH"
 
-    powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
-    powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
-    archiveArtifacts artifacts: './*.msi', fingerprint: true
+        powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
+        powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
+        archiveArtifacts artifacts: './*.msi', fingerprint: true
+    }
 }
