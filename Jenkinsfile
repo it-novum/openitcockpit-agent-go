@@ -284,7 +284,7 @@ pipeline {
                         label 'macos'
                     }
                     environment {
-                        GOOS = 'windows'
+                        GOOS = 'darwin'
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
@@ -421,7 +421,7 @@ def package_darwin() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
-        sh "mkdir -p release/package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
+        sh "mkdir -p package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
         cp "example/example_config.cnf package/Applications/openitcockpit-agent/config.cnf"
         cp "example/example_customchecks.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
