@@ -68,6 +68,25 @@ pipeline {
                         }
                     }
                 }
+                stage('darwin') {
+                    agent {
+                        label 'macos'
+                    }
+                    environment {
+                        GOOS = 'darwin'
+                        BINNAME = 'openitcockpit-agent'
+                    }
+                    stages {
+                        stage('amd64') {
+                            environment {
+                                GOARCH = 'amd64'
+                            }
+                            steps {
+                                test()
+                            }
+                        }
+                    }
+                }
             }
         }
         stage('Build') {
