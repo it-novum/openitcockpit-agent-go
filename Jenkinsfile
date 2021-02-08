@@ -96,7 +96,6 @@ pipeline {
                                 GOARCH = 'amd64'
                             }
                             steps {
-                                sleep 10
                                 build_windows_binary()
                             }
                         }
@@ -159,7 +158,6 @@ pipeline {
                         }
                     }
                 }
-                /*
                 stage('darwin') {
                     agent {
                         docker { 
@@ -183,7 +181,6 @@ pipeline {
                         }
                     }
                 }
-                */
             }
         }
         stage('Package') {
