@@ -359,6 +359,6 @@ def package_windows() {
 
     unstash name: "release-$GOOS-$GOARCH"
 
-    bat "$ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
-    bat "$ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
+    powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
+    powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
 }
