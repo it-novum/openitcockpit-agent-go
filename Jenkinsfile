@@ -361,4 +361,5 @@ def package_windows() {
 
     powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
     powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
+    archiveArtifacts artifacts: './*.msi', fingerprint: true
 }
