@@ -5,7 +5,6 @@ pipeline {
         ADVINST = "\"C:\\Program Files (x86)\\Caphyon\\Advanced Installer\\bin\\x86\\advinst.exe\""
     }
     stages {
-        /*
         stage('Test') {
             environment {
                 CGO_ENABLED = '0'
@@ -13,11 +12,7 @@ pipeline {
             parallel {
                 stage('windows') {
                     agent {
-                        docker { 
-                            image 'golang:windowsservercore'
-                            args '-v agentgocache:C:\\cache'
-                            label 'windows'
-                        }
+                        label 'windows'
                     }
                     environment {
                         GOOS = 'windows'
@@ -80,11 +75,7 @@ pipeline {
             parallel {
                 stage('windows') {
                     agent {
-                        docker { 
-                            image 'golang:windowsservercore'
-                            args '-v agentgocache:C:\\cache'
-                            label 'windows'
-                        }
+                        label 'windows'
                     }
                     environment {
                         GOOS = 'windows'
@@ -276,7 +267,7 @@ pipeline {
 }
 
 def cleanup_windows() {
-    powershell '& git.exe clean -f -d -x'
+    bat 'git.exe clean -f -d -x'
 }
 
 def cleanup() {
@@ -287,11 +278,9 @@ def test_windows() {
     cleanup_windows()
 
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
         bat "go.exe test -coverprofile=cover.out -timeout=120s ./..."
         bat 'gocover-cobertura.exe < cover.out > coverage.xml'
-        bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     }
 }
 
@@ -310,10 +299,8 @@ def build_windows_binary() {
     cleanup_windows()
 
     catchError(buildResult: null, stageResult: 'FAILURE') {
-        bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\cache C:\\gopath', returnStatus: true
         bat "mkdir release\\$GOOS\\$GOARCH"
         bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
-        bat script: 'robocopy.exe /MIR /NFL /NDL /NJH /NJS /nc /ns /np C:\\gopath C:\\cache', returnStatus: true
     }
     archiveArtifacts artifacts: "release/$GOOS/$GOARCH/**", fingerprint: true
     stash name: "release-$GOOS-$GOARCH", includes: "release/$GOOS/$GOARCH/**"
