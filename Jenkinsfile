@@ -269,6 +269,7 @@ pipeline {
                                 package_windows()
                             }
                         }
+                        /*
                         stage('386') {
                             environment {
                                 GOARCH = '386'
@@ -277,6 +278,7 @@ pipeline {
                                 package_windows()
                             }
                         }
+                        */
                     }
                 }
                 stage('darwin') {
