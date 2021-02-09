@@ -90,10 +90,8 @@ func TestAgentReload(t *testing.T) {
 	defer cancel()
 
 	rt.Start(ctx)
-	for i := 0; i < 10; i++ {
-		t.Log("Reload ", i)
-		rt.Reload()
-	}
+	t.Log("Reload")
+	rt.Reload()
 
 	rt.Shutdown()
 }
@@ -152,10 +150,8 @@ func TestAgentReloadWithLongRunningTask(t *testing.T) {
 	defer cancel()
 
 	rt.Start(ctx)
-	for i := 0; i < 2; i++ {
-		t.Log("Reload ", i)
-		rt.Reload()
-	}
+	t.Log("Reload ")
+	rt.Reload()
 
 	rt.Shutdown()
 }
