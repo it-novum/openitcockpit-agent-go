@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 type testPlatformPath struct {
@@ -87,10 +88,17 @@ func TestExecute(t *testing.T) {
 		r.cmd.SetArgs(args)
 		r.cmd.SetOut(out)
 		r.cmd.SetErr(out)
-		err := r.Execute()
-		if err != nil {
-			t.Errorf("test failed \"%+v\": %s", args, err)
-		}
+		done := make(chan struct{})
+		go func() {
+			err := r.Execute()
+			if err != nil {
+				t.Errorf("test failed \"%+v\": %s", args, err)
+			}
+			done <- struct{}{}
+		}()
+		time.Sleep(time.Second * 2)
+		r.Shutdown()
+		<-done
 	}
 }
 

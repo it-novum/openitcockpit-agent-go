@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sync"
 
 	"github.com/it-novum/openitcockpit-agent-go/agentrt"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
@@ -26,6 +27,8 @@ type RootCmd struct {
 	disableLog       bool
 	disableLogRotate bool
 	logRotate        int
+	shutdown         chan struct{}
+	wg               sync.WaitGroup
 
 	platformPath platformpaths.PlatformPath
 }
@@ -101,12 +104,20 @@ func (r *RootCmd) run(cmd *cobra.Command, args []string) {
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
+	defer signal.Stop(sig)
 
-	<-sig
+	select {
+	case <-sig:
+		return
+	case <-r.shutdown:
+		return
+	}
 }
 
 func New() *RootCmd {
-	r := &RootCmd{}
+	r := &RootCmd{
+		shutdown: make(chan struct{}),
+	}
 	r.cmd = &cobra.Command{
 		Use:     "openitcockpit-agent",
 		Short:   "openitcockpit-agent collects system metrics for openitcockpit",
@@ -129,5 +140,13 @@ func New() *RootCmd {
 }
 
 func (r *RootCmd) Execute() error {
+	r.wg.Add(1)
+	defer r.wg.Done()
+
 	return r.cmd.Execute()
+}
+
+func (r *RootCmd) Shutdown() {
+	close(r.shutdown)
+	r.wg.Wait()
 }
