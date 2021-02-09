@@ -311,7 +311,7 @@ def cleanup() {
 }
 
 def test_windows() {
-    timeout(time: 5, unit: 'MINUTES') {
+    timeout(time: 10, unit: 'MINUTES') {
         cleanup_windows()
 
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -323,7 +323,7 @@ def test_windows() {
 }
 
 def test() {
-    timeout(time: 5, unit: 'MINUTES') {
+    timeout(time: 10, unit: 'MINUTES') {
         cleanup()
 
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -336,7 +336,7 @@ def test() {
 
 
 def build_windows_binary() {
-    timeout(time: 2, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         cleanup_windows()
 
         catchError(buildResult: null, stageResult: 'FAILURE') {
@@ -349,7 +349,7 @@ def build_windows_binary() {
 }
 
 def build_binary() {
-    timeout(time: 2, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         cleanup()
 
         catchError(buildResult: null, stageResult: 'FAILURE') {
@@ -362,7 +362,7 @@ def build_binary() {
 }
 
 def package_linux() {
-    timeout(time: 2, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         cleanup()
 
         unstash name: "release-$GOOS-$GOARCH"
@@ -402,7 +402,7 @@ def package_linux() {
 }
 
 def package_windows() {
-    timeout(time: 2, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         cleanup_windows()
 
         unstash name: "release-$GOOS-$GOARCH"
@@ -414,7 +414,7 @@ def package_windows() {
 }
 
 def package_darwin() {
-    timeout(time: 2, unit: 'MINUTES') {
+    timeout(time: 5, unit: 'MINUTES') {
         cleanup()
 
         unstash name: "release-$GOOS-$GOARCH"
