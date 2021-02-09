@@ -46,7 +46,7 @@ func TestPlatformRegistryRead(t *testing.T) {
 		t.Error(err)
 	}
 	test := wpp.LogPath()
-	if test != "test/agent.log" {
+	if test != "test\\agent.log" {
 		t.Error("PlatformPath did not return correct registry value: ", test)
 	}
 	testVerbose, ok := wpp.AdditionalData()["Verbose"]
