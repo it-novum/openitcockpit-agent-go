@@ -35,9 +35,10 @@ const (
 )
 
 type CommandArgs struct {
-	Command string
-	Timeout time.Duration
-	Shell   string
+	Command       string
+	Timeout       time.Duration
+	Shell         string
+	PowershellExe string
 }
 
 var (
@@ -92,7 +93,7 @@ func encodePowershell(command string) (string, error) {
 	return base64.StdEncoding.EncodeToString([]byte(encoded)), nil
 }
 
-func parseCommand(command, shell string) ([]string, string, error) {
+func parseCommand(command, shell, powershellExe string) ([]string, string, error) {
 	if runtime.GOOS == "windows" {
 		command = findDoubleBackslash.ReplaceAllString(command, "\\")
 		command = findBackslash.ReplaceAllString(command, "\\\\")
@@ -107,13 +108,21 @@ func parseCommand(command, shell string) ([]string, string, error) {
 
 		switch shell {
 		case "powershell":
-			return ConcatStringSlice(powershellCommand, args), "", nil
+			res := ConcatStringSlice(powershellCommand, args)
+			if powershellExe != "" {
+				res[0] = powershellExe
+			}
+			return res, "", nil
 		case "powershell_command":
 			encoded, err := encodePowershell(command)
 			if err != nil {
 				return nil, "", fmt.Errorf("could not encode powershell command '%s': %s", command, err)
 			}
-			return ConcatStringSlice(powershellCommandEncoded, []string{encoded}), "", nil
+			res := ConcatStringSlice(powershellCommandEncoded, []string{encoded})
+			if powershellExe != "" {
+				res[0] = powershellExe
+			}
+			return res, "", nil
 		case "bat":
 			return ConcatStringSlice(cmdCommand, args), "", nil
 		case "vbs":
@@ -141,7 +150,7 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 	ctxTimeout, cancel := context.WithTimeout(ctx, commandArgs.Timeout)
 	defer cancel()
 
-	args, stdin, err := parseCommand(commandArgs.Command, commandArgs.Shell)
+	args, stdin, err := parseCommand(commandArgs.Command, commandArgs.Shell, commandArgs.PowershellExe)
 	if err != nil {
 		result.RC = Unknown
 		result.Stdout = err.Error()
@@ -154,7 +163,13 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 
 	c := exec.CommandContext(ctxTimeout, args[0], args[1:]...)
 	c.Stdout = outputBuf
-	c.Stderr = outputBuf
+	// there is a bug in powershell where powershell prints an xml with the shell contents to stderr
+	if commandArgs.Shell == "powershell_command" {
+		nulBuf := &bytes.Buffer{}
+		c.Stderr = nulBuf
+	} else {
+		c.Stderr = outputBuf
+	}
 	c.Stdin = stdinBuf
 
 	c.SysProcAttr = commandSysproc

@@ -27,9 +27,10 @@ func (c *CustomCheckExecutor) Shutdown() {
 func (c *CustomCheckExecutor) runCheck(ctx context.Context, timeout time.Duration) {
 	log.Debugln("Begin CustomCheck: ", c.Configuration.Name)
 	result, err := utils.RunCommand(ctx, utils.CommandArgs{
-		Command: c.Configuration.Command,
-		Timeout: timeout,
-		Shell:   c.Configuration.Shell,
+		Command:       c.Configuration.Command,
+		Timeout:       timeout,
+		Shell:         c.Configuration.Shell,
+		PowershellExe: c.Configuration.PowershellExe,
 	})
 	if err != nil && result.RC == utils.Unknown {
 		log.Infoln("Custom check '", c.Configuration.Name, "' error: ", err)

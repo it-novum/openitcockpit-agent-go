@@ -52,6 +52,8 @@
 
 #[check_powershell_command]
    # This example shows the execution of a PowerShell Script on Windows
+   # Please note that due to a bug in powershell we have to discard the error output
+   # Use a powershell ps1 file if you require the error output
 #  command = "Write-Host test"
 #  shell = powershell_command
 #  interval = 60

@@ -84,7 +84,7 @@ func TestWindowsShells(t *testing.T) {
 		}
 		res, err := RunCommand(context.Background(), CommandArgs{
 			Command: cmd + " " + test.args,
-			Timeout: time.Second * 2,
+			Timeout: time.Second * 5,
 			Shell:   test.shell,
 		})
 		if strings.TrimSpace(res.Stdout) != test.expected {

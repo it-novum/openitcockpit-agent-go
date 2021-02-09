@@ -29,7 +29,8 @@ type CustomCheck struct {
 	// Windows => bat -> start cmd call, command must be path to bat file
 	// Windows => vbs -> wscript, command must be path to vbs file
 	// if not set the command will be just executed as it is
-	Shell string `mapstructure:"shell"`
+	Shell         string `mapstructure:"shell"`
+	PowershellExe string `mapstructure:"powershell_exe"`
 }
 
 type PushConfiguration struct {
