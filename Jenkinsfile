@@ -169,11 +169,7 @@ pipeline {
                 }
                 stage('darwin') {
                     agent {
-                        docker { 
-                            image 'golang:buster'
-                            args "-u root --privileged -v agentgocache:/go"
-                            label 'linux'
-                        }
+                        label 'macos'
                     }
                     environment {
                         GOOS = 'darwin'
@@ -425,8 +421,8 @@ def package_darwin() {
 
         sh "mkdir -p package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
-        sh "cp example/example_config.cnf package/Applications/openitcockpit-agent/config.cnf"
-        sh "cp example/example_customchecks.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
+        sh "cp example/config_example.cnf package/Applications/openitcockpit-agent/config.cnf"
+        sh "cp example/customchecks_example.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
