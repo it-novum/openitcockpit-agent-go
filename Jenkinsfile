@@ -265,7 +265,6 @@ pipeline {
                                 package_windows()
                             }
                         }
-                        /*
                         stage('386') {
                             environment {
                                 GOARCH = '386'
@@ -274,7 +273,6 @@ pipeline {
                                 package_windows()
                             }
                         }
-                        */
                     }
                 }
                 stage('darwin') {
@@ -407,8 +405,8 @@ def package_windows() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
-        powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent.aip\" \\SetVersion \"$VERSION\""
-        powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent.aip\""
+        powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
+        powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
     }
 }
