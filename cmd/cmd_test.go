@@ -2,13 +2,42 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
+func dynamicPort() int64 {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer l.Close()
+	port := int64(l.Addr().(*net.TCPAddr).Port)
+	l.Close()
+	return port
+}
+
+const exampleConfig = `[default]
+port = "%d"
+customchecks =
+`
 
 type testPlatformPath struct {
 	tempPath   string
@@ -58,12 +87,12 @@ func newTestPath(t *testing.T, invalidLogDir bool) *testPlatformPath {
 	} else {
 		tpp.logPath = filepath.Join(tpp.tempPath, "agent.log")
 	}
-	fl, err := os.Create(filepath.Join(tpp.tempPath, "config.ini"))
+
+	tpp.configPath = filepath.Join(tpp.tempPath, "config.ini")
+	err = ioutil.WriteFile(tpp.configPath, []byte(fmt.Sprintf(exampleConfig, dynamicPort())), 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fl.Close()
-	tpp.configPath = filepath.Join(tpp.tempPath, "config.ini")
 	ok = true
 	return tpp
 }

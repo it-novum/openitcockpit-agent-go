@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -15,6 +16,17 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
+
+func testPortOpen(address string) bool {
+	timeout := time.Second
+	conn, err := net.DialTimeout("tcp", address, timeout)
+	if err != nil {
+		log.Debugln(err)
+		return false
+	}
+	defer conn.Close()
+	return true
+}
 
 type Reloader interface {
 	Reload()
@@ -136,6 +148,13 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 
 	s.close()
 	s.handler = newHandler
+
+	for i := 0; i < 10; i++ {
+		if !testPortOpen(newServer.Addr) {
+			continue
+		}
+		time.Sleep(time.Second)
+	}
 
 	s.wg.Add(1)
 	go func() {
