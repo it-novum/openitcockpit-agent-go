@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
