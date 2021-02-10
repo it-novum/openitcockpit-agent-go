@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/checkrunner"
+	"github.com/it-novum/openitcockpit-agent-go/checks"
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/it-novum/openitcockpit-agent-go/loghandler"
 	"github.com/it-novum/openitcockpit-agent-go/pushclient"
@@ -125,13 +126,20 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 	if a.checkRunner != nil {
 		a.checkRunner.Shutdown()
 	}
+
+	checks, err := checks.ChecksForConfiguration(cfg)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	a.checkRunner = &checkrunner.CheckRunner{
 		Configuration: cfg,
 		Result:        a.checkResult,
+		Checks:        checks,
 	}
 	if err := a.checkRunner.Start(ctx); err != nil {
 		log.Fatalln(err)
 	}
+
 	if a.pushClient != nil {
 		a.pushClient.Shutdown()
 		a.pushClient = nil

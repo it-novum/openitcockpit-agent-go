@@ -15,6 +15,7 @@ import (
 type CheckRunner struct {
 	Configuration *config.Configuration
 	Result        chan map[string]interface{}
+	Checks        []checks.Check
 
 	mtx      sync.Mutex
 	wg       sync.WaitGroup
@@ -111,11 +112,6 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 func (c *CheckRunner) Start(ctx context.Context) error {
 	c.shutdown = make(chan struct{})
 
-	checks, err := checks.ChecksForConfiguration(c.Configuration)
-	if err != nil {
-		return err
-	}
-
 	checkTimeout := time.Duration(c.Configuration.CheckInterval-1) * time.Second
 
 	c.wg.Add(1)
@@ -128,7 +124,7 @@ func (c *CheckRunner) Start(ctx context.Context) error {
 		ticker := time.NewTicker(time.Duration(c.Configuration.CheckInterval) * time.Second)
 		defer ticker.Stop()
 
-		go c.runChecks(ctx, checks, checkTimeout)
+		go c.runChecks(ctx, c.Checks, checkTimeout)
 		for {
 			select {
 			case <-ctx.Done():
@@ -138,7 +134,7 @@ func (c *CheckRunner) Start(ctx context.Context) error {
 					return
 				}
 			case <-ticker.C:
-				go c.runChecks(ctx, checks, checkTimeout)
+				go c.runChecks(ctx, c.Checks, checkTimeout)
 			}
 		}
 	}()

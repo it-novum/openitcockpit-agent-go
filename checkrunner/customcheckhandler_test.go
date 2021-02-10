@@ -25,16 +25,16 @@ func TestRun(t *testing.T) {
 		Configuration: []*config.CustomCheck{
 			{
 				Name:     "check_1",
-				Interval: 1,
+				Interval: 2,
 				Enabled:  true,
-				Timeout:  30,
+				Timeout:  1,
 				Command:  getCommandLine(),
 			},
 		},
 	}
 	cc.Start(context.Background())
 
-	timeout := time.After(time.Second * 3)
+	timeout := time.After(time.Second * 5)
 	results := []*utils.CommandResult{}
 
 outerfor:
