@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 )
 
@@ -24,14 +23,4 @@ func TestChecksCheckUser(t *testing.T) {
 
 	js, _ := json.Marshal(results)
 	fmt.Println(string(js))
-
-	if os.Getenv("CIBUILD") != "" {
-		// results will always be empty on the Jenkins server
-		return
-	}
-
-	if len(results) == 0 {
-		t.Fatal("No logged in users - this is impossible. Who is running this test? ;)")
-	}
-
 }
