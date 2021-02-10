@@ -27,6 +27,7 @@ type resultAgent struct {
 	Family               string `json:"family"`                 // Standalone Workstation | Server
 	AgentVersion         string `json:"agent_version"`          // e.g. 3.0.0
 	TemperatureUnit      string `json:"temperature_unit"`       // C (hardcoded)
+	GOOS                 string `json:"goos"`                   // wValue of runtime.GOOS
 }
 
 // Run the actual check
@@ -53,6 +54,7 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		Family:               family,
 		AgentVersion:         config.AgentVersion,
 		TemperatureUnit:      "C",
+		GOOS:                 runtime.GOOS,
 	}, nil
 }
 
