@@ -71,6 +71,9 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Errorln("Consider increasing check interval or disable unnecessary checks")
 		}
+	case <-c.shutdown:
+		log.Errorln("Check: canceled")
+		return
 	case c.Result <- results:
 	}
 }

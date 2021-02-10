@@ -42,6 +42,12 @@ func (c *CustomCheckExecutor) runCheck(ctx context.Context, timeout time.Duratio
 	}:
 	case <-time.After(time.Second * 5):
 		log.Errorln("Internal error: timeout could not save custom check result")
+	case <-c.shutdown:
+		log.Errorln("CustomCheck: canceled")
+		return
+	case <-ctx.Done():
+		log.Errorln("CustomCheck: canceled")
+		return
 	}
 	log.Debugln("Finish CustomCheck: ", c.Configuration.Name)
 }

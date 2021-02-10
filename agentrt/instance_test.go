@@ -24,7 +24,9 @@ func dynamicPort() int64 {
 		log.Fatal(err)
 	}
 	defer l.Close()
-	return int64(l.Addr().(*net.TCPAddr).Port)
+	port := int64(l.Addr().(*net.TCPAddr).Port)
+	l.Close()
+	return port
 }
 
 const exampleConfig = `[default]

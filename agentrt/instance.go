@@ -162,26 +162,48 @@ func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.C
 }
 
 func (a *AgentInstance) stop() {
+	wg := sync.WaitGroup{}
 	if a.logHandler != nil {
-		a.logHandler.Shutdown()
-		a.logHandler = nil
+		wg.Add(1)
+		go func() {
+			a.logHandler.Shutdown()
+			a.logHandler = nil
+			wg.Done()
+		}()
 	}
 	if a.webserver != nil {
-		a.webserver.Shutdown()
-		a.webserver = nil
+		wg.Add(1)
+		go func() {
+			a.webserver.Shutdown()
+			a.webserver = nil
+			wg.Done()
+		}()
 	}
 	if a.customCheckHandler != nil {
-		a.customCheckHandler.Shutdown()
-		a.customCheckHandler = nil
+		wg.Add(1)
+		go func() {
+			a.customCheckHandler.Shutdown()
+			a.customCheckHandler = nil
+			wg.Done()
+		}()
 	}
 	if a.checkRunner != nil {
-		a.checkRunner.Shutdown()
-		a.checkRunner = nil
+		wg.Add(1)
+		go func() {
+			a.checkRunner.Shutdown()
+			a.checkRunner = nil
+			wg.Done()
+		}()
 	}
 	if a.pushClient != nil {
-		a.pushClient.Shutdown()
-		a.pushClient = nil
+		wg.Add(1)
+		go func() {
+			a.pushClient.Shutdown()
+			a.pushClient = nil
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
 
 func (a *AgentInstance) Start(parent context.Context) {
