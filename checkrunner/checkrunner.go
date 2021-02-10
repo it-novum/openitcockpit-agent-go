@@ -3,6 +3,7 @@ package checkrunner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -25,6 +26,38 @@ func (c *CheckRunner) Shutdown() {
 	c.wg.Wait()
 }
 
+type errorResult struct {
+	Error string `json:"error"`
+}
+
+func runCheck(ctx context.Context, check checks.Check) interface{} {
+	var result interface{}
+
+	// note: no gopher!
+	// we have to encapsulate the recover() from panics
+	func() {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Errorln("Check ", check.Name(), ": !!PANIC!! ", err)
+				result = &errorResult{
+					Error: fmt.Sprint(err),
+				}
+			}
+		}()
+
+		if r, err := check.Run(ctx); err != nil {
+			log.Errorln("Check ", check.Name(), ": ", err)
+			result = &errorResult{
+				Error: fmt.Sprint(err),
+			}
+		} else {
+			result = r
+		}
+	}()
+
+	return result
+}
+
 func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, timeout time.Duration) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
@@ -39,11 +72,7 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 	go func() {
 		for _, check := range checks {
 			log.Debugln("Begin Check: ", check.Name())
-			if result, err := check.Run(ctx); err != nil {
-				log.Errorln("Check ", check.Name(), ": ", err)
-			} else {
-				results[check.Name()] = result
-			}
+			results[check.Name()] = runCheck(ctx, check)
 			log.Debugln("Finish Check: ", check.Name())
 		}
 		// done maybe already to late
