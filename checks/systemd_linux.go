@@ -2,10 +2,31 @@ package checks
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/coreos/go-systemd/v22/dbus"
+	systemdutil "github.com/coreos/go-systemd/v22/util"
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
+
+// we have to reuse the systemd dbus connection, because the dbus lib uses some sort of reuse stuff
+// if we close the connection and short time later create a new one it might break
+var systemdConn *dbus.Conn
+
+func getSystemdConn() (*dbus.Conn, error) {
+	var err error
+
+	if !systemdutil.IsRunningSystemd() {
+		return nil, fmt.Errorf("not running systemd")
+	}
+	if systemdConn == nil {
+		systemdConn, err = dbus.New()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return systemdConn, nil
+}
 
 // CheckSystemd gathers information about Systemd services
 type CheckSystemd struct {
@@ -33,11 +54,14 @@ func (c *CheckSystemd) Run(ctx context.Context) (interface{}, error) {
 }
 
 func (c *CheckSystemd) getServiceListViaDbus(ctx context.Context) ([]*resultSystemdServices, error) {
-	conn, err := dbus.NewWithContext(ctx)
+	if !systemdutil.IsRunningSystemd() {
+		return []*resultSystemdServices{}, nil
+	}
+
+	conn, err := getSystemdConn()
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 
 	if err := ctx.Err(); err != nil {
 		return nil, err

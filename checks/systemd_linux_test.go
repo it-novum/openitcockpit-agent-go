@@ -4,16 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 	"time"
+
+	systemdutil "github.com/coreos/go-systemd/v22/util"
 )
 
 func TestChecksCheckSystemdServices(t *testing.T) {
-	if os.Getenv("CIBUILD") != "" {
-		t.SkipNow()
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -36,7 +33,7 @@ func TestChecksCheckSystemdServices(t *testing.T) {
 }
 
 func TestGetServiceListFromDbus(t *testing.T) {
-	if os.Getenv("CIBUILD") != "" {
+	if !systemdutil.IsRunningSystemd() {
 		t.SkipNow()
 	}
 
