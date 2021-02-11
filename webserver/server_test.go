@@ -1,21 +1,16 @@
 package webserver
 
 import (
-	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -88,7 +83,7 @@ func TestServerCancel(t *testing.T) {
 }
 
 func TestServerTLS(t *testing.T) {
-	crt, err := generateTestCertificates(false)
+	crt, err := copyTestCertificates(false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +122,7 @@ func TestServerTLS(t *testing.T) {
 }
 
 func TestServerAutoTLS(t *testing.T) {
-	crt, err := generateTestCertificates(true)
+	crt, err := copyTestCertificates(true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +163,7 @@ func TestServerAutoTLS(t *testing.T) {
 }
 
 func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
-	crt, err := generateTestCertificates(true)
+	crt, err := copyTestCertificates(true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,152 +293,6 @@ func connectionTest(host string, port int, crt *certs) bool {
 	return true
 }
 
-func encodeAndSaveKey(dest string, key *rsa.PrivateKey) error {
-	buf := &bytes.Buffer{}
-	if err := pem.Encode(buf, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	}); err != nil {
-		return fmt.Errorf("encode private key failed: %s", err)
-	}
-	if err := ioutil.WriteFile(dest, buf.Bytes(), 0600); err != nil {
-		return fmt.Errorf("write key to file failed: %s", err)
-	}
-	return nil
-}
-
-func encodeAndSaveCert(dest string, derCert []byte) error {
-	buf := &bytes.Buffer{}
-	if err := pem.Encode(buf, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: derCert,
-	}); err != nil {
-		return fmt.Errorf("encode certificate failed: %s", err)
-	}
-	if err := ioutil.WriteFile(dest, buf.Bytes(), 0600); err != nil {
-		return fmt.Errorf("write certificate to file failed: %s", err)
-	}
-	return nil
-}
-
-func generateSelfSignedCertificate(destCertFilePath, destKeyFilePath string) error {
-	bits := 4096
-	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		return fmt.Errorf("rsa key generate failed: %s", err)
-	}
-
-	tpl := x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "localhost"},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(2, 0, 0),
-		BasicConstraintsValid: true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-	}
-
-	derCert, err := x509.CreateCertificate(rand.Reader, &tpl, &tpl, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return fmt.Errorf("create x509 certificate failed: %s", err)
-	}
-
-	if err := encodeAndSaveKey(destKeyFilePath, privateKey); err != nil {
-		return err
-	}
-
-	return encodeAndSaveCert(destCertFilePath, derCert)
-}
-
-func generateCASignedCertificate(destCertFilePath, destKeyFilePath, destClientCertFilePath, destClientKeyFilePath, destCACertFilePath, destCAKeyFilePath string) error {
-	bits := 4096
-	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		return fmt.Errorf("rsa key generate failed: %s", err)
-	}
-	privateClientKey, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		return fmt.Errorf("rsa key generate failed: %s", err)
-	}
-	caPrivateKey, err := rsa.GenerateKey(rand.Reader, bits)
-	if err != nil {
-		return fmt.Errorf("rsa key generate failed: %s", err)
-	}
-
-	ca := x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "CA Name"},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(2, 0, 0),
-		BasicConstraintsValid: true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		IsCA:                  true,
-	}
-	caDer, err := x509.CreateCertificate(rand.Reader, &ca, &ca, &caPrivateKey.PublicKey, caPrivateKey)
-	if err != nil {
-		return fmt.Errorf("create x509 certificate failed: %s", err)
-	}
-
-	cert := x509.Certificate{
-		SerialNumber:          big.NewInt(456),
-		Subject:               pkix.Name{CommonName: "localhost"},
-		DNSNames:              []string{"localhost"},
-		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(2, 0, 0),
-		BasicConstraintsValid: true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-	}
-
-	derCert, err := x509.CreateCertificate(rand.Reader, &cert, &ca, &privateKey.PublicKey, caPrivateKey)
-	if err != nil {
-		return fmt.Errorf("create x509 certificate failed: %s", err)
-	}
-
-	certClient := x509.Certificate{
-		SerialNumber:          big.NewInt(457),
-		Subject:               pkix.Name{CommonName: "test client"},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(2, 0, 0),
-		BasicConstraintsValid: true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-	}
-
-	derCertClient, err := x509.CreateCertificate(rand.Reader, &certClient, &ca, &privateClientKey.PublicKey, caPrivateKey)
-	if err != nil {
-		return fmt.Errorf("create x509 certificate failed: %s", err)
-	}
-
-	if err := encodeAndSaveCert(destCACertFilePath, caDer); err != nil {
-		return err
-	}
-
-	if err := encodeAndSaveKey(destCAKeyFilePath, caPrivateKey); err != nil {
-		return err
-	}
-
-	if err := encodeAndSaveCert(destCertFilePath, derCert); err != nil {
-		return err
-	}
-
-	if err := encodeAndSaveKey(destKeyFilePath, privateKey); err != nil {
-		return err
-	}
-
-	if err := encodeAndSaveCert(destClientCertFilePath, derCertClient); err != nil {
-		return err
-	}
-
-	if err := encodeAndSaveKey(destClientKeyFilePath, privateClientKey); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 type certs struct {
 	tmpDir         string
 	certPath       string
@@ -454,7 +303,7 @@ type certs struct {
 	caKeyPath      string
 }
 
-func generateTestCertificates(autoTLS bool) (*certs, error) {
+func copyTestCertificates(autoTLS bool) (*certs, error) {
 	crt := &certs{}
 	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
 	crt.tmpDir = tmpDir
@@ -467,19 +316,33 @@ func generateTestCertificates(autoTLS bool) (*certs, error) {
 			os.RemoveAll(tmpDir)
 		}
 	}()
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("could not call runtime.Caller")
+	}
+	templateCertDir := filepath.Join(filepath.Dir(filename), "..", "testdata", "certificates")
+
 	crt.certPath = filepath.Join(tmpDir, "server.crt")
 	crt.keyPath = filepath.Join(tmpDir, "server.key")
+	copyMap := map[string]string{}
 	if autoTLS {
 		crt.caCertPath = filepath.Join(tmpDir, "ca.crt")
 		crt.caKeyPath = filepath.Join(tmpDir, "ca.key")
 		crt.certClientPath = filepath.Join(tmpDir, "client.crt")
 		crt.keyClientPath = filepath.Join(tmpDir, "client.key")
-		if err := generateCASignedCertificate(crt.certPath, crt.keyPath, crt.certClientPath, crt.keyClientPath, crt.caCertPath, crt.caKeyPath); err != nil {
-			return nil, err
-		}
+		copyMap["server.crt"] = "server.crt"
+		copyMap["server.key"] = "server.key"
+		copyMap["ca.crt"] = "ca.crt"
+		copyMap["ca.key"] = "ca.key"
+		copyMap["client.crt"] = "client.crt"
+		copyMap["client.key"] = "client.key"
 	} else {
-		if err := generateSelfSignedCertificate(crt.certPath, crt.keyPath); err != nil {
-			return nil, err
+		copyMap["server_self.crt"] = "server.crt"
+		copyMap["server_self.key"] = "server.key"
+	}
+	for src, dest := range copyMap {
+		if err := utils.CopyFile(filepath.Join(templateCertDir, src), filepath.Join(tmpDir, dest)); err != nil {
+			log.Fatalln("Copy failed: ", filepath.Join(templateCertDir, src), "->", filepath.Join(tmpDir, dest), ": ", err)
 		}
 	}
 	ok = true
