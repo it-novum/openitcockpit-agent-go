@@ -37,15 +37,16 @@ func TestGetServiceListFromDbus(t *testing.T) {
 		t.SkipNow()
 	}
 
-	check := &CheckSystemd{}
+	c := &CheckSystemd{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	results, err := check.getServiceListViaDbus(ctx)
+	r, err := c.Run(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	results := r.([]*resultSystemdServices)
 
 	if len(results) == 0 {
 		t.Fatal("Empty result from systemd / dbus")
