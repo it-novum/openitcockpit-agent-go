@@ -148,11 +148,13 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	s.close()
 	s.handler = newHandler
 
-	for i := 0; i < 10; i++ {
-		if !testPortOpen(newServer.Addr) {
-			break
+	if s.server != nil {
+		for i := 0; i < 30; i++ {
+			if !testPortOpen(s.server.Addr) {
+				break
+			}
+			time.Sleep(time.Second)
 		}
-		time.Sleep(time.Second)
 	}
 
 	s.wg.Add(1)
@@ -167,6 +169,12 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	}()
 
 	s.server = newServer
+	for i := 0; i < 30; i++ {
+		if testPortOpen(newServer.Addr) {
+			break
+		}
+		time.Sleep(time.Second)
+	}
 	log.Debugln("Webserver: Reload complete")
 	cfg.reloadDone <- struct{}{}
 }
