@@ -24,7 +24,7 @@ func burn(d time.Time) <-chan struct{} {
 		defer func() {
 			done <- struct{}{}
 		}()
-		for i := 0; i < math.MaxInt64; i++ {
+		for i := 0; i < int(^uint(0)>>1); i++ {
 			if time.Now().After(d) {
 				return
 			}
