@@ -37,3 +37,12 @@ Thumbs.db
 
 # VSCode local history
 .history
+
+
+# Testing
+agent-key
+agent.crt
+agent.csr
+selfsigned.crt
+selfsigned.key
+server_ca-crt
