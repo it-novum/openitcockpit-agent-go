@@ -45,6 +45,7 @@ func (c *CheckDocker) Run(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		panic(err)
 	}
+	defer cli.Close()
 
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{
 		All: false, //Only show running containers
