@@ -181,6 +181,7 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 			continue
 		}
 
+		// Docs: https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainMemoryStats
 		result.Memory = &virtMemory{
 			Total:      domStats.Balloon.Current,
 			Ununsed:    domStats.Balloon.Unused,
