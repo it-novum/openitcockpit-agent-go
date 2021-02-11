@@ -21,7 +21,6 @@ func testPortOpen(address string) bool {
 	timeout := time.Second
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
-		log.Debugln(err)
 		return false
 	}
 	defer conn.Close()
@@ -151,7 +150,7 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 
 	for i := 0; i < 10; i++ {
 		if !testPortOpen(newServer.Addr) {
-			continue
+			break
 		}
 		time.Sleep(time.Second)
 	}
