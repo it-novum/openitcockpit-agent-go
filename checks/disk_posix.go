@@ -4,6 +4,7 @@ package checks
 
 import (
 	"context"
+	"strings"
 
 	"github.com/shirou/gopsutil/v3/disk"
 )
@@ -13,14 +14,17 @@ var devToIgnore = map[string]bool{
 	"proc":        true,
 	"udev":        true,
 	"devpts":      true,
+	"devfs":       true,
 	"tmpfs":       true,
 	"securityfs":  true,
 	"cgroup":      true,
+	"cgroup2":     true,
 	"pstore":      true,
 	"debugfs":     true,
 	"hugetlbfs":   true,
 	"systemd-1":   true,
 	"mqueue":      true,
+	"none":        true,
 	"sunrpc":      true,
 	"nfsd":        true,
 	"nsfs":        true,
@@ -28,6 +32,7 @@ var devToIgnore = map[string]bool{
 	"configfs":    true,
 	"overlay":     true,
 	"shm":         true,
+	"tracefs":     true,
 	"binfmt_misc": true,
 }
 
@@ -45,6 +50,10 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 
 	for _, device := range disks {
 		if devToIgnore[device.Device] {
+			continue
+		}
+
+		if strings.HasPrefix(device.Device, "/dev/loop") {
 			continue
 		}
 
