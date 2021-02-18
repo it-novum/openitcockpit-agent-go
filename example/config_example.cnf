@@ -1,153 +1,161 @@
 [default]
+#
+# This is the configuration file for the openITCOCKPIT Monitoring Agent 3.x
+# Notice: Empty values will not been ignored! If you want to disable an option like proxy comment it out!
+
+#########################
+#       Web Server      #
+#########################
+
+# Bind address of the build-in web server
+# Use 0.0.0.0 to bind on all interfaces
+address = 0.0.0.0
+
+# Port of the Agents build-in web server
+# Default port is 3333
+port = 3333
+
+#########################
+#   Security Settings   #
+#########################
+
+# Try to enable auto ssl mode for webserver
+try-autossl = True
+
+# File paths used to store autossl related files (default: /etc/openitcockpit-agent/):
+# Leave this blank to use the default values
+# Example: /etc/openitcockpit-agent/agent.csr
+#autossl-csr-file =
+
+# Example: /etc/openitcockpit-agent/agent.crt
+#autossl-crt-file =
+
+# Example: /etc/openitcockpit-agent/agent.key
+#autossl-key-file =
+
+# Example: /etc/openitcockpit-agent/server_ca.crt
+#autossl-ca-file =
+
+# If a certificate file is given, the agent will only be accessible through HTTPS
+# Instead of messing around with self-signed certificates we recommend to use the autossl feature.
+# Example: /etc/ssl/certs/ssl-cert-snakeoil.pem
+#certfile = /etc/ssl/certs/ssl-cert-snakeoil.pem
+
+# Private key file of the given TLS certificate
+# Example: /etc/ssl/private/ssl-cert-snakeoil.key
+#keyfile = /etc/ssl/private/ssl-cert-snakeoil.key
+
+# Enable remote read and write access to the current agent configuration (this file) and
+# the customchecks config
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ! WARNING: This could lead to remote code execution    !
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+config-update-mode = False
+
+# Enable HTTP Basic Authentication
+# Disabled if blank
+# Example: auth = user:password
+#auth = user:password
+
+#########################
+#        Checks         #
+#########################
 
 # Determines in seconds how often the agent will schedule all internal checks
 interval = 30
 
-# Port of the Agents build-in web server
-port = 3333
-
-# Bind address of the build-in web server
-address = 0.0.0.0
-
-# If a certificate file is given, the agent will switch to https only
-# Example: /etc/ssl/certs/ssl-cert-snakeoil.pem
-certfile =
-
-# Private key file of the given TLS certificate
-# Example: /etc/ssl/private/ssl-cert-snakeoil.key
-keyfile =
-
-# Try to enable auto ssl mode for webserver
-try-autossl = true
-
-# File paths used for autossl (default: /etc/openitcockpit-agent/):
-# Example: /etc/openitcockpit-agent/agent.csr
-autossl-csr-file = 
-# Example: /etc/openitcockpit-agent/agent.crt
-autossl-crt-file = 
-# Example: /etc/openitcockpit-agent/agent.key
-autossl-key-file = 
-# Example: /etc/openitcockpit-agent/server_ca.crt
-autossl-ca-file = 
-
-# Print most messages
-verbose = false
-
-# Print all messages with stacktrace
-# For developers
-stacktrace = false
-
-# Enable remote read and write of THIS config file and custom checks defenition
-# Examples:
-#   Read config: curl http://0.0.0.0:3333/config
-#   Write config: curl -X POST -d '{"config": {"interval": "60", "port": "3333", "address": "0.0.0.0", "certfile": "/etc/ssl/certs/ssl-cert-snakeoil.pem", "keyfile": "/etc/ssl/private/ssl-cert-snakeoil.key", "verbose": "true", "stacktrace": "false", "config-update-mode": "true", "auth": "", "customchecks": "", "temperature-fahrenheit": "false", "oitc-host": "", "oitc-url": "", "oitc-apikey": "", "oitc-interval": "60", "oitc-enabled": "false"}, "customchecks": {}}' http://0.0.0.0:3333/config
-config-update-mode = false
-
-# Enable Basic Authentication
-# Disabled if blank
-# Example: auth = user:password
-# Do not use colon (:) in the username!
-auth =
-
 # Remote Plugin Execution
 # Path to config will where custom checks can be defined
-customchecks = /etc/openitcockpit-agent/customchecks.ini
+# Leave blank for the default value
+#
+# Linux: /etc/openitcockpit-agent/customchecks.ini
+# Windows: C:\Program Files\it-novum\openitcockpit-agent\customchecks.ini
+# macOS: /Applications/openitcockpit-agent/customchecks.ini
+#customchecks = /etc/openitcockpit-agent/customchecks.ini
 
-# Return temperature values as fahrenheit
-temperature-fahrenheit = false
+#########################
+# Enable/Disable checks #
+#########################
 
-# Try to check docker containers and return stats in default output
-dockerstats = false
+# Enable CPU monitoring
+cpustats = True
 
-# Try to check qemu virtual machines and return stats in default output
-qemustats = false
+# Enable monitoring of running processes
+processstats = True
 
-# Enable default cpu status check
-cpustats = true
+# Enable monitoring of network interfaces
+netstats = True
 
-# Enable default sensor status check
-sensorstats = true
+# Enable monitoring of the traffic (I/O) of network interfaces
+netio = True
 
-# Enable default process status check
-processstats = true
+# Enable disk usage monitoring
+diskstats = True
 
-# Add process child ids to the default process status check (computationally intensive)
-processstats-including-child-ids = false
+# Enable monitoring of disk I/O
+diskio = True
 
-# Enable default network status check
-netstats = true
+# Enable monitoring of Systemd Services (Linux only)
+systemdservices = True
 
-# Enable default disk status check
-diskstats = true
+# Enable monitoring of Launchd Services (macOS only)
+launchdservices = True
 
-# Enable default network I/O calculation
-netio = true
+# Enable monitoring of Windows Services (Windows only)
+winservices = True
 
-# Enable default disk I/O calculation
-diskio = true
-
-# Enable default windows services status check
-winservices = true
-
-# Enable default systemd services status check
-systemdservices = true
-
-# Enable default windows event log check
-wineventlog = true
+# Enable monitoring of Windows Event Log records (Windows only)
+wineventlog = True
 
 # Define comma separated windows event log log types
-wineventlog-logtypes = System, Application, Security
+wineventlog-logtypes = System,Application,Security
 
-# If you have an Alfresco enterprise instance, JMX is configured and java installed, you can enable alfrescostats
-alfrescostats = false
+# Enable monitoring of temperature and battery sensors
+sensorstats = True
 
-# Set your Alfresco JMX username
-alfresco-jmxuser = monitorRole
+# Enable support to monitor Docker containers
+# Known issues: Error response from daemon: client version 1.41 is too new. Maximum supported API version is 1.40
+# Workaround: export DOCKER_API_VERSION=1.40
+dockerstats = False
 
-# Set your Alfresco JMX password
-alfresco-jmxpassword = change_asap
+# Check KVMs through libvirt
+# This requires to complie the openITCOCKPIT Monitoring Agent by yourself.
+# Please see the Wiki for instructions: https://github.com/it-novum/openitcockpit-agent-go/wiki/Build-binary
+libvirt = False
 
-# Set your Alfresco host address
-alfresco-jmxaddress = 0.0.0.0
 
-# Set your Alfresco JMX port
-alfresco-jmxport = 50500
-
-# Set your Alfresco JMX path (path behind the JMX address "service:jmx:rmi:///jndi/rmi://0.0.0.0:50500")
-alfresco-jmxpath = /alfresco/jmxrmi
-
-# Set you custom Alfresco JMX query. Leave empty to use the default.
-alfresco-jmxquery = 
-
-# Path to the java binary (java need to be installed on agent host system in case you want to use alfrescostats)
-alfresco-javapath = /usr/bin/java
-
+#########################
+#       Push mode       #
+#########################
 
 # By default openITCOCKPIT will pull check results from the openITCOCKPIT Agent.
-# In a Cloud environments or behind a NAT network it could become handy
-# if the openITCOCKPIT Agent will push the results to your openITCOCKPIT Server
+# In a cloud environments or behind a NAT network it could become handy
+# if the openITCOCKPIT Monitoring Agent will push the results to your openITCOCKPIT Server
 [oitc]
 
 # Enable Push Mode
-enabled = false
+enabled = False
 
-# The UUID of the Host.
-# You can find this information in the openITCOCKPIT interface
-# Example: 402357e4-dc34-4f5b-a86d-e59cfbb3ffe7
-hostuuid =
+# This option disables the webserver of the openITCOCKPIT Monitoring Agent when running in PUSH mode.
+# When you also want to enable the Webserver even if the agent is running in PUSH mode we highly recommend
+# to enable HTTP Basic Authentication and to use the certfile and keyfile options to enable HTTPS
+enable-webserver = False
 
-# Address of your openITCOCKPIT Server
-# Example: https://openitcockpit.io
+# Address of your openITCOCKPIT Server where the Agent will push the results to
+# Example: https://demo.openitcockpit.io
 url = 
 
+# Enable this option when your openITCOCKPIT server uses valid TLS certificates
+# like from Let's Encrypt
+verify-server-certificate = False
+
+# Timeout in seconds for the HTTP push client
+timeout = 1
+
 # API-Key of your openITCOCKPIT Server
-apikey =
+apikey = 
 
 # Address of HTTP/HTTPS Proxy if required.
 # Leave blank to not use a proxy server
 # Example: http://10.10.1.10:3128
-proxy =
-
-# Determines in seconds how often the agent will push
-# check results to your openITCOCKPIT Server
-interval = 60
+#proxy = http://10.10.1.10:3128
