@@ -337,13 +337,6 @@ def build_windows_binary() {
     timeout(time: 5, unit: 'MINUTES') {
         cleanup_windows()
 
-        // Convert Linux new lines to Windows new lines for older Windows Server systems
-        bat 'move example\\config_example.ini example\\config_example_linux.ini'
-        bat 'TYPE example\\config_example_linux.ini | MORE /P > example\\config_example.ini'
-
-        bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
-        bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
-
         catchError(buildResult: null, stageResult: 'FAILURE') {
             bat "mkdir release\\$GOOS\\$GOARCH"
             bat "go.exe build -o release/$GOOS/$GOARCH/$BINNAME main.go"
@@ -411,6 +404,13 @@ def package_windows() {
         cleanup_windows()
 
         unstash name: "release-$GOOS-$GOARCH"
+
+        // Convert Linux new lines to Windows new lines for older Windows Server systems
+        bat 'move example\\config_example.ini example\\config_example_linux.ini'
+        bat 'TYPE example\\config_example_linux.ini | MORE /P > example\\config_example.ini'
+
+        bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
+        bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
 
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
         powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
