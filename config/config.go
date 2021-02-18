@@ -141,7 +141,7 @@ var defaultValue = map[string]interface{}{
 	"alfrescostats":        true,
 	"libvirt":              true,
 	"wineventlog-logtypes": "System,Application,Security",
-	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
+	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
 	"autossl-crt-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
@@ -150,7 +150,7 @@ var defaultValue = map[string]interface{}{
 }
 
 var oitcDefaultvalue = map[string]interface{}{
-	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.cnf"),
+	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.ini"),
 }
 
 func setConfigurationDefaults(v *viper.Viper) {
@@ -215,10 +215,10 @@ func Load(ctx context.Context, configHint *LoadConfigHint) (*Configuration, erro
 		if configHint.ConfigFile != "" {
 			v.SetConfigFile(configHint.ConfigFile)
 		} else {
-			v.SetConfigFile(filepath.Join(configHint.SearchPath, "config.cnf"))
+			v.SetConfigFile(filepath.Join(configHint.SearchPath, "config.ini"))
 		}
 	} else {
-		v.SetConfigFile(filepath.Join(platformpath.ConfigPath(), "config.cnf"))
+		v.SetConfigFile(filepath.Join(platformpath.ConfigPath(), "config.ini"))
 	}
 	v.SetConfigType("ini")
 

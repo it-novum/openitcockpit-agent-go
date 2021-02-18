@@ -59,8 +59,8 @@ command = "sleep 120"
 `
 
 func writeTestConfig(t *testing.T, tempDir, config, cccLin, cccWin string) {
-	cfgPath := filepath.Join(tempDir, "config.cnf")
-	cccPath := filepath.Join(tempDir, "customchecks.cnf")
+	cfgPath := filepath.Join(tempDir, "config.ini")
+	cccPath := filepath.Join(tempDir, "customchecks.ini")
 	if err := ioutil.WriteFile(cfgPath, []byte(fmt.Sprintf(config, dynamicPort(), cccPath)), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestAgentReload(t *testing.T) {
 	writeTestConfig(t, tempDir, exampleConfig, exampleCCConfigNix, exampleCCConfigWin)
 
 	rt := &AgentInstance{
-		ConfigurationPath: filepath.Join(tempDir, "config.cnf"),
+		ConfigurationPath: filepath.Join(tempDir, "config.ini"),
 		LogPath:           filepath.Join(tempDir, "agent.log"),
 		LogRotate:         3,
 		Debug:             true,
@@ -107,7 +107,7 @@ func TestAgentCancel(t *testing.T) {
 	writeTestConfig(t, tempDir, exampleConfig, exampleCCConfigNix, exampleCCConfigWin)
 
 	rt := &AgentInstance{
-		ConfigurationPath: filepath.Join(tempDir, "config.cnf"),
+		ConfigurationPath: filepath.Join(tempDir, "config.ini"),
 		LogPath:           filepath.Join(tempDir, "agent.log"),
 		LogRotate:         3,
 		Debug:             true,
@@ -142,7 +142,7 @@ func TestAgentReloadWithLongRunningTask(t *testing.T) {
 	writeTestConfig(t, tempDir, exampleConfig, exampleCCConfigNixLong, exampleCCConfigWinLong)
 
 	rt := &AgentInstance{
-		ConfigurationPath: filepath.Join(tempDir, "config.cnf"),
+		ConfigurationPath: filepath.Join(tempDir, "config.ini"),
 		LogPath:           filepath.Join(tempDir, "agent.log"),
 		LogRotate:         3,
 		Debug:             true,
@@ -167,7 +167,7 @@ func TestAgentShortInterval(t *testing.T) {
 	writeTestConfig(t, tempDir, exampleConfigShort, exampleCCConfigNix, exampleCCConfigWin)
 
 	rt := &AgentInstance{
-		ConfigurationPath: filepath.Join(tempDir, "config.cnf"),
+		ConfigurationPath: filepath.Join(tempDir, "config.ini"),
 		LogPath:           filepath.Join(tempDir, "agent.log"),
 		LogRotate:         3,
 		Debug:             true,

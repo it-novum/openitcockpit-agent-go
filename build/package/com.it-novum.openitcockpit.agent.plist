@@ -8,7 +8,7 @@
                 <array>
                         <string>/Applications/openitcockpit-agent/openitcockpit-agent-python3.macos.bin</string>
                         <string>--config</string>
-                        <string>/Applications/openitcockpit-agent/config.cnf</string>
+                        <string>/Applications/openitcockpit-agent/config.ini</string>
                 </array>
                 <key>RunAtLoad</key>
                 <true/>

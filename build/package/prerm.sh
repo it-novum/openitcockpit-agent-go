@@ -41,5 +41,5 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     fi
     set -e
     
-    rm -rf /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist /Applications/openitcockpit-agent/config.cnf /Applications/openitcockpit-agent/config.cnf /Applications/openitcockpit-agent/customchecks.cnf /Applications/openitcockpit-agent /private/etc/openitcockpit-agent
+    rm -rf /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist /Applications/openitcockpit-agent/config.ini /Applications/openitcockpit-agent/customchecks.ini /Applications/openitcockpit-agent /private/etc/openitcockpit-agent
 fi

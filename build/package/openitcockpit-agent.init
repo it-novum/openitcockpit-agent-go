@@ -13,7 +13,7 @@ set -u
 
 i=0
 DAEMON="/usr/bin/openitcockpit-agent"
-DAEMON_OPTS="--config /etc/openitcockpit-agent/config.cnf"
+DAEMON_OPTS="--config /etc/openitcockpit-agent/config.ini"
 PIDFILE=/var/run/openitcockpit-agent.pid
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 

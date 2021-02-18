@@ -7,7 +7,7 @@ After=network.target
 User=root
 Type=simple
 Restart=on-failure
-ExecStart=/usr/bin/openitcockpit-agent --config /etc/openitcockpit-agent/config.cnf
+ExecStart=/usr/bin/openitcockpit-agent --config /etc/openitcockpit-agent/config.ini
 StandardOutput=journal
 StandardError=inherit
 

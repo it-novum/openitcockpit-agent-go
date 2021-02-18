@@ -51,7 +51,7 @@ auth =
 
 # Remote Plugin Execution
 # Path to config will where custom checks can be defined
-customchecks = /etc/openitcockpit-agent/customchecks.cnf
+customchecks = /etc/openitcockpit-agent/customchecks.ini
 
 # Return temperature values as fahrenheit
 temperature-fahrenheit = false
