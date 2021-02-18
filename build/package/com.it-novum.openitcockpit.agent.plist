@@ -6,7 +6,7 @@
                 <string>com.it-novum.openitcockpit.agent</string>
                 <key>ProgramArguments</key>
                 <array>
-                        <string>/Applications/openitcockpit-agent/openitcockpit-agent-python3.macos.bin</string>
+                        <string>/Applications/openitcockpit-agent/openitcockpit-agent</string>
                         <string>--config</string>
                         <string>/Applications/openitcockpit-agent/config.ini</string>
                 </array>

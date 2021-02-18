@@ -43,8 +43,8 @@ fi
 
 if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     if [ -f /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist ]; then
-        if [ -d /Library/LaunchDaemons/ ]; then
-            ln -s /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/
+        if [ -d /Library/LaunchDaemons/ ] && [ ! -f /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist ]; then
+            ln -s /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist
         fi
     fi
 
@@ -56,7 +56,16 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
         enableConfig="1"
     fi
     set -e
-    
+
+    # Keep configs on Updates
+    if [ -f /Applications/openitcockpit-agent/config.ini.old ]; then
+        cp /Applications/openitcockpit-agent/config.ini.old /Applications/openitcockpit-agent/config.ini
+    fi
+
+    if [ -f /Applications/openitcockpit-agent/customchecks.ini.old ]; then
+        cp /Applications/openitcockpit-agent/customchecks.ini.old /Applications/openitcockpit-agent/customchecks.ini
+    fi
+
     if [ "$enableConfig" == "1" ]; then
         /bin/launchctl load /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist
     fi
