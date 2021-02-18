@@ -246,7 +246,7 @@
     <ROW ServiceControl="openitcockpitagent.exe" Name="openITCOCKPITAgent" Event="161" Wait="1" Component_="openitcockpitagent.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiServInstComponent">
-    <ROW ServiceInstall="openitcockpitagent.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" StartName="LocalService" Component_="openitcockpitagent.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
+    <ROW ServiceInstall="openitcockpitagent.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" Component_="openitcockpitagent.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
     <ATTRIBUTE name="UsedTheme" value="classic"/>
