@@ -77,6 +77,10 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
         /bin/launchctl load /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist
     fi
     
+    if [ ! -d "/Library/Logs/openitcockpit-agent" ]; then
+        mkdir -p /Library/Logs/openitcockpit-agent
+    fi
+
     /bin/launchctl start com.it-novum.openitcockpit.agent
 
 fi

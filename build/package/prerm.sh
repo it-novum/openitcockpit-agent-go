@@ -31,7 +31,7 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         fi
         
     fi
-    rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service
+    rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
     set -e
 
 fi
@@ -49,5 +49,9 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     fi
     set -e
     
+    if [ -d "/Library/Logs/openitcockpit-agent" ]; then
+        rm -rf /Library/Logs/openitcockpit-agent
+    fi
+
     rm -rf /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist /Applications/openitcockpit-agent/config.ini /Applications/openitcockpit-agent/customchecks.ini /Applications/openitcockpit-agent /private/etc/openitcockpit-agent
 fi

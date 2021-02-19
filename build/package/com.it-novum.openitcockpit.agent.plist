@@ -9,6 +9,8 @@
                         <string>/Applications/openitcockpit-agent/openitcockpit-agent</string>
                         <string>--config</string>
                         <string>/Applications/openitcockpit-agent/config.ini</string>
+                        <string>--log</string>
+                        <string>/Library/Logs/openitcockpit-agent/agent.log</string>
                 </array>
                 <key>RunAtLoad</key>
                 <true/>
