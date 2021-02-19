@@ -244,7 +244,9 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 			if strings.TrimSpace(check.Command) == "" {
 				return nil, fmt.Errorf("missing command in custom check: %s", check.Name)
 			}
-			checks = append(checks, check)
+			if check.Enabled {
+				checks = append(checks, check)
+			}
 		}
 	}
 
