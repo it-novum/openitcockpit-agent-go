@@ -36,7 +36,7 @@ type RootCmd struct {
 func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 	if r.configPath == "" {
 		if platformConfigPath := r.platformPath.ConfigPath(); platformConfigPath != "" {
-			r.configPath = filepath.Join(platformConfigPath, "config.ini")
+			r.configPath = platformConfigPath
 		} else {
 			msg := "No config.ini path given"
 			if runtime.GOOS == "windows" {

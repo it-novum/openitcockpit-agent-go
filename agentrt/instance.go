@@ -251,9 +251,7 @@ func (a *AgentInstance) Start(parent context.Context) {
 					return
 				}
 			case done := <-a.reload:
-				cfg, err := config.Load(ctx, &config.LoadConfigHint{
-					ConfigFile: a.ConfigurationPath,
-				})
+				cfg, err := config.Load(ctx, a.ConfigurationPath)
 				if err != nil {
 					log.Fatalln("could not load configuration: ", err)
 				}

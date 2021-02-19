@@ -163,12 +163,6 @@ func setConfigurationDefaults(v *viper.Viper) {
 	}
 }
 
-// LoadConfigHint for Load func
-type LoadConfigHint struct {
-	SearchPath string
-	ConfigFile string
-}
-
 func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	cfg := &Configuration{}
 	cfg.Default = cfg
@@ -207,19 +201,12 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 }
 
 // Load configuration from default paths or configPath. The reload func must be short lived or start a go routine.
-func Load(ctx context.Context, configHint *LoadConfigHint) (*Configuration, error) {
-	platformpath := platformpaths.Get()
+func Load(ctx context.Context, configPath string) (*Configuration, error) {
 	v := viper.New()
 	setConfigurationDefaults(v)
-	if configHint != nil {
-		if configHint.ConfigFile != "" {
-			v.SetConfigFile(configHint.ConfigFile)
-		} else {
-			v.SetConfigFile(filepath.Join(configHint.SearchPath, "config.ini"))
-		}
-	} else {
-		v.SetConfigFile(filepath.Join(platformpath.ConfigPath(), "config.ini"))
-	}
+
+	v.SetConfigFile(configPath)
+
 	v.SetConfigType("ini")
 
 	if err := v.ReadInConfig(); err != nil {
