@@ -19,8 +19,16 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
             /bin/systemctl disable openitcockpit-agent
         fi      
     else
-        invoke-rc.d openitcockpit-agent stop
-        update-rc.d -f openitcockpit-agent remove
+        service openitcockpit-agent stop
+        if [ -x "$(command -v update-rc.d)" ]; then
+            # Debian / Ubuntu
+            update-rc.d -f openitcockpit-agent remove
+        fi
+        if [ -x "$(command -v chkconfig)" ]; then
+            # CentOS
+            chkconfig openitcockpit-agent off
+            chkconfig --del openitcockpit-agent
+        fi
         
     fi
     rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service

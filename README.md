@@ -12,7 +12,7 @@ Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 * Microsoft Windows Server 2012 or newer
 * Microsoft Windows 8 or newer
 * Apple macOS 10.14 Mojave or newer
-* Linux (Everything from Debian 7 (Wheezy) and newer should work fine)
+* Linux (Everything from Debian 6.0 (Squeeze) / CentOS 6.6 and newer should work fine)
 
 ## Installation
 To be done

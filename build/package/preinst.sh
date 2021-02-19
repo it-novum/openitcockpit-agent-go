@@ -32,9 +32,18 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         set +e
         ps auxw | grep -P '/usr/bin/openitcockpit-agent' | grep -v grep >/dev/null
         if [ $? = 0 ]; then
-            invoke-rc.d openitcockpit-agent stop
+            service openitcockpit-agent stop
         fi
-        update-rc.d -f openitcockpit-agent remove
+
+        if [ -x "$(command -v update-rc.d)" ]; then
+            # Debian / Ubuntu
+            update-rc.d -f openitcockpit-agent remove
+        fi
+        if [ -x "$(command -v chkconfig)" ]; then
+            # CentOS
+            chkconfig openitcockpit-agent off
+            chkconfig --del openitcockpit-agent
+        fi
         set -e
     fi
 

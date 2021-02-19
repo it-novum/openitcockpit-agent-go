@@ -33,10 +33,17 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         fi
         
         if [ "$enableConfig" == "1" ]; then
-            update-rc.d -f openitcockpit-agent defaults
+            if [ -x "$(command -v update-rc.d)" ]; then
+                # Debian / Ubuntu
+                update-rc.d -f openitcockpit-agent defaults
+            fi
+            if [ -x "$(command -v chkconfig)" ]; then
+                # CentOS
+                chkconfig openitcockpit-agent on
+            fi
         fi
         
-        invoke-rc.d openitcockpit-agent start
+        service openitcockpit-agent start
     fi
 
 fi
