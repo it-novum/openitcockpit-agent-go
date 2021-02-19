@@ -394,8 +394,8 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(ccc) != 4 {
-		t.Error("This config is expected to have 4 custom checks")
+	if len(ccc) != 3 {
+		t.Error("This config is expected to have 3 enabled custom checks")
 	}
 
 	for _, customcheck := range ccc {
