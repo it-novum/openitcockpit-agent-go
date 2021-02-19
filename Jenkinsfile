@@ -372,6 +372,7 @@ def package_linux() {
         sh 'cp build/package/openitcockpit-agent.service package/etc/openitcockpit-agent/init/openitcockpit-agent.service'
         sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
         sh "chmod +x package/usr/bin/$BINNAME"
+        sh "chmod +x package/etc/openitcockpit-agent/init/openitcockpit-agent.init"
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
