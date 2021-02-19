@@ -405,6 +405,13 @@ def package_windows() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
+        // Convert Linux new lines to Windows new lines for older Windows Server systems
+        bat 'move example\\config_example.ini example\\config_example_linux.ini'
+        bat 'TYPE example\\config_example_linux.ini | MORE /P > example\\config_example.ini'
+
+        bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
+        bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
+
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
         powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
