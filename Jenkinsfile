@@ -365,7 +365,7 @@ def package_linux() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
-        sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/init release/packages/$GOOS"
+        sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/init release/packages/$GOOS package/var/log/openitcockpit-agent"
         sh 'cp example/config_example.ini package/etc/openitcockpit-agent/config.ini'
         sh 'cp example/customchecks_example.ini package/etc/openitcockpit-agent/customchecks.ini'
         sh 'cp build/package/openitcockpit-agent.init package/etc/openitcockpit-agent/init/openitcockpit-agent.init'
