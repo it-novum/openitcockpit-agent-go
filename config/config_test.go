@@ -215,7 +215,8 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigBlank, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +253,8 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigEmpty, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -290,7 +292,8 @@ func TestAgentVersion1Config(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1Config, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,7 +378,7 @@ func TestAgentVersion1Config(t *testing.T) {
 func TestReadConfigFromFile(t *testing.T) {
 	dir, _ := os.Getwd()
 	configPath := fmt.Sprintf("%s%s../example/config_example.ini", dir, string(os.PathSeparator))
-	_, err := Load(context.Background(), &LoadConfigHint{ConfigFile: configPath})
+	_, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,7 +459,8 @@ func TestReadAgentConfigWithCC(t *testing.T) {
 	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +475,8 @@ func TestReadAgentConfigWithCCAndNewConfig(t *testing.T) {
 	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,7 +492,7 @@ func TestReadAgentConfigWithCCAndNewConfig(t *testing.T) {
 	if err := c.SaveConfiguration([]byte(agentConfigWithCustomCheck2)); err != nil {
 		t.Fatal(err)
 	}
-	c, err = Load(context.Background(), &LoadConfigHint{ConfigFile: c.ConfigurationPath})
+	c, err = Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
