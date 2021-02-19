@@ -412,7 +412,7 @@ def package_windows() {
         bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
         bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
 
-        powershell "& $ADVINST /loadpathvars \"build\\msi\\PathVariables_Jenkins.apf\"
+        powershell "& $ADVINST /loadpathvars \"build\\msi\\PathVariables_Jenkins.apf\""
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
         powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
