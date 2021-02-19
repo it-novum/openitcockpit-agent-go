@@ -54,13 +54,13 @@
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="example_config.cnf" Component_="example_config.cnf" FileName="config.cnf" Attributes="0" SourcePath="..\..\example\config_example.cnf" SelfReg="false"/>
-    <ROW File="example_customchecks.cnf" Component_="example_config.cnf" FileName="CUSTOM~1.CNF|customchecks.cnf" Attributes="0" SourcePath="..\..\example\customchecks_example.cnf" SelfReg="false"/>
-    <ROW File="openitcockpitagent.exe" Component_="openitcockpitagent.exe" FileName="OPENIT~1.EXE|openitcockpit-agent.exe" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\..\release\windows\386\openitcockpit-agent.exe" SelfReg="false" DigSign="true"/>
+    <ROW File="example_config.cnf" Component_="example_config.cnf" FileName="config.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\config_example.ini" SelfReg="false"/>
+    <ROW File="openitcockpitagent.exe" Component_="openitcockpitagent.exe" FileName="OPENIT~1.EXE|openitcockpit-agent.exe" Version="65535.65535.65535.65535" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;release\windows\386\openitcockpit-agent.exe" SelfReg="false" DigSign="true"/>
+    <ROW File="customchecks.ini" Component_="example_config.cnf" FileName="CUSTOM~1.INI|customchecks.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\customchecks_example.ini" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.AiPersistentDataComponent">
     <ROW PersistentRow="example_config.cnf" Type="0" Condition="1"/>
-    <ROW PersistentRow="example_customchecks.cnf" Type="0" Condition="1"/>
+    <ROW PersistentRow="customchecks.ini" Type="0" Condition="1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -103,7 +103,7 @@
     <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
-    <ROW Dialog_="LicenseAgreementDlg" Control="AgreementText" Type="ScrollableText" X="20" Y="60" Width="330" Height="120" Attributes="7" Text="License-en.rtf" Order="400" TextLocId="Control.Text.LicenseAgreementDlg#AgreementText" MsiKey="LicenseAgreementDlg#AgreementText"/>
+    <ROW Dialog_="LicenseAgreementDlg" Control="AgreementText" Type="ScrollableText" X="20" Y="60" Width="330" Height="120" Attributes="7" Text="License-en.rtf" Order="400" TextLocId="-" MsiKey="LicenseAgreementDlg#AgreementText"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
     <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="LicenseAgreementDlg" Condition="AI_INSTALL" Ordering="1"/>
@@ -242,7 +242,7 @@
     <ROW ServiceControl="openitcockpitagent.exe" Name="openITCOCKPITAgent" Event="161" Wait="1" Component_="openitcockpitagent.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiServInstComponent">
-    <ROW ServiceInstall="openitcockpitagent.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" StartName="LocalService" Component_="openitcockpitagent.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
+    <ROW ServiceInstall="openitcockpitagent.exe" Name="openITCOCKPITAgent" DisplayName="openITCOCKPIT Monitoring Agent" ServiceType="16" StartType="2" ErrorControl="32769" Component_="openitcockpitagent.exe" Description="openITCOCKPIT Monitoring Agent and remote plugin executor."/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
     <ATTRIBUTE name="UsedTheme" value="classic"/>
