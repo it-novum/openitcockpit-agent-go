@@ -3,13 +3,13 @@ Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 
 ## Table of contents
 * [Supported operating systems](#supported-operating-systems)
-* [Installation](#installation)[#]
+* [Installation](#installation)
   - [Debian and Ubuntu](#debian-and-ubuntu)
-  - [Red Hat Linux / CentOS / openSUSE](#red-hat-linux---centos---opensuse)
+  - [Red Hat Linux / CentOS / openSUSE](#red-hat-linux--centos--opensuse)
   - [Arch Linux](#arch-linux)
   - [Windows](#windows)
   - [macOS](#macos)
-* [Supported Platforms](#fupported-flatforms)
+* [Supported Platforms](#supported-platforms)
 * [Full documentation](#full-documentation)
 * [License](#license)
 ## Supported operating systems
@@ -81,7 +81,7 @@ Please use the Windows built-in graphical software manager to uninstall.
 **GUI**
 
 Install with double clicking the pkg installer file.
-![openITCOCKPIT Monitoring Agent PKG installer](/docs/images/pkg_install_macos.png)
+![openITCOCKPIT Monitoring Agent PKG installer](/docs/images/pkg_install_macos3.png)
 
 **CLI**
 
