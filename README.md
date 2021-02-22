@@ -26,7 +26,7 @@ Please visit the [release page](https://github.com/it-novum/openitcockpit-agent-
 ### Debian and Ubuntu
 Install
 ```
-sudo apt-get install openitcockpit-agent_3.x.x_amd64.deb
+sudo apt-get install ./openitcockpit-agent_3.x.x_amd64.deb
 ```
 
 Uninstall
@@ -62,6 +62,7 @@ Install
 **GUI**
 
 Install with double clicking the msi installer file.
+
 ![openITCOCKPIT Monitoring Agent MSI installer](/docs/images/msi_install.png)
 
 **CLI**
@@ -81,6 +82,7 @@ Please use the Windows built-in graphical software manager to uninstall.
 **GUI**
 
 Install with double clicking the pkg installer file.
+
 ![openITCOCKPIT Monitoring Agent PKG installer](/docs/images/pkg_install_macos3.png)
 
 **CLI**
