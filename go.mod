@@ -6,6 +6,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
+	github.com/andybalholm/crlf v0.0.0-20171020200849-670099aa064f
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coreos/go-systemd/v22 v22.1.1-0.20201123092900-87511f396ae9
 	github.com/distatus/battery v0.10.0

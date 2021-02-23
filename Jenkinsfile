@@ -365,11 +365,14 @@ def package_linux() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
-        sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/ release/packages/$GOOS"
-        sh 'cp example/config_example.cnf package/etc/openitcockpit-agent/config.cnf'
-        sh 'cp example/customchecks_example.cnf package/etc/openitcockpit-agent/customchecks.cnf'
+        sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/init release/packages/$GOOS package/var/log/openitcockpit-agent"
+        sh 'cp example/config_example.ini package/etc/openitcockpit-agent/config.ini'
+        sh 'cp example/customchecks_example.ini package/etc/openitcockpit-agent/customchecks.ini'
+        sh 'cp build/package/openitcockpit-agent.init package/etc/openitcockpit-agent/init/openitcockpit-agent.init'
+        sh 'cp build/package/openitcockpit-agent.service package/etc/openitcockpit-agent/init/openitcockpit-agent.service'
         sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
         sh "chmod +x package/usr/bin/$BINNAME"
+        sh "chmod +x package/etc/openitcockpit-agent/init/openitcockpit-agent.init"
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
@@ -405,6 +408,14 @@ def package_windows() {
 
         unstash name: "release-$GOOS-$GOARCH"
 
+        // Convert Linux new lines to Windows new lines for older Windows Server systems
+        bat 'move example\\config_example.ini example\\config_example_linux.ini'
+        bat 'TYPE example\\config_example_linux.ini | MORE /P > example\\config_example.ini'
+
+        bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
+        bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
+
+        powershell "& $ADVINST /loadpathvars \"build\\msi\\PathVariables_Jenkins.apf\""
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
         powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
@@ -419,9 +430,10 @@ def package_darwin() {
 
         sh "mkdir -p package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
-        sh "cp example/config_example.cnf package/Applications/openitcockpit-agent/config.cnf"
-        sh "cp example/customchecks_example.cnf package/Applications/openitcockpit-agent/customchecks.cnf"
+        sh "cp example/config_example.ini package/Applications/openitcockpit-agent/config.ini"
+        sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
+        sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license "Apache License Version 2.0" --config-files Applications/openitcockpit-agent \\

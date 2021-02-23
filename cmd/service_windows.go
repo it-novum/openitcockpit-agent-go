@@ -26,7 +26,7 @@ func newAgentInstance() *agentrt.AgentInstance {
 	pp := platformpaths.Get()
 
 	r := &agentrt.AgentInstance{
-		ConfigurationPath:  pp.ConfigPath(),
+		ConfigurationPath:  filepath.Join(pp.ConfigPath(), "config.ini"),
 		LogPath:            pp.LogPath(),
 		LogRotate:          3,
 		Verbose:            false,
@@ -37,7 +37,7 @@ func newAgentInstance() *agentrt.AgentInstance {
 	for key, val := range pp.AdditionalData() {
 		switch key {
 		case "ConfigurationPath":
-			r.ConfigurationPath = val
+			r.ConfigurationPath = filepath.Join(val, "config.ini")
 		case "LogPath":
 			r.LogPath = val
 		case "LogRotate":

@@ -148,7 +148,7 @@ func TestWebserverHandlerConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpdir)
-	cfgPath := filepath.Join(tmpdir, "config.cnf")
+	cfgPath := filepath.Join(tmpdir, "config.ini")
 
 	w := &handler{
 		StateInput: state,

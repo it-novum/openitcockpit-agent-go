@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PathVariables Application="Advanced Installer" Version="17.9">
+  <Var Name="AGENT_SOURCE" Path="C:\Users\dev\Documents\openitcockpit-agent-go" Type="2" ContentType="0"/>
+</PathVariables>

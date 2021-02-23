@@ -157,7 +157,7 @@ func (p *PushClient) Start(ctx context.Context, cfg *config.Configuration) error
 	)
 
 	p.url, err = url.Parse(p.configuration.URL)
-	p.url.Path = path.Join(p.url.Path, "agentconnector", "updateCheckdata.json")
+	p.url.Path = path.Join(p.url.Path, "agentconnector", "submit_checkdata.json")
 	if err != nil {
 		return err
 	}

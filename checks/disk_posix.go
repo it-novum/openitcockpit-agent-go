@@ -13,14 +13,17 @@ var devToIgnore = map[string]bool{
 	"proc":        true,
 	"udev":        true,
 	"devpts":      true,
+	"devfs":       true,
 	"tmpfs":       true,
 	"securityfs":  true,
 	"cgroup":      true,
+	"cgroup2":     true,
 	"pstore":      true,
 	"debugfs":     true,
 	"hugetlbfs":   true,
 	"systemd-1":   true,
 	"mqueue":      true,
+	"none":        true,
 	"sunrpc":      true,
 	"nfsd":        true,
 	"nsfs":        true,
@@ -28,6 +31,7 @@ var devToIgnore = map[string]bool{
 	"configfs":    true,
 	"overlay":     true,
 	"shm":         true,
+	"tracefs":     true,
 	"binfmt_misc": true,
 }
 
@@ -47,6 +51,11 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 		if devToIgnore[device.Device] {
 			continue
 		}
+
+		// This will also ignore the main disk for LXC containers :(
+		//if strings.HasPrefix(device.Device, "/dev/loop") {
+		//	continue
+		//}
 
 		usage, _ := disk.UsageWithContext(ctx, device.Mountpoint)
 

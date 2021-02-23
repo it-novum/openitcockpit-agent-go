@@ -141,7 +141,7 @@ var defaultValue = map[string]interface{}{
 	"alfrescostats":        true,
 	"libvirt":              true,
 	"wineventlog-logtypes": "System,Application,Security",
-	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"),
+	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
 	"autossl-crt-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
@@ -150,7 +150,7 @@ var defaultValue = map[string]interface{}{
 }
 
 var oitcDefaultvalue = map[string]interface{}{
-	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.cnf"),
+	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.ini"),
 }
 
 func setConfigurationDefaults(v *viper.Viper) {
@@ -161,12 +161,6 @@ func setConfigurationDefaults(v *viper.Viper) {
 	for key, value := range oitcDefaultvalue {
 		v.SetDefault("oitc."+key, value)
 	}
-}
-
-// LoadConfigHint for Load func
-type LoadConfigHint struct {
-	SearchPath string
-	ConfigFile string
 }
 
 func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
@@ -207,19 +201,12 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 }
 
 // Load configuration from default paths or configPath. The reload func must be short lived or start a go routine.
-func Load(ctx context.Context, configHint *LoadConfigHint) (*Configuration, error) {
-	platformpath := platformpaths.Get()
+func Load(ctx context.Context, configPath string) (*Configuration, error) {
 	v := viper.New()
 	setConfigurationDefaults(v)
-	if configHint != nil {
-		if configHint.ConfigFile != "" {
-			v.SetConfigFile(configHint.ConfigFile)
-		} else {
-			v.SetConfigFile(filepath.Join(configHint.SearchPath, "config.cnf"))
-		}
-	} else {
-		v.SetConfigFile(filepath.Join(platformpath.ConfigPath(), "config.cnf"))
-	}
+
+	v.SetConfigFile(configPath)
+
 	v.SetConfigType("ini")
 
 	if err := v.ReadInConfig(); err != nil {
@@ -257,7 +244,9 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 			if strings.TrimSpace(check.Command) == "" {
 				return nil, fmt.Errorf("missing command in custom check: %s", check.Name)
 			}
-			checks = append(checks, check)
+			if check.Enabled {
+				checks = append(checks, check)
+			}
 		}
 	}
 

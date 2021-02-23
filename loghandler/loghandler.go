@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
+	"github.com/andybalholm/crlf"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -40,7 +42,14 @@ func (h *LogHandler) openLogFile() {
 	if err != nil {
 		log.Fatal("LogHandler: could not open/create log file: ", err)
 	}
-	log.SetOutput(io.MultiWriter(h.DefaultWriter, fl))
+
+	if runtime.GOOS == "windows" {
+		// Replace \n with \r\n on Windows to make the logfile readable in Windows7/8 notepad
+		log.SetOutput(io.MultiWriter(h.DefaultWriter, crlf.NewWriter(fl)))
+	} else {
+		log.SetOutput(io.MultiWriter(h.DefaultWriter, fl))
+	}
+
 	log.Infoln("LogHandler: log file opened successfully: ", h.LogPath)
 
 	h.logFile = fl

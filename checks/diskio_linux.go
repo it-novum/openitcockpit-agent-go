@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
@@ -30,6 +31,10 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 	diskResults := make(map[string]*resultDiskIo)
 
 	for _, iostats := range stats {
+		if strings.HasPrefix(iostats.DeviceName, "loop") {
+			continue
+		}
+
 		if lastCheckResults, ok := c.lastResults[iostats.DeviceName]; ok {
 			ReadSectors := WrapDiffUint64(lastCheckResults.ReadBytes, iostats.ReadSectors)
 			WriteSectors := WrapDiffUint64(lastCheckResults.WriteBytes, iostats.WriteSectors)

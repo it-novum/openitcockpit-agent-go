@@ -183,9 +183,9 @@ enabled = true
 `
 
 func saveTempConfig(config string, customchecks bool) string {
-	filename := "config.cnf"
+	filename := "config.ini"
 	if customchecks {
-		filename = "customchecks.cnf"
+		filename = "customchecks.ini"
 	}
 	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
 	if err != nil {
@@ -202,10 +202,10 @@ func saveTempConfigWithCC(config string, customchecks string) string {
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "config.cnf"), []byte(fmt.Sprintf(config, filepath.Join(tmpDir, "customchecks.cnf"))), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "config.ini"), []byte(fmt.Sprintf(config, filepath.Join(tmpDir, "customchecks.ini"))), 0600); err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "customchecks.cnf"), []byte(customchecks), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "customchecks.ini"), []byte(customchecks), 0600); err != nil {
 		panic(err)
 	}
 	return tmpDir
@@ -215,7 +215,8 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigBlank, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +253,8 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1ConfigEmpty, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,8 +267,8 @@ func TestAgentVersion1EmptyConfig(t *testing.T) {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.CustomchecksFilePath != filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf") {
-		t.Error("WebServer port expect to be: ", filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.cnf"))
+	if c.CustomchecksFilePath != filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini") {
+		t.Error("WebServer port expect to be: ", filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"))
 	}
 
 	if c.CPU != true {
@@ -290,7 +292,8 @@ func TestAgentVersion1Config(t *testing.T) {
 	cfgdir := saveTempConfig(agentVersion1Config, false)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,8 +366,8 @@ func TestAgentVersion1Config(t *testing.T) {
 		t.Error("BasicAuth username expect to be 'username'")
 	}
 
-	if !strings.Contains(c.OITC.AuthFile, "auth.cnf") {
-		t.Error("auth.cnf file not set")
+	if !strings.Contains(c.OITC.AuthFile, "auth.ini") {
+		t.Error("auth.ini file not set")
 	}
 
 	js, _ := json.MarshalIndent(c, "", "    ")
@@ -374,8 +377,8 @@ func TestAgentVersion1Config(t *testing.T) {
 
 func TestReadConfigFromFile(t *testing.T) {
 	dir, _ := os.Getwd()
-	configPath := fmt.Sprintf("%s%s../example/config_example.cnf", dir, string(os.PathSeparator))
-	_, err := Load(context.Background(), &LoadConfigHint{ConfigFile: configPath})
+	configPath := fmt.Sprintf("%s%s../example/config_example.ini", dir, string(os.PathSeparator))
+	_, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -386,13 +389,13 @@ func TestReadCustomChecksConfigAgentVersion1(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1Config, true)
 	defer os.RemoveAll(cfgdir)
 
-	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
+	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.ini"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(ccc) != 4 {
-		t.Error("This config is expected to have 4 custom checks")
+	if len(ccc) != 3 {
+		t.Error("This config is expected to have 3 enabled custom checks")
 	}
 
 	for _, customcheck := range ccc {
@@ -414,7 +417,7 @@ func TestReadCustomChecksConfigAgentVersion1EmptyCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigEmptyCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
+	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.ini"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -428,7 +431,7 @@ func TestReadCustomChecksConfigAgentVersion1MissingCommandline(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentVersion1ConfigMissingCommand, true)
 	defer os.RemoveAll(cfgdir)
 
-	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
+	_, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.ini"))
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -442,7 +445,7 @@ func TestReadCustomChecksConfigEmpty(t *testing.T) {
 	cfgdir := saveTempConfig(customChecksAgentEmptyConfig, true)
 	defer os.RemoveAll(cfgdir)
 
-	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.cnf"))
+	ccc, err := unmarshalCustomChecks(filepath.Join(cfgdir, "customchecks.ini"))
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
@@ -456,7 +459,8 @@ func TestReadAgentConfigWithCC(t *testing.T) {
 	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +475,8 @@ func TestReadAgentConfigWithCCAndNewConfig(t *testing.T) {
 	cfgdir := saveTempConfigWithCC(agentConfigWithCustomCheck, customChecksAgentVersion1Config)
 	defer os.RemoveAll(cfgdir)
 
-	c, err := Load(context.Background(), &LoadConfigHint{SearchPath: cfgdir})
+	configPath := filepath.Join(cfgdir, "config.ini")
+	c, err := Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,7 +492,7 @@ func TestReadAgentConfigWithCCAndNewConfig(t *testing.T) {
 	if err := c.SaveConfiguration([]byte(agentConfigWithCustomCheck2)); err != nil {
 		t.Fatal(err)
 	}
-	c, err = Load(context.Background(), &LoadConfigHint{ConfigFile: c.ConfigurationPath})
+	c, err = Load(context.Background(), configPath)
 	if err != nil {
 		t.Fatal(err)
 	}

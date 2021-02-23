@@ -19,11 +19,19 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
             /bin/systemctl disable openitcockpit-agent
         fi      
     else
-        invoke-rc.d openitcockpit-agent stop
-        update-rc.d -f openitcockpit-agent remove
+        service openitcockpit-agent stop
+        if [ -x "$(command -v update-rc.d)" ]; then
+            # Debian / Ubuntu
+            update-rc.d -f openitcockpit-agent remove
+        fi
+        if [ -x "$(command -v chkconfig)" ]; then
+            # CentOS
+            chkconfig openitcockpit-agent off
+            chkconfig --del openitcockpit-agent
+        fi
         
     fi
-    rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service
+    rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
     set -e
 
 fi
@@ -41,5 +49,9 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     fi
     set -e
     
-    rm -rf /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist /Applications/openitcockpit-agent/config.cnf /Applications/openitcockpit-agent/config.cnf /Applications/openitcockpit-agent/customchecks.cnf /Applications/openitcockpit-agent /private/etc/openitcockpit-agent
+    if [ -d "/Library/Logs/openitcockpit-agent" ]; then
+        rm -rf /Library/Logs/openitcockpit-agent
+    fi
+
+    rm -rf /Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist /Applications/openitcockpit-agent/config.ini /Applications/openitcockpit-agent/customchecks.ini /Applications/openitcockpit-agent /private/etc/openitcockpit-agent
 fi
