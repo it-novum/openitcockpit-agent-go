@@ -4,7 +4,6 @@ package checks
 
 import (
 	"context"
-	"strings"
 
 	"github.com/shirou/gopsutil/v3/disk"
 )
@@ -53,9 +52,10 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 			continue
 		}
 
-		if strings.HasPrefix(device.Device, "/dev/loop") {
-			continue
-		}
+		// This will also ignore the main disk for LXC containers :(
+		//if strings.HasPrefix(device.Device, "/dev/loop") {
+		//	continue
+		//}
 
 		usage, _ := disk.UsageWithContext(ctx, device.Mountpoint)
 
