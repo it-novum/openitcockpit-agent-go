@@ -39,9 +39,15 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 		if err != nil {
 			return err
 		}
+
+		pemBytes, err := x509.MarshalPKCS8PrivateKey(key)
+		if err != nil {
+			return err
+		}
+
 		pemData := pem.EncodeToMemory(&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(key),
+			Type:  "PRIVATE KEY",
+			Bytes: pemBytes,
 		})
 		if err := ioutil.WriteFile(keyFile, pemData, 0600); err != nil {
 			return err
@@ -60,7 +66,7 @@ func CSRFromKeyFile(keyFile, subject string) ([]byte, error) {
 	if pemBlock == nil {
 		return nil, fmt.Errorf("key file does not contain any valid pem block")
 	}
-	key, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+	key, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
 	if err != nil {
 		return nil, err
 	}
