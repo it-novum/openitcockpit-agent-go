@@ -9,14 +9,15 @@ import (
 )
 
 // Win32_Service from https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-service
+// DelayedAutoStart: This property is not supported before Windows Server 2016 and Windows 10.
 // nolint:underscore
 type Win32_Service struct {
-	AcceptPause             bool
-	AcceptStop              bool
-	Caption                 string
-	CheckPoint              uint32
-	CreationClassName       string
-	DelayedAutoStart        bool
+	AcceptPause       bool
+	AcceptStop        bool
+	Caption           string
+	CheckPoint        uint32
+	CreationClassName string
+	//DelayedAutoStart        bool
 	Description             string
 	DesktopInteract         bool
 	DisplayName             string

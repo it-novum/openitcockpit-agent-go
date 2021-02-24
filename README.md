@@ -14,10 +14,13 @@ Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 * [License](#license)
 ## Supported operating systems
 
-* Microsoft Windows Server 2012 or newer
+* Microsoft Windows Server 2012
 * Microsoft Windows 8 or newer
 * Apple macOS 10.14 Mojave or newer
 * Linux (Everything from Debian 6.0 (Squeeze) / CentOS 6.6 and newer should work fine)
+
+Please notice: Due to missing PowerShell on Windows 7 / Windows Server 2008 R2 you need to add add the required Firewall rules manually to Windows Firewall.
+Windows 7 / Windows Server 2008 R2 is official not supported by the Agent - even if it probably works.
 
 ## Installation
 
