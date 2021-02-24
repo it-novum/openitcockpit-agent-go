@@ -28,6 +28,7 @@ Thumbs.db
 # vendor/
 
 /.vscode
+/.idea
 /config.cnf
 /config.ini
 /customchecks.cnf
