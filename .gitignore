@@ -29,12 +29,13 @@ Thumbs.db
 
 /.vscode
 /.idea
-/config.cnf
 /config.ini
-/customchecks.cnf
+/config.ini
+/customchecks.ini
 /customchecks.ini
 /__debug_bin
 /agent.log
+/auth.json
 
 # VSCode local history
 .history

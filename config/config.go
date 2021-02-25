@@ -150,7 +150,7 @@ var defaultValue = map[string]interface{}{
 }
 
 var oitcDefaultvalue = map[string]interface{}{
-	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.ini"),
+	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.json"),
 }
 
 func setConfigurationDefaults(v *viper.Viper) {
