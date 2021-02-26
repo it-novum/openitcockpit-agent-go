@@ -9,7 +9,7 @@ import (
 
 func TestQuery(t *testing.T) {
 	e := EventLog{
-		LogChannel: []string{"Application"},
+		LogChannel: "Application",
 	}
 	events, err := e.Query()
 	if err != nil {
