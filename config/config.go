@@ -109,6 +109,7 @@ type Configuration struct {
 	// WindowsEventLog with all event log types to monitor
 
 	WindowsEventLogTypes []string `mapstructure:"wineventlog-logtypes"`
+	WindowsEventLogCache int64    `mapstructure:"wineventlog-cache"`
 
 	// Push Mode
 
@@ -140,7 +141,8 @@ var defaultValue = map[string]interface{}{
 	"systemdservices":      true,
 	"alfrescostats":        true,
 	"libvirt":              true,
-	"wineventlog-logtypes": "System,Application,Security",
+	"wineventlog-logtypes": "System,Application",
+	"wineventlog-cache":    3600,
 	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),

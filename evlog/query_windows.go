@@ -22,7 +22,7 @@ type xmlEventList struct {
 	Query   xmlEventQuery `xml:"Query"`
 }
 
-func queryStringFromChannels(channels []string, timeDiffSeconds int) (string, error) {
+func queryStringFromChannels(channels []string, timeDiffSeconds uint64) (string, error) {
 	if len(channels) < 1 {
 		return "", fmt.Errorf("missing channel for event log query")
 	}

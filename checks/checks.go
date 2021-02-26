@@ -24,7 +24,7 @@ type Check interface {
 }
 
 func ChecksForConfiguration(config *config.Configuration) ([]Check, error) {
-	res := []Check{}
+	var res []Check
 	checks := getPlatformChecks()
 	for _, check := range checks {
 		ok, err := check.Configure(config)

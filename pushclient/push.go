@@ -143,7 +143,6 @@ func (p *PushClient) httpRequest(ctx context.Context, url *url.URL, sendJson int
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", p.apiKeyHeader)
 
-	log.Debugln("Push Client: ", string(data))
 	res, err := p.client.Do(req)
 	if err != nil {
 		return 0, errors.Wrap(err, "request failed")
@@ -155,7 +154,6 @@ func (p *PushClient) httpRequest(ctx context.Context, url *url.URL, sendJson int
 		return 0, errors.Wrap(err, "reading response body from server was not successful")
 	}
 	log.Debugln("Push Client: Response status from server: ", res.StatusCode)
-	log.Debugln("Push Client: ", string(body))
 	if len(body) > 0 {
 		if err := json.Unmarshal(body, result); err != nil {
 			return 0, errors.Wrap(err, "could not unmarshal server response")

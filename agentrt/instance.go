@@ -127,14 +127,14 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 		a.checkRunner.Shutdown()
 	}
 
-	checks, err := checks.ChecksForConfiguration(cfg)
+	cList, err := checks.ChecksForConfiguration(cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	a.checkRunner = &checkrunner.CheckRunner{
 		Configuration: cfg,
 		Result:        a.checkResult,
-		Checks:        checks,
+		Checks:        cList,
 	}
 	if err := a.checkRunner.Start(ctx); err != nil {
 		log.Fatalln(err)
