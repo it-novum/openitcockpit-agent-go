@@ -29,7 +29,7 @@ verbose = false
 stacktrace = false
 config-update-mode = false
 auth =
-customchecks = /etc/openitcockpit-agent/customcnf
+customchecks = /etc/openitcockpit-agent/customchecks.ini
 temperature-fahrenheit = false
 dockerstats = false
 qemustats = false
@@ -79,7 +79,7 @@ verbose = false
 stacktrace = false
 config-update-mode = false
 auth = username:pass:word
-customchecks = C:\Program Files\it-novum\openitcockpit-agent\customcnf
+customchecks = C:\Program Files\it-novum\openitcockpit-agent\customchecks.ini
 temperature-fahrenheit = false
 dockerstats = false
 qemustats = false
@@ -229,8 +229,8 @@ func TestAgentVersion1BlankConfig(t *testing.T) {
 		t.Error("WebServer port expect to be 3333")
 	}
 
-	if c.CustomchecksFilePath != "/etc/openitcockpit-agent/customcnf" {
-		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customcnf")
+	if c.CustomchecksFilePath != "/etc/openitcockpit-agent/customchecks.ini" {
+		t.Error("WebServer port expect to be /etc/openitcockpit-agent/customchecks.ini")
 	}
 
 	if c.CPU != true {
@@ -330,8 +330,8 @@ func TestAgentVersion1Config(t *testing.T) {
 		t.Error("TLS AutoSslCaFile expect to be /etc/autossl/server_ca.ca")
 	}
 
-	if c.CustomchecksFilePath != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf" {
-		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customcnf")
+	if c.CustomchecksFilePath != "C:\\Program Files\\it-novum\\openitcockpit-agent\\customchecks.ini" {
+		t.Error("WebServer port expect to be C:\\Program Files\\it-novum\\openitcockpit-agent\\customchecks.ini")
 	}
 
 	if c.CPU != false {
