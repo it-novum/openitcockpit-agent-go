@@ -366,8 +366,8 @@ func TestAgentVersion1Config(t *testing.T) {
 		t.Error("BasicAuth username expect to be 'username'")
 	}
 
-	if !strings.Contains(c.OITC.AuthFile, "auth.ini") {
-		t.Error("auth.ini file not set")
+	if !strings.Contains(c.OITC.AuthFile, "auth.json") {
+		t.Error("auth.json file not set")
 	}
 
 	js, _ := json.MarshalIndent(c, "", "    ")
