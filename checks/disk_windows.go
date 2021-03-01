@@ -2,7 +2,7 @@ package checks
 
 import (
 	"context"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
@@ -14,6 +14,7 @@ import (
 // https://github.com/prometheus-community/windows_exporter/blob/9723aa221885f593ac77019566c1ced9d4d746fd/collector/logical_disk.go#L168-L187
 // https://docs.microsoft.com/de-de/windows/win32/wmisdk/retrieving-raw-and-formatted-performance-data?redirectedfrom=MSDN
 // https://msdn.microsoft.com/en-us/library/ms803973.aspx - LogicalDisk object reference
+// nolint:underscore
 type Perf_LogicalDisk struct {
 	Name                   string
 	AvgDiskQueueLength     float64 `perflib:"Avg. Disk Queue Length"`    // Type: QUEUELEN
@@ -36,17 +37,16 @@ type Perf_LogicalDisk struct {
 	IdleTime               float64 `perflib:"% Idle Time"`
 }
 
+var (
+	perflibDiskQuery = strconv.FormatUint(uint64(perflib.QueryNameTable("Counter 009").LookupIndex("LogicalDisk")), 10)
+)
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
-
-	//Todo can we cache this?
-	nametable := perflib.QueryNameTable("Counter 009")
-	query := strconv.FormatUint(uint64(nametable.LookupIndex("LogicalDisk")), 10)
-
-	objects, err := perflib.QueryPerformanceData(query)
+func (c *CheckDisk) Run(_ context.Context) (interface{}, error) {
+	objects, err := perflib.QueryPerformanceData(perflibDiskQuery)
 	diskResults := make([]*resultDisk, 0)
 	if err != nil {
 		return nil, err
@@ -60,8 +60,7 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 		var dst []Perf_LogicalDisk
 		err = utils.UnmarshalObject(obj, &dst)
 		if err != nil {
-			// todo add logging
-			fmt.Println(err)
+			log.Errorln("Check Disk: could not query perflib: ", err)
 			continue
 		}
 
@@ -72,7 +71,7 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 				freeDiskSpaceBytes := disk.PercentFreeSpace_Base * 1024 * 1024
 				usedDiskSpaceBytes := totalDiskSpaceBytes - freeDiskSpaceBytes
 
-				freeDiskSpacePercentage := safemaths.DivideFloat64(float64(freeDiskSpaceBytes), float64(totalDiskSpaceBytes)) * 100.0
+				freeDiskSpacePercentage := safemaths.DivideFloat64(freeDiskSpaceBytes, totalDiskSpaceBytes) * 100.0
 				usedDiskSpacePercentage := 100.0 - freeDiskSpacePercentage
 
 				//Save to struct

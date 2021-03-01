@@ -95,7 +95,7 @@ type Win32_PerfRawData_PerfDisk_PhysicalDisk struct {
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
+func (c *CheckDiskIo) Run(_ context.Context) (interface{}, error) {
 
 	// Need some help on Windows Performance Counters? We all need - it's a nightmare
 	// This is gold!
@@ -246,10 +246,10 @@ func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
 				// Store calculated values
 				ReadIopsPerSecond:   ReadIops,
 				WriteIopsPerSecond:  WriteIops,
-				TotalIopsPerSecond:  (ReadIops + WriteIops),
+				TotalIopsPerSecond:  ReadIops + WriteIops,
 				ReadBytesPerSecond:  ReadBytesPerSecond,
 				WriteBytesPerSecond: WriteBytesPerSecond,
-				TotalAvgWait:        (AvgDiskSecPerRead_Ms + AvgDiskSecPerWrite_Ms),
+				TotalAvgWait:        AvgDiskSecPerRead_Ms + AvgDiskSecPerWrite_Ms,
 				ReadAvgWait:         AvgDiskSecPerRead_Ms,
 				WriteAvgWait:        AvgDiskSecPerWrite_Ms,
 				ReadAvgSize:         AvgReadRequestSizeInBytes,
