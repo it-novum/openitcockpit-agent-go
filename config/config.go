@@ -73,6 +73,9 @@ type Configuration struct {
 	ConfigUpdate         bool   `mapstructure:"config-update-mode"`
 	CustomchecksFilePath string `mapstructure:"customchecks"`
 
+	// EnablePPROF for debugging memory leaks with the go tool pprof command
+	EnablePPROF bool `mapstructure:"enable-dev-pprof"`
+
 	// Default Checks
 
 	CheckInterval   int64 `mapstructure:"interval"`

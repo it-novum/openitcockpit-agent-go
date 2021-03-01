@@ -81,12 +81,16 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	newHandler.Start(ctx)
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)
 	log.Debugln("Webserver: Listening to ", serverAddr)
+	timeout := time.Second * 30
+	if cfg.Configuration.EnablePPROF {
+		timeout = time.Hour
+	}
 	newServer := &http.Server{
 		Addr:           serverAddr,
 		Handler:        newHandler.Handler(),
-		ReadTimeout:    time.Second * 30,
-		WriteTimeout:   time.Second * 30,
-		IdleTimeout:    time.Second * 30,
+		ReadTimeout:    timeout,
+		WriteTimeout:   timeout,
+		IdleTimeout:    timeout,
 		MaxHeaderBytes: 256 * 1024,
 	}
 

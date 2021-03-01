@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/http/pprof"
 	"strings"
 	"sync"
 
@@ -300,6 +301,19 @@ func (w *handler) Handler() *mux.Router {
 		routes.Path("/config").Methods("POST").HandlerFunc(w.handleConfigPush)
 		routes.Path("/autotls").Methods("GET").HandlerFunc(w.handlerCsr)
 		routes.Path("/autotls").Methods("POST").HandlerFunc(w.handlerUpdateCert)
+
+		if w.Configuration.EnablePPROF {
+			routes.Path("/debug/pprof/").HandlerFunc(pprof.Index)
+			routes.Path("/debug/pprof/cmdline").HandlerFunc(pprof.Cmdline)
+			routes.Path("/debug/pprof/profile").HandlerFunc(pprof.Profile)
+			routes.Path("/debug/pprof/symbol").HandlerFunc(pprof.Symbol)
+			routes.Path("/debug/pprof/trace").HandlerFunc(pprof.Trace)
+			routes.Path("/debug/pprof/block").Handler(pprof.Handler("block"))
+			routes.Path("/debug/pprof/goroutine").Handler(pprof.Handler("goroutine"))
+			routes.Path("/debug/pprof/heap").Handler(pprof.Handler("heap"))
+			routes.Path("/debug/pprof/threadcreate").Handler(pprof.Handler("threadcreate"))
+		}
+
 		w.router = routes
 	}
 	return w.router
