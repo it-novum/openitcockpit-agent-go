@@ -43,7 +43,7 @@ type resultDocker struct {
 func (c *CheckDocker) Run(ctx context.Context) (interface{}, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer cli.Close()
 
