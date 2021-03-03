@@ -5,6 +5,7 @@ package checks
 import (
 	"context"
 	"fmt"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -159,16 +160,20 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 
 	processResults := make([]*resultProcess, 0, len(processes))
 	for _, process := range processes {
+		cmd := strings.Split(process.Command, " ")
+		binaryWithPath := cmd[0]
+		binary := path.Base(cmd[0])
+
 		result := &resultProcess{
 			Pid:           process.Pid,
 			Ppid:          process.Ppid,
 			Username:      process.User,
-			Name:          process.Command,
+			Name:          binary,
 			CPUPercent:    process.Cpup,
 			MemoryPercent: process.Memp,
 			Cmdline:       process.Command,
 			Status:        process.Stat,
-			Exe:           process.Command,
+			Exe:           binaryWithPath,
 			Nice:          process.Nice,
 			NumFds:        0,
 		}
