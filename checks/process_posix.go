@@ -5,7 +5,7 @@ package checks
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -13,27 +13,45 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
+type ps struct {
+	Pid     int32
+	Ppid    int32
+	Cpup    float64
+	Memp    float32
+	User    string
+	Stat    []string
+	Nice    int32
+	Rss     uint64
+	VSZ     uint64
+	Pagein  uint64
+	Command string
+}
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
-	/*PID  PPID  %CPU %MEM USER             STAT NI    RSS      VSZ PAGEIN COMM             COMMAND
-	 *  1     0   0,1  0,1 root             Ss    0  21340  4313476      0 /sbin/launchd    /sbin/launchd
-	 *109     1   0,0  0,0 root             Ss    0   1136  4306048      0 /usr/sbin/syslog /usr/sbin/syslogd
-	 *110     1   0,0  0,1 root             Ss    0  11456  4336292      0 /usr/libexec/Use /usr/libexec/UserEventAgent (System)
-	 *112     1   0,0  0,0 root             Ss    0   2252  4296900      0 /System/Library/ /System/Library/PrivateFrameworks/Uninstall.framework/Resources/uninstalld
-	 *113     1   0,0  0,1 root             Ss    0  20908  4857808      0 /usr/libexec/kex /usr/libexec/kextd
-	 *114     1   0,0  0,0 root             Ss    0   8288  4324792      0 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
-	 *116     1   0,0  0,1 root             Ss    0  12508  4336452      0 /System/Library/ /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
-	 *119     1   0,0  0,1 root             Ss    0  13780  4344220      0 /usr/sbin/system /usr/sbin/systemstats --daemon
-	 *120     1   0,0  0,1 root             Ss    0   8992  4339428      0 /usr/libexec/con /usr/libexec/configd
+	/*PID  PPID  %CPU %MEM USER             STAT NI    RSS      VSZ PAGEIN COMMAND
+	 *  1     0   0,1  0,1 root             Ss    0  21340  4313476      0 /sbin/launchd
+	 *109     1   0,0  0,0 root             Ss    0   1136  4306048      0 /usr/sbin/syslogd
+	 *110     1   0,0  0,1 root             Ss    0  11456  4336292      0 /usr/libexec/UserEventAgent (System)
+	 *112     1   0,0  0,0 root             Ss    0   2252  4296900      0 /System/Library/PrivateFrameworks/Uninstall.framework/Resources/uninstalld
+	 *113     1   0,0  0,1 root             Ss    0  20908  4857808      0 /usr/libexec/kextd
+	 *114     1   0,0  0,0 root             Ss    0   8288  4324792      0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+	 *116     1   0,0  0,1 root             Ss    0  12508  4336452      0 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+	 *119     1   0,0  0,1 root             Ss    0  13780  4344220      0 /usr/sbin/systemstats --daemon
+	 *120     1   0,0  0,1 root             Ss    0   8992  4339428      0 /usr/libexec/configd
 	 */
 
 	var err error
 
 	timeout := 10 * time.Second
-	command := "ps -ax -o pid,ppid,%cpu,%mem,user,state,nice,rss,vsize,pagein,comm,command"
+	command := "ps -ax -o pid,ppid,%cpu,%mem,user,state,nice,rss,vsize,pagein,command"
+	if runtime.GOOS == "linux" {
+		command = command + " --columns 10000"
+	}
+
 	result, err := utils.RunCommand(ctx, utils.CommandArgs{
 		Command: command,
 		Timeout: timeout,
@@ -43,128 +61,120 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 	}
 
 	lines := strings.Split(result.Stdout, "\n")
-	headerLine := lines[0]
 
 	if len(lines) > 0 {
-		//Remove first line
+		//Remove first line (ps header)
 		lines = lines[1:]
 	}
 
-	var positions = make(map[string]map[string]int)
+	var processes []*ps
+	fields := []string{"PID", "PPID", "%CPU", "%MEM", "USER", "STAT", "NI", "RSS", "VSZ", "PAGEIN", "COMMAND"}
 
-	re := regexp.MustCompile(`\S+`)
-	submatchall := re.FindAllString(headerLine, -1)
-	start := 0
-	end := 0
-	for i := 0; i < len(submatchall); i++ {
-		if i != len(submatchall)-1 {
-			//fmt.Println("Ends with : ",i, strings.Index(headerLine, submatchall[i+1])-1 )
-			end = strings.Index(headerLine, submatchall[i+1]) - 1
-		} else {
-			end = 0
-		}
-		if i > 0 {
-			start = strings.Index(headerLine, submatchall[i])
-		}
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		index := 0
 
-		positions[submatchall[i]] = map[string]int{
-			"start": start,
-			"end":   end,
+		ps := &ps{}
+
+		var piece string
+		delimiter := " "
+		for i, c := range line {
+			char := string(c)
+
+			if fields[index] == "COMMAND" {
+				// Command could have spaces so we use the complete string...
+				ps.Command = line[i:]
+				processes = append(processes, ps)
+
+				// Go to the next line of the ps output
+				index = 0
+				break
+			}
+
+			if char != delimiter {
+				piece = piece + char
+			} else {
+				// We hit a space
+				if piece != "" {
+					//fmt.Println(fields[index] + ": " + piece)
+
+					if fields[index] == "PID" {
+						pid, _ := strconv.ParseInt(piece, 10, 32)
+						ps.Pid = int32(pid)
+					}
+
+					if fields[index] == "PPID" {
+						ppid, _ := strconv.ParseInt(piece, 10, 32)
+						ps.Ppid = int32(ppid)
+					}
+
+					if fields[index] == "%CPU" {
+						cpu, _ := strconv.ParseFloat(piece, 64)
+						ps.Cpup = cpu
+					}
+
+					if fields[index] == "%MEM" {
+						mem, _ := strconv.ParseFloat(piece, 64)
+						ps.Memp = float32(mem)
+					}
+
+					if fields[index] == "USER" {
+						ps.User = piece
+					}
+
+					if fields[index] == "STAT" {
+						s := getStatusName(piece[0:1])
+						var status []string
+						status = append(status, s)
+
+						ps.Stat = status
+					}
+
+					if fields[index] == "NI" {
+						nice, _ := strconv.Atoi(piece)
+						ps.Nice = int32(nice)
+					}
+
+					if fields[index] == "RSS" {
+						rss, _ := strconv.ParseInt(piece, 10, 64)
+						ps.Rss = uint64(rss)
+					}
+
+					if fields[index] == "VSZ" {
+						vsz, _ := strconv.ParseInt(piece, 10, 64)
+						ps.VSZ = uint64(vsz)
+					}
+
+					if fields[index] == "PAGEIN" {
+						pagein, _ := strconv.ParseInt(piece, 10, 64)
+						ps.Pagein = uint64(pagein)
+					}
+
+					index++
+				}
+				piece = ""
+			}
 		}
-		//fmt.Println(submatchall[i], "Started with : ", start, " and ends with ", end) // Position 0
-		//if end > 0 {
-		//	fmt.Println("part = ", i, string(headerLine[start:end]))
-		//} else {
-		//	fmt.Println("part = ", i, string(headerLine[start:]))
-		//}
 	}
 
-	//fmt.Println(positions)
-
-	processResults := make([]*resultProcess, 0, len(lines))
-
-	fields := []string{"PID", "PPID", "%CPU", "%MEM", "USER", "STAT", "NI", "RSS", "VSZ", "PAGEIN", "COMM", "COMMAND"}
-
-	for _, l := range lines {
-		if l == "" {
-			continue
+	processResults := make([]*resultProcess, 0, len(processes))
+	for _, process := range processes {
+		result := &resultProcess{
+			Pid:           process.Pid,
+			Ppid:          process.Ppid,
+			Username:      process.User,
+			Name:          process.Command,
+			CPUPercent:    process.Cpup,
+			MemoryPercent: process.Memp,
+			Cmdline:       process.Command,
+			Status:        process.Stat,
+			Exe:           process.Command,
+			Nice:          process.Nice,
+			NumFds:        0,
 		}
-
-		result := &resultProcess{}
-		for _, field := range fields {
-			var value string
-			if field != "COMMAND" {
-				start := positions[field]["start"]
-				end := positions[field]["end"]
-				value = strings.TrimSpace(l[start:end])
-			} else {
-				// Comand ist the last element in the string, so get all remaining characters
-				start := positions[field]["start"]
-				value = strings.TrimSpace(l[start:])
-			}
-
-			if field == "PID" {
-				pid, _ := strconv.ParseInt(value, 10, 32)
-				result.Pid = int32(pid)
-			}
-
-			if field == "PPID" {
-				ppid, _ := strconv.ParseInt(value, 10, 32)
-				result.Ppid = int32(ppid)
-			}
-
-			if field == "%CPU" {
-				cpu, _ := strconv.ParseFloat(value, 64)
-				result.CPUPercent = cpu
-			}
-
-			if field == "%MEM" {
-				mem, _ := strconv.ParseFloat(value, 64)
-				result.MemoryPercent = float32(mem)
-			}
-
-			if field == "USER" {
-				result.Username = value
-			}
-
-			if field == "STAT" {
-				s := getStatusName(value[0:1])
-				var status []string
-				status = append(status, s)
-
-				result.Status = status
-			}
-
-			if field == "NI" {
-				nice, _ := strconv.Atoi(value)
-				result.Nice = int32(nice)
-			}
-
-			if field == "RSS" {
-				rss, _ := strconv.ParseInt(value, 10, 64)
-				result.Memory.RSS = uint64(rss)
-			}
-
-			if field == "VSZ" {
-				vsz, _ := strconv.ParseInt(value, 10, 64)
-				result.Memory.VMS = uint64(vsz)
-			}
-
-			if field == "PAGEIN" {
-				pagein, _ := strconv.ParseInt(value, 10, 64)
-				result.Memory.Swap = uint64(pagein)
-			}
-
-			if field == "COMM" {
-				result.Exe = value
-			}
-
-			if field == "COMMAND" {
-				result.Cmdline = value
-			}
-
-		}
-
+		result.Memory.RSS = process.Rss
+		result.Memory.VMS = process.VSZ
+		result.Memory.Swap = process.Pagein
 		processResults = append(processResults, result)
 	}
 
