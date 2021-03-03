@@ -93,5 +93,5 @@ func (c *CheckWinService) getServiceListViaWmi(ctx context.Context) ([]*resultWi
 
 // Configure the command or return false if the command was disabled
 func (c *CheckWinService) Configure(config *config.Configuration) (bool, error) {
-	return true, nil
+	return config.WindowsServices, nil
 }
