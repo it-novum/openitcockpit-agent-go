@@ -75,7 +75,7 @@ pipeline {
                     environment {
                         GOOS = 'darwin'
                         BINNAME = 'openitcockpit-agent'
-                        CGO_ENABLED = '0'
+                        CGO_ENABLED = '1'
                     }
                     stages {
                         stage('amd64') {
