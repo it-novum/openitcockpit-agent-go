@@ -177,9 +177,9 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 			Nice:          process.Nice,
 			NumFds:        0,
 		}
-		result.Memory.RSS = process.Rss
-		result.Memory.VMS = process.VSZ
-		result.Memory.Swap = process.Pagein
+		result.Memory.RSS = process.Rss * 1024 // convert kib to bytes
+		result.Memory.VMS = process.VSZ * 1024
+		result.Memory.Swap = process.Pagein * 1024
 		processResults = append(processResults, result)
 	}
 
