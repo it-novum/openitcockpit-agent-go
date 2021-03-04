@@ -89,14 +89,15 @@ func GetProcessTimes(handle windows.Handle) (*ProcessTimeStat, error) {
 type processMemoryCounters struct {
 	CB                         uint32
 	PageFaultCount             uint32
-	PeakWorkingSetSize         uint64
-	WorkingSetSize             uint64
-	QuotaPeakPagedPoolUsage    uint64
-	QuotaPagedPoolUsage        uint64
-	QuotaPeakNonPagedPoolUsage uint64
-	QuotaNonPagedPoolUsage     uint64
-	PagefileUsage              uint64
-	PeakPagefileUsage          uint64
+	PeakWorkingSetSize         uintptr
+	WorkingSetSize             uintptr
+	QuotaPeakPagedPoolUsage    uintptr
+	QuotaPagedPoolUsage        uintptr
+	QuotaPeakNonPagedPoolUsage uintptr
+	QuotaNonPagedPoolUsage     uintptr
+	PagefileUsage              uintptr
+	PeakPagefileUsage          uintptr
+	PrivateUsage               uintptr
 }
 
 type ProcessMemStat struct {
@@ -106,15 +107,15 @@ type ProcessMemStat struct {
 
 func GetProcessMemoryInfo(handle windows.Handle) (*ProcessMemStat, error) {
 	var mem processMemoryCounters
-	mem.CB = uint32(unsafe.Sizeof(&mem))
+	mem.CB = uint32(unsafe.Sizeof(mem))
 
 	if err := getProcessMemoryInfo(handle, &mem, mem.CB); err != nil {
 		return nil, errors.Wrap(err, "win32 GetProcessMemoryInfo")
 	}
 
 	return &ProcessMemStat{
-		RSS: mem.WorkingSetSize,
-		VMS: mem.PagefileUsage,
+		RSS: uint64(mem.WorkingSetSize),
+		VMS: uint64(mem.PagefileUsage),
 	}, nil
 }
 
