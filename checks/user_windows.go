@@ -2,8 +2,9 @@ package checks
 
 import (
 	"context"
-
-	wapi "github.com/it-novum/openitcockpit-agent-go/winapi"
+	"github.com/it-novum/openitcockpit-agent-go/winpsapi"
+	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // Run the actual check
@@ -11,29 +12,48 @@ import (
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckUser) Run(ctx context.Context) (interface{}, error) {
-	// This check runs best as NT AUTHORITY\SYSTEM
-	//
-	// Running as a normal or even elevated user,
-	// we can't properly detect who is an admin or not.
-	//
-	// This is because we require TOKEN_DUPLICATE permission,
-	// which we don't seem to have otherwise (Win10).
-	users, err := wapi.ListLoggedInUsers()
+	procs, err := winpsapi.CreateToolhelp32Snapshot()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not fetch process list")
 	}
-
-	// Users currently logged in (Admin check doesn't work for AD Accounts)
-	userResults := make([]*resultUser, 0)
-	for _, u := range users {
-		result := &resultUser{
-			Name:     u.Username,
-			Terminal: "",
-			Host:     u.Domain,
-			Started:  int(u.LogonTime.Unix()),
+	explorer := make([]uint32, 0, 16)
+	for _, proc := range procs {
+		if proc.ExeFile == "explorer.exe" {
+			explorer = append(explorer, proc.PID)
 		}
-		userResults = append(userResults, result)
 	}
 
-	return userResults, nil
+	users := make(map[string]*resultUser)
+	for _, pid := range explorer {
+		p, err := process.NewProcessWithContext(ctx, int32(pid))
+		if err != nil {
+			continue
+		}
+		username, err := p.UsernameWithContext(ctx)
+		if err != nil {
+			continue
+		}
+		user, ok := users[username]
+		if !ok {
+			user = &resultUser{
+				Name:    username,
+				Started: 0,
+			}
+			users[username] = user
+		}
+		createTime, err := p.CreateTime()
+		if err != nil {
+			continue
+		}
+		if user.Started == 0 || user.Started > createTime {
+			user.Started = createTime
+		}
+	}
+
+	result := make([]*resultUser, 0, len(users))
+	for _, user := range users {
+		result = append(result, user)
+	}
+
+	return result, nil
 }

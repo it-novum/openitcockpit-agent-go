@@ -6,6 +6,8 @@ import (
 
 // CheckProcess gathers information about each process
 type CheckProcess struct {
+	// ProcessCache for windows checks
+	ProcessCache map[int32]*resultProcess
 }
 
 type resultProcess struct {
@@ -30,6 +32,7 @@ type resultProcess struct {
 		Locked uint64 `json:"locked"`
 		Swap   uint64 `json:"swap"`
 	}
+	CreateTime int64
 }
 
 // Name will be used in the response as check name

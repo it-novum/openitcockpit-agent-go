@@ -20,13 +20,12 @@ func (c *CheckUser) Run(ctx context.Context) (interface{}, error) {
 
 	userResults := make([]*resultUser, 0, len(users))
 
-	// TODO log errors
 	for _, user := range users {
 		result := &resultUser{
 			Name:     user.User,
 			Terminal: user.Terminal,
 			Host:     user.Host,
-			Started:  user.Started,
+			Started:  int64(user.Started),
 		}
 		userResults = append(userResults, result)
 	}

@@ -17,7 +17,7 @@ type resultUser struct {
 	Name     string `json:"name"`     // The name of the user
 	Terminal string `json:"terminal"` // The tty or pseudo-tty associated with the user, if an
 	Host     string `json:"host"`     // The host name associated with the entry, if any
-	Started  int    `json:"started"`  // The creation time as a floating point number expressed in seconds since the epoch. - Maybe not under macOS???
+	Started  int64  `json:"started"`  // The creation time as a floating point number expressed in seconds since the epoch. - Maybe not under macOS???
 }
 
 // Configure the command or return false if the command was disabled
