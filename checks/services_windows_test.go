@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGetServiceListFromWmi(t *testing.T) {
+func TestGetServiceList(t *testing.T) {
 	c := &CheckWinService{}
 	r, err := c.Run(context.Background())
 	if err != nil {
