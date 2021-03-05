@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	commandSysproc *syscall.SysProcAttr = &syscall.SysProcAttr{
+	commandSysproc = &syscall.SysProcAttr{
 		HideWindow:    true,
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 	}

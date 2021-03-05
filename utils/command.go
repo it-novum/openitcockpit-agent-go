@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -49,8 +50,6 @@ var (
 		"unrestricted",
 		"-NonInteractive",
 		"-NoLogo",
-		"-WindowStyle",
-		"hidden",
 		"-OutputFormat",
 		"Text",
 		"-File",
@@ -62,8 +61,6 @@ var (
 		"unrestricted",
 		"-NonInteractive",
 		"-NoLogo",
-		"-WindowStyle",
-		"hidden",
 		"-OutputFormat",
 		"Text",
 		"-EncodedCommand",
@@ -147,6 +144,9 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 	result := &CommandResult{
 		ExecutionUnixTimestampSec: time.Now().Unix(),
 	}
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	ctxTimeout, cancel := context.WithTimeout(ctx, commandArgs.Timeout)
 	defer cancel()
 
@@ -177,7 +177,9 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 	// Do not hang forever
 	// https://github.com/golang/go/issues/18874
 	// https://github.com/golang/go/issues/22610
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-ctxTimeout.Done()
 		switch ctxTimeout.Err() {
 		case context.DeadlineExceeded:
