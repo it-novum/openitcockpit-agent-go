@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -28,12 +29,12 @@ func TestChecksCheckDiskIO(t *testing.T) {
 
 	var oldIops uint64 = 0
 	for _, result := range results {
-		if result.Device == "disk0" {
+		if strings.HasPrefix(result.Device, "disk") {
 			fmt.Printf("Device [Check 1]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
 			fmt.Printf("TotalAvgWait: %v\n", result.TotalAvgWait)
-			oldIops = result.TotalIopsPerSecond
+			oldIops = oldIops + result.TotalIopsPerSecond
 		}
 	}
 
@@ -65,7 +66,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 
 	var newIops uint64 = 0
 	for _, result := range results {
-		if result.Device == "disk0" {
+		if strings.HasPrefix(result.Device, "disk") {
 			fmt.Printf("Device [Check 2]: %s\n", result.Device)
 			fmt.Printf("LoadPercent: %v\n", result.LoadPercent)
 			fmt.Printf("TotalIopsPerSecond: %v\n", result.TotalIopsPerSecond)
@@ -73,7 +74,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 
 			js, _ := json.Marshal(result)
 			fmt.Println(string(js))
-			newIops = result.TotalIopsPerSecond
+			newIops = newIops + result.TotalIopsPerSecond
 		}
 	}
 
