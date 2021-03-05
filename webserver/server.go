@@ -23,7 +23,9 @@ func testPortOpen(address string) bool {
 	if err != nil {
 		return false
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	return true
 }
 
@@ -195,7 +197,7 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 func (s *Server) close() {
 	if s.server != nil {
 		log.Debugln("Webserver: Stopping http server")
-		s.server.Close()
+		_ = s.server.Close()
 		s.server = nil
 		log.Infoln("Webserver: Server stopped")
 	}
