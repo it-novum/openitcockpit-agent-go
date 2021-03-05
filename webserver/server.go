@@ -152,6 +152,7 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	s.close()
 	s.handler = newHandler
 
+	// test that old server stopped
 	if s.server != nil {
 		for i := 0; i < 30; i++ {
 			if !testPortOpen(s.server.Addr) {
@@ -159,6 +160,14 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 			}
 			time.Sleep(time.Second)
 		}
+	}
+
+	// test if new port is really ready
+	for i := 0; i < 30; i++ {
+		if !testPortOpen(newServer.Addr) {
+			break
+		}
+		time.Sleep(time.Second)
 	}
 
 	s.wg.Add(1)
