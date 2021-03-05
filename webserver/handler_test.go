@@ -118,22 +118,22 @@ func TestWebserverHandlerAuthFailed(t *testing.T) {
 
 	r, err := client.Do(req)
 	if err != nil {
-		t.Error("Request failed")
+		t.Fatal("Request failed")
 	}
 	if r.StatusCode != http.StatusForbidden {
 		t.Error("Unexpected status code: ", http.StatusForbidden)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	req, _ = http.NewRequest("GET", ts.URL, nil)
 	r, err = client.Do(req)
 	if err != nil {
-		t.Error("Request failed")
+		t.Fatal("Request failed")
 	}
 	if r.StatusCode != http.StatusForbidden {
 		t.Error("Unexpected status code: ", http.StatusForbidden)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	w.Shutdown()
 }
@@ -147,7 +147,9 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpdir)
+	defer func() {
+		_ = os.RemoveAll(tmpdir)
+	}()
 	cfgPath := filepath.Join(tmpdir, "config.ini")
 
 	w := &handler{

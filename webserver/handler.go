@@ -94,7 +94,7 @@ func (w *handler) setState(newState []byte) {
 	w.state = newState
 }
 
-func (w *handler) handleStatus(response http.ResponseWriter, request *http.Request) {
+func (w *handler) handleStatus(response http.ResponseWriter, _ *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 	_, err := response.Write(w.getState())
@@ -109,7 +109,9 @@ type configurationPush struct {
 }
 
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
-	defer request.Body.Close()
+	defer func() {
+		_ = request.Body.Close()
+	}()
 
 	if !w.Configuration.ConfigUpdate {
 		http.Error(response, "config update is disabled", http.StatusForbidden)
@@ -143,7 +145,9 @@ func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.R
 }
 
 func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.Request) {
-	defer request.Body.Close()
+	defer func() {
+		_ = request.Body.Close()
+	}()
 
 	if !w.Configuration.ConfigUpdate {
 		http.Error(response, "config update is disabled", http.StatusForbidden)
@@ -231,7 +235,9 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 }
 
 func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.Request) {
-	defer request.Body.Close()
+	defer func() {
+		_ = request.Body.Close()
+	}()
 
 	log.Debugln("Webserver: Certificate update")
 

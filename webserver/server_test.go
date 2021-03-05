@@ -87,7 +87,9 @@ func TestServerTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(crt.tmpDir)
+	defer func() {
+		_ = os.RemoveAll(crt.tmpDir)
+	}()
 
 	stateInput := make(chan []byte)
 
@@ -126,7 +128,9 @@ func TestServerAutoTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(crt.tmpDir)
+	defer func() {
+		_ = os.RemoveAll(crt.tmpDir)
+	}()
 
 	stateInput := make(chan []byte)
 
@@ -167,7 +171,9 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(crt.tmpDir)
+	defer func() {
+		_ = os.RemoveAll(crt.tmpDir)
+	}()
 
 	stateInput := make(chan []byte)
 
@@ -217,7 +223,9 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 	if res, err := c.Do(req); err != nil {
 		t.Error(err)
 	} else {
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 		if body, err := ioutil.ReadAll(res.Body); err != nil {
 			t.Error(body)
 		} else {
@@ -250,7 +258,9 @@ func dynamicPort() int64 {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 	return int64(l.Addr().(*net.TCPAddr).Port)
 }
 
@@ -260,7 +270,9 @@ func connectionTest(host string, port int, crt *certs) bool {
 	if err != nil {
 		return false
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	if crt != nil {
 		tlsConfig := &tls.Config{
 			ServerName: host,
@@ -313,13 +325,10 @@ func copyTestCertificates(autoTLS bool) (*certs, error) {
 	}
 	defer func() {
 		if !ok {
-			os.RemoveAll(tmpDir)
+			_ = os.RemoveAll(tmpDir)
 		}
 	}()
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("could not call runtime.Caller")
-	}
+	_, filename, _, _ := runtime.Caller(0)
 	templateCertDir := filepath.Join(filepath.Dir(filename), "..", "testdata", "certificates")
 
 	crt.certPath = filepath.Join(tmpDir, "server.crt")
