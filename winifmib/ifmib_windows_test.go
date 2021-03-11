@@ -66,7 +66,6 @@ func TestGetIfTable2Ex(t *testing.T) {
 		//t.Log(hexDump(row))
 		t.Log("")
 	}
-	t.Fail()
 }
 
 func TestEthernet(t *testing.T) {
