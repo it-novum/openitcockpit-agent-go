@@ -50,9 +50,9 @@ func fetchProcessInfo(pid uint64) (*processInfo, error) {
 	return result, nil
 }
 
-func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
-	var processList []win32Process
-	var processPerf []win32ProcessPerf
+func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
+	var processList []*win32Process
+	var processPerf []*win32ProcessPerf
 
 	if err := wmi.Query("SELECT processid,parentprocessid,commandline,name,ExecutablePath FROM Win32_Process", &processList); err != nil {
 		return nil, errors.Wrap(err, "could not query wmi for process list")
@@ -64,7 +64,7 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 
 	processMapPerfdata := make(map[uint64]*win32ProcessPerf, len(processPerf))
 	for _, p := range processPerf {
-		processMapPerfdata[p.IDProcess] = &p
+		processMapPerfdata[p.IDProcess] = p
 	}
 
 	ignorePid := c.processCacheIgnorePid
