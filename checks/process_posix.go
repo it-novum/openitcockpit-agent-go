@@ -168,10 +168,12 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 			Exe:           binaryWithPath,
 			Nice:          process.Nice,
 			NumFds:        0,
+			Memory: &resultMemoryPosix{
+				RSS:  process.Rss * 1024,
+				VMS:  process.VSZ * 1024,
+				Swap: process.Pagein * 1024,
+			},
 		}
-		result.Memory.RSS = process.Rss * 1024 // convert kib to bytes
-		result.Memory.VMS = process.VSZ * 1024
-		result.Memory.Swap = process.Pagein * 1024
 		processResults = append(processResults, result)
 	}
 
