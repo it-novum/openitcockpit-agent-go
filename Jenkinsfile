@@ -314,9 +314,7 @@ def test_windows() {
         cleanup_windows()
 
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-            bat 'cd C:\\ & go.exe get -u github.com/t-yuki/gocover-cobertura'
-            bat "go.exe test -coverprofile=cover.out -timeout=120s ./..."
-            bat 'gocover-cobertura.exe < cover.out > coverage.xml'
+            bat "go.exe test -timeout=120s ./..."
         }
     }
 }
@@ -326,9 +324,7 @@ def test() {
         cleanup()
 
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-            sh 'cd / && go get -u github.com/t-yuki/gocover-cobertura'
-            sh "go test -coverprofile=cover.out -timeout=120s ./..."
-            sh 'gocover-cobertura < cover.out > coverage.xml'
+            sh "go test -timeout=120s ./..."
         }
     }
 }
