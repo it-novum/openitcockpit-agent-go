@@ -2,7 +2,9 @@ package winpsapi
 
 import (
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 )
@@ -63,8 +65,9 @@ type systemTimes struct {
 }
 
 type ProcessTimeStat struct {
-	User   float64
-	System float64
+	User       float64
+	System     float64
+	CreateTime int64
 }
 
 func GetProcessTimes(handle windows.Handle) (*ProcessTimeStat, error) {
@@ -80,10 +83,19 @@ func GetProcessTimes(handle windows.Handle) (*ProcessTimeStat, error) {
 		return nil, err
 	}
 
-	return &ProcessTimeStat{
+	result := &ProcessTimeStat{
 		User:   float64(times.UserTime.HighDateTime)*429.4967296 + float64(times.UserTime.LowDateTime)*1e-7,
 		System: float64(times.KernelTime.HighDateTime)*429.4967296 + float64(times.KernelTime.LowDateTime)*1e-7,
-	}, nil
+	}
+
+	var createTime windows.Systemtime
+	if err := fileTimeToSystemTime(&times.CreateTime, &createTime); err == nil {
+		result.CreateTime = time.Date(int(createTime.Year), time.Month(createTime.Month), int(createTime.Day), int(createTime.Hour), int(createTime.Minute), int(createTime.Second), int(createTime.Milliseconds)*1000000, time.UTC).Unix()
+	} else {
+		log.Debugln("win32 FileTimeToSystemTime: ", err)
+	}
+
+	return result, nil
 }
 
 type processMemoryCounters struct {
@@ -115,7 +127,7 @@ func GetProcessMemoryInfo(handle windows.Handle) (*ProcessMemStat, error) {
 
 	return &ProcessMemStat{
 		RSS: uint64(mem.WorkingSetSize),
-		VMS: uint64(mem.PagefileUsage),
+		VMS: uint64(mem.PrivateUsage),
 	}, nil
 }
 
@@ -162,8 +174,9 @@ func QueryProcessInformation(pid uint32) (*Process, error) {
 }
 
 type Toolhelp32Process struct {
-	PID     uint32
-	ExeFile string
+	PID             uint32
+	ParentProcessID uint32
+	ExeFile         string
 }
 
 func CreateToolhelp32Snapshot() ([]*Toolhelp32Process, error) {
@@ -180,10 +193,13 @@ func CreateToolhelp32Snapshot() ([]*Toolhelp32Process, error) {
 	var procEntry windows.ProcessEntry32
 	procEntry.Size = uint32(unsafe.Sizeof(procEntry))
 	for err = windows.Process32First(handle, &procEntry); err == nil; err = windows.Process32Next(handle, &procEntry) {
-		result = append(result, &Toolhelp32Process{
-			PID:     procEntry.ProcessID,
-			ExeFile: windows.UTF16ToString(procEntry.ExeFile[:]),
-		})
+		if procEntry.ProcessID != 0 {
+			result = append(result, &Toolhelp32Process{
+				PID:             procEntry.ProcessID,
+				ParentProcessID: procEntry.ParentProcessID,
+				ExeFile:         windows.UTF16ToString(procEntry.ExeFile[:]),
+			})
+		}
 	}
 	if err != windows.ERROR_NO_MORE_FILES {
 		return nil, err
@@ -195,3 +211,4 @@ func CreateToolhelp32Snapshot() ([]*Toolhelp32Process, error) {
 //sys getProcessImageFileName(hProcess windows.Handle, lpImageFileName *uint16, nSize uint32) (n uint32, err error) [failretval==0] = psapi.GetProcessImageFileNameW
 //sys queryFullProcessImageName(hProcess windows.Handle, dwFlags uint32, lpImageFileName *uint16, nSize *uint32) (err error) [failretval==0] = kernel32.QueryFullProcessImageNameW
 //sys getProcessMemoryInfo(hProcess windows.Handle, mem *processMemoryCounters, cb uint32) (err error) [failretval==0] = psapi.GetProcessMemoryInfo
+//sys fileTimeToSystemTime(filetime *windows.Filetime, systemtime *windows.Systemtime) (err error) [failretval==0] = kernel32.FileTimeToSystemTime

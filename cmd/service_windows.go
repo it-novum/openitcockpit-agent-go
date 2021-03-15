@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/StackExchange/wmi"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,6 +22,18 @@ import (
 var elog debug.Log
 
 type myservice struct{}
+
+func initWbem() {
+	// This initialization prevents a memory leak on WMF 5+. See
+	// https://github.com/martinlindhe/wmi_exporter/issues/77 and linked issues
+	// for details.
+	log.Debugf("Initializing SWbemServices")
+	s, err := wmi.InitializeSWbemServices(wmi.DefaultClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wmi.DefaultClient.SWbemServicesClient = s
+}
 
 func newAgentInstance() *agentrt.AgentInstance {
 	pp := platformpaths.Get()
@@ -257,6 +270,7 @@ func controlService(name string, c svc.Cmd, to svc.State) error {
 }
 
 func PlatformMain() {
+	initWbem()
 	if os.Getenv("OITC_AGENT_DEBUG") == "1" {
 		if err := New().Execute(); err != nil {
 			os.Exit(1)

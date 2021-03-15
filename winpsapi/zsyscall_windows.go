@@ -41,10 +41,19 @@ var (
 	modkernel32 = windows.NewLazySystemDLL("kernel32.dll")
 	modpsapi    = windows.NewLazySystemDLL("psapi.dll")
 
+	procFileTimeToSystemTime       = modkernel32.NewProc("FileTimeToSystemTime")
 	procQueryFullProcessImageNameW = modkernel32.NewProc("QueryFullProcessImageNameW")
 	procGetProcessImageFileNameW   = modpsapi.NewProc("GetProcessImageFileNameW")
 	procGetProcessMemoryInfo       = modpsapi.NewProc("GetProcessMemoryInfo")
 )
+
+func fileTimeToSystemTime(filetime *windows.Filetime, systemtime *windows.Systemtime) (err error) {
+	r1, _, e1 := syscall.Syscall(procFileTimeToSystemTime.Addr(), 2, uintptr(unsafe.Pointer(filetime)), uintptr(unsafe.Pointer(systemtime)), 0)
+	if r1 == 0 {
+		err = errnoErr(e1)
+	}
+	return
+}
 
 func queryFullProcessImageName(hProcess windows.Handle, dwFlags uint32, lpImageFileName *uint16, nSize *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall6(procQueryFullProcessImageNameW.Addr(), 4, uintptr(hProcess), uintptr(dwFlags), uintptr(unsafe.Pointer(lpImageFileName)), uintptr(unsafe.Pointer(nSize)), 0, 0)

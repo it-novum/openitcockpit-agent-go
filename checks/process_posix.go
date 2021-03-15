@@ -15,13 +15,13 @@ import (
 )
 
 type ps struct {
-	Pid     int32
-	Ppid    int32
+	Pid     uint64
+	Ppid    uint64
 	Cpup    float64
-	Memp    float32
+	Memp    float64
 	User    string
 	Stat    []string
-	Nice    int32
+	Nice    int64
 	Rss     uint64
 	VSZ     uint64
 	Pagein  uint64
@@ -100,23 +100,19 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 					//fmt.Println(fields[index] + ": " + piece)
 
 					if fields[index] == "PID" {
-						pid, _ := strconv.ParseInt(piece, 10, 32)
-						ps.Pid = int32(pid)
+						ps.Pid, _ = strconv.ParseUint(piece, 10, 64)
 					}
 
 					if fields[index] == "PPID" {
-						ppid, _ := strconv.ParseInt(piece, 10, 32)
-						ps.Ppid = int32(ppid)
+						ps.Ppid, _ = strconv.ParseUint(piece, 10, 64)
 					}
 
 					if fields[index] == "%CPU" {
-						cpu, _ := strconv.ParseFloat(piece, 64)
-						ps.Cpup = cpu
+						ps.Cpup, _ = strconv.ParseFloat(piece, 64)
 					}
 
 					if fields[index] == "%MEM" {
-						mem, _ := strconv.ParseFloat(piece, 64)
-						ps.Memp = float32(mem)
+						ps.Memp, _ = strconv.ParseFloat(piece, 64)
 					}
 
 					if fields[index] == "USER" {
@@ -132,23 +128,19 @@ func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
 					}
 
 					if fields[index] == "NI" {
-						nice, _ := strconv.Atoi(piece)
-						ps.Nice = int32(nice)
+						ps.Nice, _ = strconv.ParseInt(piece, 10, 64)
 					}
 
 					if fields[index] == "RSS" {
-						rss, _ := strconv.ParseInt(piece, 10, 64)
-						ps.Rss = uint64(rss)
+						ps.Rss, _ = strconv.ParseUint(piece, 10, 64)
 					}
 
 					if fields[index] == "VSZ" {
-						vsz, _ := strconv.ParseInt(piece, 10, 64)
-						ps.VSZ = uint64(vsz)
+						ps.VSZ, _ = strconv.ParseUint(piece, 10, 64)
 					}
 
 					if fields[index] == "PAGEIN" {
-						pagein, _ := strconv.ParseInt(piece, 10, 64)
-						ps.Pagein = uint64(pagein)
+						ps.Pagein, _ = strconv.ParseUint(piece, 10, 64)
 					}
 
 					index++
