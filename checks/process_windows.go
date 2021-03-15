@@ -9,6 +9,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
+	"runtime"
 )
 
 type win32Process struct {
@@ -114,8 +115,7 @@ func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
 			newIgnorePid[proc.ProcessId] = 1
 		} else {
 			result.CreateTime = stat.TimeStat.CreateTime
-			// maybe we have to divide this by CPU Count ??
-			result.CPUPercent = stat.TimeStat.User + stat.TimeStat.System
+			result.CPUPercent = (stat.TimeStat.User + stat.TimeStat.System) / float64(runtime.NumCPU())
 		}
 	}
 
