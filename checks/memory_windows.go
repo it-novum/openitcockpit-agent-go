@@ -3,6 +3,7 @@ package checks
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/StackExchange/wmi"
 )
@@ -33,6 +34,7 @@ type Win32_OperatingSystem struct {
 	FreeSpaceInPagingFiles                    uint64
 	FreeVirtualMemory                         uint64
 	LargeSystemCache                          uint32
+	LastBootUpTime                            time.Time
 	Locale                                    string
 	Manufacturer                              string
 	MaxNumberOfProcesses                      uint32
@@ -78,7 +80,7 @@ type Win32_OperatingSystem struct {
 func (c *CheckMem) Run(ctx context.Context) (interface{}, error) {
 
 	var dst []Win32_OperatingSystem
-	err := wmi.Query("SELECT * FROM Win32_OperatingSystem WHERE Name <> '_Total'", &dst)
+	err := wmi.Query("SELECT * FROM Win32_OperatingSystem", &dst)
 	if err != nil {
 		return nil, err
 	}

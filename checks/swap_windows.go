@@ -26,7 +26,7 @@ type Win32_PageFileUsage struct {
 func (c *CheckSwap) Run(ctx context.Context) (interface{}, error) {
 
 	var dst []Win32_PageFileUsage
-	err := wmi.Query("SELECT * FROM Win32_PageFileUsage WHERE Name <> '_Total'", &dst)
+	err := wmi.Query("SELECT * FROM Win32_PageFileUsage", &dst)
 	if err != nil {
 		return nil, err
 	}
