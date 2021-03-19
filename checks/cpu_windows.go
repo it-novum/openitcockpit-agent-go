@@ -2,68 +2,59 @@ package checks
 
 import (
 	"context"
-	"runtime"
-	"time"
 
-	"github.com/it-novum/openitcockpit-agent-go/config"
-	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/StackExchange/wmi"
 )
 
+// https://wutils.com/wmi/root/cimv2/win32_perfformatteddata_perfos_processor/
+type Win32_PerfFormattedData_PerfOS_Processor struct {
+	PercentC1Time         uint64
+	PercentC2Time         uint64
+	PercentC3Time         uint64
+	PercentDPCTime        uint64
+	PercentIdleTime       uint64
+	PercentInterruptTime  uint64
+	PercentPrivilegedTime uint64 // system
+	PercentProcessorTime  uint64 // total usage that taskmanager Shows
+	PercentUserTime       uint64 // user
+	Name                  string
+}
 
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
+
+	var dst []Win32_PerfFormattedData_PerfOS_Processor
+	err := wmi.Query("SELECT * FROM Win32_PerfFormattedData_PerfOS_Processor", &dst)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &resultCpu{}
+	var detailsPerCore []cpuDetails
 
-	cpuPercentages, err := cpu.PercentWithContext(ctx, 1*time.Second, true)
-
-	if err == nil {
-		result.PercentagePerCore = cpuPercentages
-	}
-
-	//get total CPU percentage
-	cpuPercentageTotal, err := cpu.PercentWithContext(ctx, 1*time.Second, false)
-
-	if err == nil {
-		result.PercentageTotal = cpuPercentageTotal[0]
-	}
-
-
-		//get total CPU timings
-		timeStats, err := cpu.TimesWithContext(ctx, false)
-
-		if err == nil {
-			total := timeStats[0].User + timeStats[0].System + timeStats[0].Idle
+	for _, cpu := range dst {
+		if cpu.Name == "_Total" {
+			result.PercentageTotal = float64(cpu.PercentProcessorTime)
 			result.DetailsTotal = &cpuDetails{
-				User:   timeStats[0].User / total * 100,
-				System: timeStats[0].System / total * 100,
-				Idle:   timeStats[0].Idle / total * 100,
+				User:   float64(cpu.PercentUserTime),
+				System: float64(cpu.PercentPrivilegedTime),
+				Idle:   float64(cpu.PercentIdleTime),
 			}
+		} else {
+			result.PercentagePerCore = append(result.PercentagePerCore, float64(cpu.PercentProcessorTime))
+			detailsPerCore = append(detailsPerCore, cpuDetails{
+				User:   float64(cpu.PercentUserTime),
+				System: float64(cpu.PercentPrivilegedTime),
+				Idle:   float64(cpu.PercentIdleTime),
+			})
 		}
+	}
 
-		//get timings per CPU
-		var timings []cpuDetails
-		timeStats, err = cpu.TimesWithContext(ctx, true)
-		if err == nil {
-			for _, timeStat := range timeStats {
-				total := timeStat.User + timeStat.System + timeStat.Idle
-				timings = append(timings, cpuDetails{
-					User:   timeStat.User / total * 100,
-					System: timeStat.System / total * 100,
-					Idle:   timeStat.Idle / total * 100,
-				})
-			}
-			result.DetailsPerCore = timings
-		}
-	
+	result.DetailsPerCore = detailsPerCore
 
 	return result, nil
 
-}
-
-// Configure the command or return false if the command was disabled
-func (c *CheckCpu) Configure(config *config.Configuration) (bool, error) {
-	return config.CPU, nil
 }

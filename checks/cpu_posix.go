@@ -10,16 +10,6 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 )
 
-
-
-type cpuDetails struct {
-	User   float64 // Linux, macOS, Windows  - Seconds
-	Nice   float64 // Linux, macOS           - Seconds
-	System float64 // Linux, macOS, Windows  - Seconds
-	Idle   float64 // Linux, macOS, Windows  - Seconds
-	Iowait float64 // Linux
-}
-
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout

@@ -8,9 +8,12 @@ import (
 type CheckCpu struct {
 }
 
-// Name will be used in the response as check name
-func (c *CheckCpu) Name() string {
-	return "cpu"
+type cpuDetails struct {
+	User   float64 // Linux, macOS, Windows  - Seconds
+	Nice   float64 // Linux, macOS           - Seconds
+	System float64 // Linux, macOS, Windows  - Seconds
+	Idle   float64 // Linux, macOS, Windows  - Seconds
+	Iowait float64 // Linux
 }
 
 type resultCpu struct {
@@ -18,6 +21,11 @@ type resultCpu struct {
 	PercentagePerCore []float64    `json:"cpu_percentage"`
 	DetailsTotal      *cpuDetails  `json:"cpu_total_percentage_detailed"`
 	DetailsPerCore    []cpuDetails `json:"cpu_percentage_detailed"`
+}
+
+// Name will be used in the response as check name
+func (c *CheckCpu) Name() string {
+	return "cpu"
 }
 
 // Configure the command or return false if the command was disabled
