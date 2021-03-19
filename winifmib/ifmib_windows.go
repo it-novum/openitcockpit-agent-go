@@ -1,9 +1,9 @@
 package winifmib
 
 import (
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/windows"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 type NetworkInterface struct {
@@ -154,9 +154,9 @@ func NetworkInterfaceStatistics() ([]*NetworkInterface, error) {
 	result := make([]*NetworkInterface, 0, t.NumEntries)
 	for i := Ulong(0); i < t.NumEntries; i++ {
 		row := t.Get(i)
-		if row.InterfaceIndex == 1 {
-			log.Errorln("type: ", row.Type)
-		}
+		//if row.InterfaceIndex == 1 {
+		//	log.Errorln("type: ", row.Type)
+		//}
 		result = append(result, row.NetworkInterface())
 	}
 	return result, nil
