@@ -21,18 +21,15 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		uptime = 0
 	}
 
-	kernel, _ := host.KernelVersionWithContext(ctx)
-	platfrom, family, pver, _ := host.PlatformInformationWithContext(ctx)
-
 	now := time.Now()
 	return &resultAgent{
 		LastUpdated:          now.String(),
 		LastUpdatedTimestamp: now.Unix(),
-		System:               platfrom,
+		System:               c.System,
 		SystemUptime:         uptime,
-		KernelVersion:        kernel,
-		MacVersion:           pver,
-		Family:               family,
+		KernelVersion:        c.KernelVersion,
+		MacVersion:           c.MacVersion,
+		Family:               c.Family,
 		AgentVersion:         config.AgentVersion,
 		TemperatureUnit:      "C",
 		GOOS:                 runtime.GOOS,
@@ -41,5 +38,16 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckAgent) Configure(config *config.Configuration) (bool, error) {
+	c.Init()
 	return true, nil
+}
+
+func (c *CheckAgent) Init() {
+	kernel, _ := host.KernelVersionWithContext(context.Background())
+	platfrom, family, pver, _ := host.PlatformInformationWithContext(context.Background())
+
+	c.System = platfrom
+	c.KernelVersion = kernel
+	c.MacVersion = pver
+	c.Family = family
 }

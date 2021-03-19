@@ -4,11 +4,13 @@ import "time"
 
 // CheckAgent gathers information about the agent itself
 type CheckAgent struct {
-	System       string // Windows e.g.: Windows Server 2016 Standard
-	ReleaseId    string // Windows e.g.: 1607
-	CurrentBuild string // Windows e.g.: 14393
-	Family       string // Windows e.g.: Server
+	System       string  // Windows e.g.: Windows Server 2016 Standard / Linux / macOS
+	ReleaseId    string  // Windows e.g.: 1607
+	CurrentBuild string  // Windows e.g.: 14393
+	Family       string  // Windows e.g.: Server
 	LastBootTime time.Time
+	MacVersion string    // macOS
+	KernelVersion string // Linux
 }
 
 // Name will be used in the response as check name
