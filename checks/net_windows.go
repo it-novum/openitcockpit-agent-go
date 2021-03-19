@@ -2,9 +2,10 @@ package checks
 
 import (
 	"context"
+	"time"
+
 	"github.com/it-novum/openitcockpit-agent-go/winifmib"
 	"golang.org/x/sys/windows"
-	"time"
 )
 
 // WMI Structs
@@ -100,7 +101,7 @@ type MSFT_NetAdapter struct {
 func (c *CheckNet) Run(_ context.Context) (interface{}, error) {
 	netResults := make(map[string]*resultNet)
 
-	mibTable, err := winifmib.GetIfTable2Ex(false)
+	mibTable, err := winifmib.GetIfTable2Ex(true)
 	if err != nil {
 		return nil, err
 	}

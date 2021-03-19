@@ -87,7 +87,7 @@ type Configuration struct {
 	Processes       bool  `mapstructure:"processstats"`
 	Netstats        bool  `mapstructure:"netstats"`
 	NetIo           bool  `mapstructure:"netio"`
-	Sensors         bool  `mapstructure:"sensors"`
+	Sensors         bool  `mapstructure:"sensorstats"`
 	Diskstats       bool  `mapstructure:"diskstats"`
 	DiskIo          bool  `mapstructure:"diskio"`
 	Swap            bool  `mapstructure:"swap"`
