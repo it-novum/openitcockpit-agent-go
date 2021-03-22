@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"runtime"
 
 	"github.com/it-novum/openitcockpit-agent-go/checks"
 	"github.com/it-novum/openitcockpit-agent-go/config"
@@ -76,6 +77,7 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 			results[check.Name()] = runCheck(ctx, check)
 			log.Debugln("Finish Check: ", check.Name())
 		}
+		runtime.GC()
 		// done maybe already to late
 		select {
 		case <-ctx.Done():
