@@ -87,8 +87,26 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 			continue
 		}
 
-		for i, _ := range dst {
-			eventBuffer[logfile] = append(eventBuffer[logfile], &dst[i])
+		for _, event := range dst {
+			// Resolve Memory Leak
+			eventBuffer[logfile] = append(eventBuffer[logfile], &Win32_NTLogEvent{
+				Category:         event.Category,
+				CategoryString:   event.CategoryString,
+				ComputerName:     event.ComputerName,
+				Data:             event.Data,
+				EventCode:        event.EventCode,
+				EventIdentifier:  event.EventIdentifier,
+				EventType:        event.EventType,
+				InsertionStrings: event.InsertionStrings,
+				Logfile:          event.Logfile,
+				Message:          event.Message,
+				RecordNumber:     event.RecordNumber,
+				SourceName:       event.SourceName,
+				TimeGenerated:    event.TimeGenerated,
+				TimeWritten:      event.TimeWritten,
+				Type:             event.Type,
+				User:             event.User,
+			})
 		}
 	}
 
