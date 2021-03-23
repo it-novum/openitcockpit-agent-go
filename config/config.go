@@ -112,7 +112,8 @@ type Configuration struct {
 	// WindowsEventLog with all event log types to monitor
 
 	WindowsEventLogTypes []string `mapstructure:"wineventlog-logtypes"`
-	WindowsEventLogAge   int64    `mapstructure:"wineventlog-age"`
+	WindowsEventLogAge   int64    `mapstructure:"wineventlog-age"`   // WMI Version
+	WindowsEventLogCache int64    `mapstructure:"wineventlog-cache"` // JD Version
 
 	// Push Mode
 
@@ -146,6 +147,7 @@ var defaultValue = map[string]interface{}{
 	"libvirt":              true,
 	"wineventlog-logtypes": "System,Application",
 	"wineventlog-age":      3600,
+	"wineventlog-cache":    3600,
 	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
