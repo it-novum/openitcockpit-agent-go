@@ -53,6 +53,10 @@ func (c *CheckWindowsEventLog) Name() string {
 	return "windows_eventlog"
 }
 
+// This check is a Memory Leak as a Service
+// See: https://github.com/StackExchange/wmi/issues/55
+// https://github.com/go-ole/go-ole/issues/135
+//
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout

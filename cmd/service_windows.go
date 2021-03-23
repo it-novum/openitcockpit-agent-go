@@ -3,12 +3,13 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/StackExchange/wmi"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/StackExchange/wmi"
 
 	"github.com/it-novum/openitcockpit-agent-go/agentrt"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
@@ -27,7 +28,9 @@ func initWbem() {
 	// This initialization prevents a memory leak on WMF 5+. See
 	// https://github.com/martinlindhe/wmi_exporter/issues/77 and linked issues
 	// for details.
-	log.Debugf("Initializing SWbemServices")
+	// https://github.com/StackExchange/wmi/issues/27#issuecomment-309578576
+	// https://github.com/bosun-monitor/bosun/pull/2028/files#diff-a6d7a21df96534b54447f5b1a8936f35e642cacad4a41f911e37a12dc2852e20R17-R23
+	//fmt.Println("Initializing SWbemServices")
 	s, err := wmi.InitializeSWbemServices(wmi.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
