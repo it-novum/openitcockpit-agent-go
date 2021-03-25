@@ -2,6 +2,8 @@ package checks
 
 import (
 	"context"
+	"runtime"
+
 	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/it-novum/openitcockpit-agent-go/winpsapi"
@@ -9,10 +11,9 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
-	"runtime"
 )
 
-type win32Process struct {
+type Win32_Process struct {
 	ProcessId       uint64
 	ParentProcessId uint64
 	CommandLine     string
@@ -20,7 +21,7 @@ type win32Process struct {
 	ExecutablePath  string
 }
 
-type win32ProcessPerf struct {
+type Win32_PerfFormattedData_PerfProc_Process struct {
 	IDProcess         uint64
 	WorkingSet        uint64
 	WorkingSetPrivate uint64
@@ -28,11 +29,11 @@ type win32ProcessPerf struct {
 	HandleCount       uint64
 }
 
-type processInfo struct {
+type ProcessInfo struct {
 	TimeStat *winpsapi.ProcessTimeStat
 }
 
-func fetchProcessInfo(pid uint64) (*processInfo, error) {
+func fetchProcessInfo(pid uint64) (*ProcessInfo, error) {
 	handle, err := windows.OpenProcess(windows.PROCESS_QUERY_INFORMATION, false, uint32(pid))
 	if err != nil {
 		return nil, errors.Wrap(err, "win32 OpenProcess")
@@ -41,7 +42,7 @@ func fetchProcessInfo(pid uint64) (*processInfo, error) {
 		_ = windows.CloseHandle(handle)
 	}()
 
-	result := &processInfo{}
+	result := &ProcessInfo{}
 	if stat, err := winpsapi.GetProcessTimes(handle); err != nil {
 		return nil, err
 	} else {
@@ -52,8 +53,8 @@ func fetchProcessInfo(pid uint64) (*processInfo, error) {
 }
 
 func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
-	var processList []*win32Process
-	var processPerf []*win32ProcessPerf
+	var processList []*Win32_Process
+	var processPerf []*Win32_PerfFormattedData_PerfProc_Process
 
 	if err := wmi.Query("SELECT processid,parentprocessid,commandline,name,ExecutablePath FROM Win32_Process", &processList); err != nil {
 		return nil, errors.Wrap(err, "could not query wmi for process list")
@@ -63,7 +64,7 @@ func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
 		return nil, errors.Wrap(err, "could not query wmi for process perfdata list")
 	}
 
-	processMapPerfdata := make(map[uint64]*win32ProcessPerf, len(processPerf))
+	processMapPerfdata := make(map[uint64]*Win32_PerfFormattedData_PerfProc_Process, len(processPerf))
 	for _, p := range processPerf {
 		processMapPerfdata[p.IDProcess] = p
 	}
