@@ -44,7 +44,6 @@ func (r *RootCmd) preRun(cmd *cobra.Command, args []string) error {
 		"swap":     true,
 		"eventlog": true,
 		"net":      true,
-		"netio":    true,
 	}
 
 	if _, exists := availableCommands[r.command]; !exists {
@@ -104,7 +103,7 @@ func (r *RootCmd) run(cmd *cobra.Command, args []string) {
 	switch r.command {
 	case "cpu":
 		cpu := &CheckCpu{}
-		cpu.Configure(conf)
+		_ = cpu.Configure(conf)
 		result, err = cpu.RunQuery()
 
 	case "diskio":
@@ -114,30 +113,34 @@ func (r *RootCmd) run(cmd *cobra.Command, args []string) {
 
 	case "memory":
 		mem := &CheckMem{}
-		mem.Configure(conf)
+		_ = mem.Configure(conf)
 		result, err = mem.RunQuery()
 
 	case "process":
 		proc := &CheckProcess{}
-		proc.Configure(conf)
+		_ = proc.Configure(conf)
 		result, err = proc.RunQuery()
 
 	case "services":
-		fmt.Println("services")
+		services := &CheckWinService{}
+		_ = services.Configure(conf)
+		result, err = services.RunCheck()
 
 	case "swap":
-		fmt.Println("swap")
+		swap := &CheckSwap{}
+		_ = swap.Configure(conf)
+		result, err = swap.RunQuery()
 
 	case "eventlog":
-		fmt.Println("eventlog")
+		eventlog := &CheckWindowsEventLog{}
+		_ = eventlog.Configure(conf)
+		result, err = eventlog.RunQuery()
 
 	case "net":
 		netstat := &CheckNet{}
-		netstat.Configure(conf)
+		_ = netstat.Configure(conf)
 		result, err = netstat.RunCheck()
 
-	case "netio":
-		fmt.Println("netio")
 	}
 
 	if err != nil {

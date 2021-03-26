@@ -40,6 +40,7 @@ type CommandArgs struct {
 	Timeout       time.Duration
 	Shell         string
 	PowershellExe string
+	Stdin         string
 }
 
 var (
@@ -156,6 +157,11 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 		result.Stdout = err.Error()
 
 		return result, err
+	}
+
+	if commandArgs.Stdin != "" {
+		// User passed data to put on stdin so put this data on stdin !
+		stdin = commandArgs.Stdin
 	}
 
 	outputBuf := &bytes.Buffer{}

@@ -1,8 +1,5 @@
 package checks
 
-// This check works and was written by Johannes Drummer. Unfortunately it has a memory leak in it
-// We decided to re-implement it using WMI but maybe in future we will switch back to this approach
-
 import (
 	"context"
 	"fmt"
@@ -10,8 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/config"
-	"github.com/it-novum/openitcockpit-agent-go/evlog"
 )
 
 type resultEvent struct {
@@ -26,10 +23,34 @@ type resultEvent struct {
 	Keywords    []string
 }
 
+// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/eventlogprov/win32-ntlogevent
+type Win32_NTLogEvent struct {
+	Category         uint16
+	CategoryString   string
+	ComputerName     string
+	Data             []uint8
+	EventCode        uint16
+	EventIdentifier  uint32
+	EventType        uint8
+	InsertionStrings []string
+	Logfile          string
+	Message          string
+	RecordNumber     uint32
+	SourceName       string
+	TimeGenerated    time.Time
+	TimeWritten      time.Time
+	Type             string
+	User             string
+}
+
 type CheckWindowsEventLog struct {
-	eventLogs  map[string]*evlog.EventLog
-	cache      time.Duration
-	eventCache map[string][]*resultEvent
+	age      time.Duration
+	logfiles []string
+}
+
+type EventlogCheckOptions struct {
+	Age      time.Duration
+	Logfiles []string
 }
 
 // Name will be used in the response as check name
@@ -37,79 +58,82 @@ func (c *CheckWindowsEventLog) Name() string {
 	return "windows_eventlog"
 }
 
+// This check is a Memory Leak as a Service
+// See: https://github.com/StackExchange/wmi/issues/55
+// https://github.com/go-ole/go-ole/issues/135
+//
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
-	for channel, eventLog := range c.eventLogs {
-		events, err := eventLog.Query()
-		if err != nil {
-			log.Errorln("Event Log: could not query event log: ", err)
-			return nil, err
-		}
-		eventCache := c.eventCache[channel]
 
-		for _, event := range events {
-			eventCache = append(eventCache, &resultEvent{
-				Message:     event.Message,
-				Channel:     event.Channel,
-				Level:       event.Level,
-				LevelRaw:    event.LevelRaw,
-				RecordID:    event.RecordID,
-				TimeCreated: event.TimeCreated.SystemTime,
-				Provider:    event.Provider.Name,
-				Task:        event.Task,
-				Keywords:    event.Keywords,
+	now := time.Now().UTC()
+	//now = now.Add((3600 * time.Second) * -1)
+	now = now.Add(c.age * -1)
+
+	// Get DMTF-DateTime for WMI.
+	// PowerShell Example to generate this:
+	// PS C:\Users\Administrator> $WMIDATEAGE = [System.Management.ManagementDateTimeConverter]::ToDmtfDateTime([DateTime]::UtcNow.AddDays(-14))
+	// PS C:\Users\Administrator> echo $WMIDATEAGE
+	// 20210308075246.091047+000
+	// Docs: https://blogs.iis.net/bobbyv/working-with-wmi-dates-and-times
+	//
+	// Golang date formate: https://golang.org/src/time/format.go
+	wmidate := now.Format("20060102150405.000000-070")
+
+	var dst []Win32_NTLogEvent
+	var sql string
+	//var eventBuffer map[string][]*Win32_NTLogEvent
+	eventBuffer := make(map[string][]*Win32_NTLogEvent)
+	for _, logfile := range c.logfiles {
+		sql = fmt.Sprintf("SELECT * FROM Win32_NTLogEvent WHERE Logfile='%v' AND TimeWritten >= '%v'", logfile, wmidate)
+		//fmt.Println(sql)
+
+		err := wmi.Query(sql, &dst)
+		if err != nil {
+			log.Errorln("Event Log: ", err)
+			continue
+		}
+
+		for _, event := range dst {
+			// Resolve Memory Leak
+			eventBuffer[logfile] = append(eventBuffer[logfile], &Win32_NTLogEvent{
+				Category:         event.Category,
+				CategoryString:   event.CategoryString,
+				ComputerName:     event.ComputerName,
+				Data:             event.Data,
+				EventCode:        event.EventCode,
+				EventIdentifier:  event.EventIdentifier,
+				EventType:        event.EventType,
+				InsertionStrings: event.InsertionStrings,
+				Logfile:          event.Logfile,
+				Message:          event.Message,
+				RecordNumber:     event.RecordNumber,
+				SourceName:       event.SourceName,
+				TimeGenerated:    event.TimeGenerated,
+				TimeWritten:      event.TimeWritten,
+				Type:             event.Type,
+				User:             event.User,
 			})
 		}
-
-		log.Debugln("Event Log: cache before cleanup: ", len(eventCache))
-		if len(eventCache) > 0 {
-			firstIndex := 0
-			keepTime := time.Now().Add(-c.cache)
-			for i, event := range eventCache {
-				if event.TimeCreated.After(keepTime) {
-					firstIndex = i
-					break
-				}
-			}
-			eventCache = eventCache[firstIndex:]
-		}
-		log.Debugln("Event Log: cache after cleanup: ", len(eventCache))
-
-		c.eventCache[channel] = eventCache
 	}
 
-	return c.eventCache, nil
+	return eventBuffer, nil
 }
 
 // Configure the command or return false if the command was disabled
 func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error) {
 	if cfg.WindowsEventLog && len(cfg.WindowsEventLogTypes) > 0 {
-		avail, err := evlog.Available()
-		if err != nil {
-			return false, fmt.Errorf("windows event log availability check: %s", err)
-		}
-		if !avail {
-			return false, fmt.Errorf("windows event log is not available")
+		c.logfiles = cfg.WindowsEventLogTypes
+
+		// Get the events from the last hour
+		var ageSec uint64 = 3600
+		if cfg.WindowsEventLogAge > 0 {
+			ageSec = uint64(cfg.WindowsEventLogAge)
 		}
 
-		var cacheSec uint64 = 3600
-		if cfg.WindowsEventLogCache > 0 {
-			cacheSec = uint64(cfg.WindowsEventLogCache)
-		}
-		c.cache = time.Second * time.Duration(cacheSec)
-		c.eventCache = make(map[string][]*resultEvent)
-		c.eventLogs = make(map[string]*evlog.EventLog)
-
-		for _, channel := range cfg.WindowsEventLogTypes {
-			c.eventCache[channel] = make([]*resultEvent, 0)
-			c.eventLogs[channel] = &evlog.EventLog{
-				LogChannel: channel,
-				TimeDiff:   cacheSec,
-			}
-		}
+		c.age = time.Second * time.Duration(ageSec)
 
 		return true, nil
 	}

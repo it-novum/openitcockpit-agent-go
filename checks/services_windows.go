@@ -3,13 +3,14 @@ package checks
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"unsafe"
+
 	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
-	"reflect"
-	"unsafe"
 )
 
 // Win32_Service from https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-service
@@ -46,7 +47,7 @@ type Win32_Service struct {
 	*/
 }
 
-// CheckWinService gathers information about Systemd services
+// CheckWinService gathers information about Windows Services services
 type CheckWinService struct {
 	serviceConfigCache map[string]*serviceConfig
 }
@@ -77,8 +78,8 @@ type resultWindowsServices struct {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWinService) Run(ctx context.Context) (interface{}, error) {
-	//return c.getServiceListViaWmi(ctx)
-	return c.getServiceListViaCAPI(ctx)
+	//return c.GetServiceListViaWmi(ctx)
+	return c.GetServiceListViaCAPI(ctx)
 }
 
 func getServiceViaWmi(name string) (*resultWindowsServices, error) {
@@ -102,7 +103,7 @@ func getServiceViaWmi(name string) (*resultWindowsServices, error) {
 	return nil, nil
 }
 
-func (c *CheckWinService) getServiceListViaWmi(_ context.Context) ([]*resultWindowsServices, error) {
+func (c *CheckWinService) GetServiceListViaWmi(_ context.Context) ([]*resultWindowsServices, error) {
 	var dst []Win32_Service
 	err := wmi.Query("SELECT * FROM Win32_Service", &dst)
 	if err != nil {
@@ -241,7 +242,7 @@ func queryServiceDescription(srvHandle windows.Handle, serviceName *uint16, serv
 	return nil
 }
 
-func (c *CheckWinService) getServiceListViaCAPI(_ context.Context) ([]*resultWindowsServices, error) {
+func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*resultWindowsServices, error) {
 	if c.serviceConfigCache == nil {
 		c.serviceConfigCache = make(map[string]*serviceConfig)
 	}
