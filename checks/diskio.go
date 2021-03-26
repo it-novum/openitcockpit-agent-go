@@ -1,12 +1,17 @@
 package checks
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
 // CheckDiskIo gathers information about system disks IO
 type CheckDiskIo struct {
-	lastResults map[string]*resultDiskIo
+	lastResults     map[string]*resultDiskIo
+	WmiExecutorPath string // Used for Windows
 }
 
 // Name will be used in the response as check name
@@ -63,5 +68,14 @@ type resultDiskIo struct {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckDiskIo) Configure(config *config.Configuration) (bool, error) {
+	if config.DiskIo && runtime.GOOS == "windows" {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
+	}
+
 	return config.DiskIo, nil
 }

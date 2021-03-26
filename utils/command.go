@@ -41,6 +41,7 @@ type CommandArgs struct {
 	Shell         string
 	PowershellExe string
 	Stdin         string
+	Env           []string
 }
 
 var (
@@ -168,6 +169,10 @@ func RunCommand(ctx context.Context, commandArgs CommandArgs) (*CommandResult, e
 	stdinBuf := bytes.NewBufferString(stdin)
 
 	c := exec.CommandContext(ctxTimeout, args[0], args[1:]...)
+	if len(commandArgs.Env) > 0 {
+		c.Env = commandArgs.Env
+	}
+
 	c.Stdout = outputBuf
 	// there is a bug in powershell where powershell prints an xml with the shell contents to stderr
 	if commandArgs.Shell == "powershell_command" {

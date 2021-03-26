@@ -23,7 +23,7 @@ func (c *CheckWinService) Configure(conf *Configuration) error {
 func (c *CheckWinService) RunCheck() (string, error) {
 	check := &checks.CheckWinService{}
 
-	result, err := check.Run(context.Background())
+	result, err := check.GetServiceListViaCAPI(context.Background())
 
 	js, err := json.Marshal(result)
 	if err != nil {

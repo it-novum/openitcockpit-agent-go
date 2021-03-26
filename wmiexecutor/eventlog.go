@@ -34,9 +34,10 @@ func (c *CheckWindowsEventLog) RunQuery() (string, error) {
 		return "", err
 	}
 
+	age := time.Second * time.Duration(options.Age)
 	now := time.Now().UTC()
 	//now = now.Add((3600 * time.Second) * -1)
-	now = now.Add((options.Age * time.Second) * -1)
+	now = now.Add(age * -1)
 
 	// Get DMTF-DateTime for WMI.
 	// PowerShell Example to generate this:

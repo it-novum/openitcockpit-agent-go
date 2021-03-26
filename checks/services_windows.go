@@ -2,12 +2,18 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"runtime"
+	"time"
 	"unsafe"
 
 	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
@@ -50,6 +56,7 @@ type Win32_Service struct {
 // CheckWinService gathers information about Windows Services services
 type CheckWinService struct {
 	serviceConfigCache map[string]*serviceConfig
+	WmiExecutorPath    string // Used for Windows
 }
 
 // Name will be used in the response as check name
@@ -63,7 +70,7 @@ type serviceConfig struct {
 	StartType   string
 }
 
-type resultWindowsServices struct {
+type ResultWindowsServices struct {
 	DisplayName string // Xbox Live Authentifizierungs-Manager
 	BinPath     string // C:\\Windows\\system32\\svchost.exe -k netsvcs -p
 	StartType   string // Manual
@@ -73,16 +80,49 @@ type resultWindowsServices struct {
 	Description string // Stellt Authentifizierungs- und Autorisierungsservices für Xbox Live bereit. Wenn der Service beendet wird, funktionieren einige Anwendungen möglicherweise nicht richtig.
 }
 
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/services_windows.go
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWinService) Run(ctx context.Context) (interface{}, error) {
-	//return c.GetServiceListViaWmi(ctx)
-	return c.GetServiceListViaCAPI(ctx)
+	// exec wmiexecutor.exe to avoid memory leak
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command services",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
+	}
+	fmt.Println(commandResult.Stdout)
+
+	var dst []*ResultWindowsServices
+	err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
 }
 
-func getServiceViaWmi(name string) (*resultWindowsServices, error) {
+func GetServiceViaWmi(name string) (*ResultWindowsServices, error) {
 	var dst []Win32_Service
 	err := wmi.Query(fmt.Sprintf("SELECT * FROM Win32_Service WHERE name = '%s'", name), &dst)
 	if err != nil {
@@ -90,7 +130,7 @@ func getServiceViaWmi(name string) (*resultWindowsServices, error) {
 	}
 	if len(dst) > 0 {
 		service := dst[0]
-		return &resultWindowsServices{
+		return &ResultWindowsServices{
 			DisplayName: service.DisplayName,
 			BinPath:     service.PathName,
 			StartType:   service.StartMode,
@@ -103,16 +143,16 @@ func getServiceViaWmi(name string) (*resultWindowsServices, error) {
 	return nil, nil
 }
 
-func (c *CheckWinService) GetServiceListViaWmi(_ context.Context) ([]*resultWindowsServices, error) {
+func (c *CheckWinService) GetServiceListViaWmi(_ context.Context) ([]*ResultWindowsServices, error) {
 	var dst []Win32_Service
 	err := wmi.Query("SELECT * FROM Win32_Service", &dst)
 	if err != nil {
 		return nil, err
 	}
 
-	wmiResults := make([]*resultWindowsServices, 0, len(dst))
+	wmiResults := make([]*ResultWindowsServices, 0, len(dst))
 	for _, service := range dst {
-		result := &resultWindowsServices{
+		result := &ResultWindowsServices{
 			DisplayName: service.DisplayName,
 			BinPath:     service.PathName,
 			StartType:   service.StartMode,
@@ -154,7 +194,7 @@ var mapServiceStartType = map[uint32]string{
 	windows.SERVICE_SYSTEM_START: "System",
 }
 
-func fetchServiceConfiguration(scManager windows.Handle, serviceName *uint16, service *resultWindowsServices) error {
+func fetchServiceConfiguration(scManager windows.Handle, serviceName *uint16, service *ResultWindowsServices) error {
 	srvHandle, err := windows.OpenService(scManager, serviceName, windows.GENERIC_READ)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprint("could not query service configuration for service ", windows.UTF16PtrToString(serviceName)))
@@ -179,7 +219,7 @@ func fetchServiceConfiguration(scManager windows.Handle, serviceName *uint16, se
 	return nil
 }
 
-func queryServiceConfig(srvHandle windows.Handle, serviceName *uint16, service *resultWindowsServices) error {
+func queryServiceConfig(srvHandle windows.Handle, serviceName *uint16, service *ResultWindowsServices) error {
 	var (
 		bytesNeeded uint32
 	)
@@ -220,7 +260,7 @@ func queryServiceConfig(srvHandle windows.Handle, serviceName *uint16, service *
 	return nil
 }
 
-func queryServiceDescription(srvHandle windows.Handle, serviceName *uint16, service *resultWindowsServices) error {
+func queryServiceDescription(srvHandle windows.Handle, serviceName *uint16, service *ResultWindowsServices) error {
 	var (
 		bytesNeeded uint32
 	)
@@ -242,7 +282,7 @@ func queryServiceDescription(srvHandle windows.Handle, serviceName *uint16, serv
 	return nil
 }
 
-func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*resultWindowsServices, error) {
+func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*ResultWindowsServices, error) {
 	if c.serviceConfigCache == nil {
 		c.serviceConfigCache = make(map[string]*serviceConfig)
 	}
@@ -276,9 +316,9 @@ func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*resultWin
 	newCache := make(map[string]*serviceConfig, len(services))
 
 	log.Debugln("Check Services: query service configuration")
-	result := make([]*resultWindowsServices, 0)
+	result := make([]*ResultWindowsServices, 0)
 	for _, service := range services {
-		srvResult := &resultWindowsServices{
+		srvResult := &ResultWindowsServices{
 			DisplayName: windows.UTF16PtrToString(service.DisplayName),
 			Status:      mapServiceState[service.ServiceStatusProcess.CurrentState],
 			Pid:         service.ServiceStatusProcess.ProcessId,
@@ -289,7 +329,7 @@ func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*resultWin
 			if err := fetchServiceConfiguration(scManager, service.ServiceName, srvResult); err != nil {
 				if err == windows.ERROR_ACCESS_DENIED {
 					// we don't have access to all service configurations so we have to use wmi for this
-					if wmiSrv, err := getServiceViaWmi(srvResult.Name); err != nil || wmiSrv == nil {
+					if wmiSrv, err := GetServiceViaWmi(srvResult.Name); err != nil || wmiSrv == nil {
 						log.Errorln("could not fetch service configuration: ", err)
 					} else {
 						srvResult.Description = wmiSrv.Description
@@ -323,5 +363,14 @@ func (c *CheckWinService) GetServiceListViaCAPI(_ context.Context) ([]*resultWin
 
 // Configure the command or return false if the command was disabled
 func (c *CheckWinService) Configure(config *config.Configuration) (bool, error) {
+	if config.WindowsServices && runtime.GOOS == "windows" {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
+	}
+
 	return config.WindowsServices, nil
 }

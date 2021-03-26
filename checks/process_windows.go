@@ -2,14 +2,13 @@ package checks
 
 import (
 	"context"
-	"runtime"
+	"encoding/json"
+	"fmt"
+	"time"
 
-	"github.com/StackExchange/wmi"
-	"github.com/it-novum/openitcockpit-agent-go/safemaths"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 	"github.com/it-novum/openitcockpit-agent-go/winpsapi"
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/v3/mem"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
 )
 
@@ -52,75 +51,40 @@ func fetchProcessInfo(pid uint64) (*ProcessInfo, error) {
 	return result, nil
 }
 
-func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
-	var processList []*Win32_Process
-	var processPerf []*Win32_PerfFormattedData_PerfProc_Process
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/process_windows.go
 
-	if err := wmi.Query("SELECT processid,parentprocessid,commandline,name,ExecutablePath FROM Win32_Process", &processList); err != nil {
-		return nil, errors.Wrap(err, "could not query wmi for process list")
+func (c *CheckProcess) Run(ctx context.Context) (interface{}, error) {
+	// exec wmiexecutor.exe to avoid memory leak
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command process",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	if err := wmi.Query("SELECT IDProcess,WorkingSet,WorkingSetPrivate,PrivateBytes,HandleCount FROM Win32_PerfFormattedData_PerfProc_Process", &processPerf); err != nil {
-		return nil, errors.Wrap(err, "could not query wmi for process perfdata list")
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
 	}
 
-	processMapPerfdata := make(map[uint64]*Win32_PerfFormattedData_PerfProc_Process, len(processPerf))
-	for _, p := range processPerf {
-		processMapPerfdata[p.IDProcess] = p
+	var processResults []*resultProcess
+	err = json.Unmarshal([]byte(commandResult.Stdout), &processResults)
+
+	if err != nil {
+		return nil, err
 	}
 
-	ignorePid := c.processCacheIgnorePid
-	if ignorePid == nil {
-		ignorePid = map[uint64]uint64{}
-	}
-	newIgnorePid := map[uint64]uint64{}
-
-	totalMemory := 0.0
-	sysMem, err := mem.VirtualMemory()
-	if err == nil {
-		totalMemory = float64(sysMem.Total)
-	}
-
-	processResults := make([]*resultProcess, 0, len(processList))
-	for _, proc := range processList {
-		perfdata, ok := processMapPerfdata[proc.ProcessId]
-		if !ok {
-			// process probably vanished
-			continue
-		}
-
-		result := &resultProcess{
-			Pid:           proc.ProcessId,
-			Ppid:          proc.ParentProcessId,
-			Name:          proc.Name,
-			MemoryPercent: safemaths.DivideFloat64(float64(perfdata.WorkingSetPrivate), totalMemory) * 100,
-			Cmdline:       proc.CommandLine,
-			Exe:           proc.ExecutablePath,
-			NumFds:        perfdata.HandleCount,
-			Memory: &resultMemoryWindows{
-				WorkingSet:        perfdata.WorkingSet,
-				WorkingSetPrivate: perfdata.WorkingSetPrivate,
-				PrivateBytes:      perfdata.PrivateBytes,
-			},
-		}
-
-		processResults = append(processResults, result)
-
-		ignore := ignorePid[proc.ProcessId]
-		if ignore == 1 {
-			newIgnorePid[proc.ProcessId] = 1
-			continue
-		}
-		if stat, err := fetchProcessInfo(proc.ProcessId); err != nil {
-			log.Debugln("could not fetch process information (", proc.ProcessId, "): ", err)
-			newIgnorePid[proc.ProcessId] = 1
-		} else {
-			result.CreateTime = stat.TimeStat.CreateTime
-			result.CPUPercent = (stat.TimeStat.User + stat.TimeStat.System) / float64(runtime.NumCPU())
-		}
-	}
-
-	c.processCacheIgnorePid = newIgnorePid
 	return processResults, nil
 }
 

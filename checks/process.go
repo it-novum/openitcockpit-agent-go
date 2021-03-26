@@ -1,6 +1,10 @@
 package checks
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
@@ -9,6 +13,7 @@ type CheckProcess struct {
 	// processCacheCmdline for windows checks
 	processCacheCmdline   map[uint64]string
 	processCacheIgnorePid map[uint64]uint64
+	WmiExecutorPath       string // Used for Windows
 }
 
 type resultMemoryPosix struct {
@@ -53,5 +58,14 @@ func (c *CheckProcess) Name() string {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckProcess) Configure(config *config.Configuration) (bool, error) {
+	if config.Processes && runtime.GOOS == "windows" {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
+	}
+
 	return config.Processes, nil
 }

@@ -2,13 +2,15 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 type resultEvent struct {
@@ -44,12 +46,13 @@ type Win32_NTLogEvent struct {
 }
 
 type CheckWindowsEventLog struct {
-	age      time.Duration
-	logfiles []string
+	age             uint64
+	logfiles        []string
+	WmiExecutorPath string // Used for Windows
 }
 
 type EventlogCheckOptions struct {
-	Age      time.Duration
+	Age      uint64
 	Logfiles []string
 }
 
@@ -57,6 +60,13 @@ type EventlogCheckOptions struct {
 func (c *CheckWindowsEventLog) Name() string {
 	return "windows_eventlog"
 }
+
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/eventlog_windows.go
 
 // This check is a Memory Leak as a Service
 // See: https://github.com/StackExchange/wmi/issues/55
@@ -67,75 +77,61 @@ func (c *CheckWindowsEventLog) Name() string {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
+	// exec wmiexecutor.exe to avoid memory leak
 
-	now := time.Now().UTC()
-	//now = now.Add((3600 * time.Second) * -1)
-	now = now.Add(c.age * -1)
+	options, _ := json.Marshal(&EventlogCheckOptions{
+		Age:      c.age,
+		Logfiles: c.logfiles,
+	})
 
-	// Get DMTF-DateTime for WMI.
-	// PowerShell Example to generate this:
-	// PS C:\Users\Administrator> $WMIDATEAGE = [System.Management.ManagementDateTimeConverter]::ToDmtfDateTime([DateTime]::UtcNow.AddDays(-14))
-	// PS C:\Users\Administrator> echo $WMIDATEAGE
-	// 20210308075246.091047+000
-	// Docs: https://blogs.iis.net/bobbyv/working-with-wmi-dates-and-times
-	//
-	// Golang date formate: https://golang.org/src/time/format.go
-	wmidate := now.Format("20060102150405.000000-070")
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command eventlog",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+		Stdin: string(options) + "\n",
+	})
 
-	var dst []Win32_NTLogEvent
-	var sql string
-	//var eventBuffer map[string][]*Win32_NTLogEvent
-	eventBuffer := make(map[string][]*Win32_NTLogEvent)
-	for _, logfile := range c.logfiles {
-		sql = fmt.Sprintf("SELECT * FROM Win32_NTLogEvent WHERE Logfile='%v' AND TimeWritten >= '%v'", logfile, wmidate)
-		//fmt.Println(sql)
-
-		err := wmi.Query(sql, &dst)
-		if err != nil {
-			log.Errorln("Event Log: ", err)
-			continue
-		}
-
-		for _, event := range dst {
-			// Resolve Memory Leak
-			eventBuffer[logfile] = append(eventBuffer[logfile], &Win32_NTLogEvent{
-				Category:         event.Category,
-				CategoryString:   event.CategoryString,
-				ComputerName:     event.ComputerName,
-				Data:             event.Data,
-				EventCode:        event.EventCode,
-				EventIdentifier:  event.EventIdentifier,
-				EventType:        event.EventType,
-				InsertionStrings: event.InsertionStrings,
-				Logfile:          event.Logfile,
-				Message:          event.Message,
-				RecordNumber:     event.RecordNumber,
-				SourceName:       event.SourceName,
-				TimeGenerated:    event.TimeGenerated,
-				TimeWritten:      event.TimeWritten,
-				Type:             event.Type,
-				User:             event.User,
-			})
-		}
+	if err != nil {
+		return nil, err
 	}
 
-	return eventBuffer, nil
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
+	}
+
+	var dst map[string][]*Win32_NTLogEvent
+	err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
 }
 
 // Configure the command or return false if the command was disabled
 func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error) {
-	if cfg.WindowsEventLog && len(cfg.WindowsEventLogTypes) > 0 {
-		c.logfiles = cfg.WindowsEventLogTypes
+	if cfg.WindowsEventLog && runtime.GOOS == "windows" && len(cfg.WindowsEventLogTypes) > 0 {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
 
-		// Get the events from the last hour
 		var ageSec uint64 = 3600
 		if cfg.WindowsEventLogAge > 0 {
 			ageSec = uint64(cfg.WindowsEventLogAge)
 		}
-
-		c.age = time.Second * time.Duration(ageSec)
+		c.age = ageSec
+		c.logfiles = cfg.WindowsEventLogTypes
 
 		return true, nil
 	}
+
 	return false, nil
 }

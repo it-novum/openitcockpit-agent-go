@@ -1,11 +1,16 @@
 package checks
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
 // CheckSwap gathers information about system swap
 type CheckSwap struct {
+	WmiExecutorPath string // Used for Windows
 }
 
 // Name will be used in the response as check name
@@ -24,5 +29,14 @@ type resultSwap struct {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckSwap) Configure(config *config.Configuration) (bool, error) {
+	if config.Swap && runtime.GOOS == "windows" {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
+	}
+
 	return config.Swap, nil
 }

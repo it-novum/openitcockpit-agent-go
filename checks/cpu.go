@@ -1,11 +1,16 @@
 package checks
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
+
 	"github.com/it-novum/openitcockpit-agent-go/config"
 )
 
 // CheckCpu gathers information about system CPU load
 type CheckCpu struct {
+	WmiExecutorPath string // Used for Windows
 }
 
 type cpuDetails struct {
@@ -30,5 +35,14 @@ func (c *CheckCpu) Name() string {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckCpu) Configure(config *config.Configuration) (bool, error) {
+	if config.CPU && runtime.GOOS == "windows" {
+		// Check is enabled
+		agentBinary, err := os.Executable()
+		if err == nil {
+			wmiPath := filepath.Dir(agentBinary) + string(os.PathSeparator) + "wmiexecutor.exe"
+			c.WmiExecutorPath = wmiPath
+		}
+	}
+
 	return config.CPU, nil
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/it-novum/openitcockpit-agent-go/agentrt"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
+	"github.com/it-novum/openitcockpit-agent-go/wmiexecutor"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
@@ -275,10 +276,19 @@ func controlService(name string, c svc.Cmd, to svc.State) error {
 func PlatformMain() {
 	initWbem()
 	if os.Getenv("OITC_AGENT_DEBUG") == "1" {
+		// This starts the oITC Agent on Windows in foreground via a Terminal
 		if err := New().Execute(); err != nil {
 			os.Exit(1)
 		}
+	} else if os.Getenv("OITC_AGENT_WMI_EXECUTOR") == "1" {
+		// This starts the WMI Executor of the Agent and exit
+		if err := wmiexecutor.New().Execute(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
 	} else {
+		// This starts the oITC Agent as Windows Service
 		windows_service_main()
 	}
 }

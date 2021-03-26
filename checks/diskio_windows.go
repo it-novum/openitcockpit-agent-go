@@ -2,12 +2,13 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 // WMI Structs
@@ -91,24 +92,40 @@ type Win32_PerfRawData_PerfDisk_PhysicalDisk struct {
 	Timestamp_Sys100NS           uint64
 }
 
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/diskio_windows.go
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
-func (c *CheckDiskIo) Run(_ context.Context) (interface{}, error) {
+func (c *CheckDiskIo) Run(ctx context.Context) (interface{}, error) {
+	// exec wmiexecutor.exe to avoid memory leak
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command diskio",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+	})
 
-	// Need some help on Windows Performance Counters? We all need - it's a nightmare
-	// This is gold!
-	// http://toncigrgin.blogspot.com/2015/11/windows-perf-counters-blog2.html?m=1
-	// Counter types: https://docs.microsoft.com/de-de/windows/win32/wmisdk/countertype-qualifier?redirectedfrom=MSDN
-	// Formulas: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc785636(v=ws.10)?redirectedfrom=MSDN
-	// https://docs.microsoft.com/en-us/archive/blogs/askcore/windows-performance-monitor-disk-counters-explained
-	//
-	// Many thanks to the_d3f4ult https://www.reddit.com/r/golang/comments/kxyhfo/get_windows_disk_io_latency_from_wmi_in/gjp5og4?utm_source=share&utm_medium=web2x&context=3
-	// for making this happen!
+	if err != nil {
+		return nil, err
+	}
 
-	var dst []Win32_PerfRawData_PerfDisk_PhysicalDisk
-	err := wmi.Query("SELECT * FROM Win32_PerfRawData_PerfDisk_PhysicalDisk WHERE Name <> '_Total'", &dst)
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
+	}
+
+	var dst []*Win32_PerfRawData_PerfDisk_PhysicalDisk
+	err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
 	if err != nil {
 		return nil, err
 	}

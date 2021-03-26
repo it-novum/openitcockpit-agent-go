@@ -2,8 +2,11 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
-	"github.com/StackExchange/wmi"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 // https://wutils.com/wmi/root/cimv2/win32_perfformatteddata_perfos_processor/
@@ -20,14 +23,40 @@ type Win32_PerfFormattedData_PerfOS_Processor struct {
 	Name                  string
 }
 
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/cpu_windows.go
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
+	// exec wmiexecutor.exe to avoid memory leak
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command cpu",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+	})
 
-	var dst []Win32_PerfFormattedData_PerfOS_Processor
-	err := wmi.Query("SELECT * FROM Win32_PerfFormattedData_PerfOS_Processor", &dst)
+	if err != nil {
+		return nil, err
+	}
+
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
+	}
+
+	var dst []*Win32_PerfFormattedData_PerfOS_Processor
+	err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
 	if err != nil {
 		return nil, err
 	}
@@ -56,5 +85,4 @@ func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
 	result.DetailsPerCore = detailsPerCore
 
 	return result, nil
-
 }

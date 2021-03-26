@@ -2,10 +2,11 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/StackExchange/wmi"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-operatingsystem
@@ -73,23 +74,45 @@ type Win32_OperatingSystem struct {
 	WindowsDirectory                          string
 }
 
+// Unfortunately the WMI library is suffering from a memory leak
+// especially on windows Server 2016 and Windows 10.
+// For this reason all WMI queries have been moved to an external binary (fork -> exec) to avoid any memory issues.
+//
+// Hopefully the memory issues will be fixed one day.
+// This check used to look like this: https://github.com/it-novum/openitcockpit-agent-go/blob/a8ec01146e419a2db246844ca95cbe4ea560d9e6/checks/memory_windows.go
+
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckMem) Run(ctx context.Context) (interface{}, error) {
+	// exec wmiexecutor.exe to avoid memory leak
+	timeout := 10 * time.Second
+	commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+		Command: c.WmiExecutorPath + " --command memory",
+		Shell:   "",
+		Timeout: timeout,
+		Env: []string{
+			"OITC_AGENT_WMI_EXECUTOR=1",
+		},
+	})
 
-	var dst []Win32_OperatingSystem
-	err := wmi.Query("SELECT * FROM Win32_OperatingSystem", &dst)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(dst) == 0 {
-		return nil, fmt.Errorf("Empty result from WMI")
+	if commandResult.RC > 0 {
+		return nil, fmt.Errorf(commandResult.Stdout)
 	}
 
-	var info Win32_OperatingSystem = dst[0]
+	var dst []*Win32_OperatingSystem
+	err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var info *Win32_OperatingSystem = dst[0]
 
 	total := info.TotalVisibleMemorySize * 1024
 	free := info.FreePhysicalMemory * 1024
