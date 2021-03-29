@@ -69,9 +69,7 @@ pipeline {
                     }
                 }
                 stage('darwin') {
-                    agent {
-                        label 'macos'
-                    }
+
                     environment {
                         GOOS = 'darwin'
                         BINNAME = 'openitcockpit-agent'
@@ -79,8 +77,22 @@ pipeline {
                     }
                     stages {
                         stage('amd64') {
+                            agent {
+                                label 'macos'
+                            }
                             environment {
                                 GOARCH = 'amd64'
+                            }
+                            steps {
+                                test()
+                            }
+                        }
+                        stage('arm64') {
+                            agent {
+                                label 'macos-arm64'
+                            }
+                            environment {
+                                GOARCH = 'arm64'
                             }
                             steps {
                                 test()
@@ -169,17 +181,28 @@ pipeline {
                     }
                 }
                 stage('darwin') {
-                    agent {
-                        label 'macos'
-                    }
                     environment {
                         GOOS = 'darwin'
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
                         stage('amd64') {
+                            agent {
+                                label 'macos'
+                            }
                             environment {
                                 GOARCH = 'amd64'
+                            }
+                            steps {
+                                build_binary()
+                            }
+                        }
+                        stage('arm64') {
+                            agent {
+                                label 'macos-arm64'
+                            }
+                            environment {
+                                GOARCH = 'arm64'
                             }
                             steps {
                                 build_binary()
