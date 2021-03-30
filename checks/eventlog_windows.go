@@ -2,15 +2,17 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/config"
+	"github.com/it-novum/openitcockpit-agent-go/utils"
 )
 
+/*
 type resultEvent struct {
 	Message     string
 	Channel     string
@@ -21,7 +23,7 @@ type resultEvent struct {
 	Provider    string
 	Task        string
 	Keywords    []string
-}
+}*/
 
 // https://docs.microsoft.com/en-us/previous-versions/windows/desktop/eventlogprov/win32-ntlogevent
 type Win32_NTLogEvent struct {
@@ -41,6 +43,32 @@ type Win32_NTLogEvent struct {
 	TimeWritten      time.Time
 	Type             string
 	User             string
+}
+
+type resultEvent struct {
+	MachineName    string
+	Category       string
+	CategoryNumber int64
+	EventID        int64
+	EntryType      int64
+	Message        string
+	Source         string
+	TimeGenerated  int64
+	TimeWritten    int64
+	Index          int64
+}
+
+type JsonEventLog struct {
+	MachineName    string
+	Category       string
+	CategoryNumber int64
+	EventID        int64
+	EntryType      int64
+	Message        string
+	Source         string
+	TimeGenerated  string
+	TimeWritten    string
+	Index          int64
 }
 
 type CheckWindowsEventLog struct {
@@ -72,49 +100,60 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 	//now = now.Add((3600 * time.Second) * -1)
 	now = now.Add(c.age * -1)
 
-	// Get DMTF-DateTime for WMI.
-	// PowerShell Example to generate this:
-	// PS C:\Users\Administrator> $WMIDATEAGE = [System.Management.ManagementDateTimeConverter]::ToDmtfDateTime([DateTime]::UtcNow.AddDays(-14))
-	// PS C:\Users\Administrator> echo $WMIDATEAGE
-	// 20210308075246.091047+000
-	// Docs: https://blogs.iis.net/bobbyv/working-with-wmi-dates-and-times
-	//
 	// Golang date formate: https://golang.org/src/time/format.go
-	wmidate := now.Format("20060102150405.000000-070")
+	datetime := now.Format("2006-01-02T15:04:05")
 
-	var dst []Win32_NTLogEvent
-	var sql string
 	//var eventBuffer map[string][]*Win32_NTLogEvent
-	eventBuffer := make(map[string][]*Win32_NTLogEvent)
+	eventBuffer := make(map[string][]*resultEvent)
 	for _, logfile := range c.logfiles {
-		sql = fmt.Sprintf("SELECT * FROM Win32_NTLogEvent WHERE Logfile='%v' AND TimeWritten >= '%v'", logfile, wmidate)
-		//fmt.Println(sql)
+		timeout := time.Duration(10 * time.Second)
 
-		err := wmi.Query(sql, &dst)
+		// Unix timestamp with timezone :/
+		//cmd := fmt.Sprintf("Get-EventLog -LogName %s -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%s }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%s }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
+
+		// Date as ISO-8601
+		// Format: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-date?view=powershell-7.1#notes
+		cmd := fmt.Sprintf("Get-EventLog -LogName %s -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
+		commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
+			Timeout: timeout,
+			Command: cmd,
+			Shell:   "powershell_command",
+		})
+
 		if err != nil {
-			log.Errorln("Event Log: ", err)
+			log.Errorln("Event Log Error: ", commandResult.Stdout)
 			continue
+		}
+
+		if commandResult.RC > 0 {
+			log.Errorln("Event Log Error: ", commandResult.Stdout)
+			continue
+		}
+
+		var dst []*JsonEventLog
+		err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+
+		if err != nil {
+			return nil, err
 		}
 
 		for _, event := range dst {
 			// Resolve Memory Leak
-			eventBuffer[logfile] = append(eventBuffer[logfile], &Win32_NTLogEvent{
-				Category:         event.Category,
-				CategoryString:   event.CategoryString,
-				ComputerName:     event.ComputerName,
-				Data:             event.Data,
-				EventCode:        event.EventCode,
-				EventIdentifier:  event.EventIdentifier,
-				EventType:        event.EventType,
-				InsertionStrings: event.InsertionStrings,
-				Logfile:          event.Logfile,
-				Message:          event.Message,
-				RecordNumber:     event.RecordNumber,
-				SourceName:       event.SourceName,
-				TimeGenerated:    event.TimeGenerated,
-				TimeWritten:      event.TimeWritten,
-				Type:             event.Type,
-				User:             event.User,
+
+			TimeGenerated, _ := time.Parse("2006-01-02T15:04:05-07", event.TimeGenerated)
+			TimeWritten, _ := time.Parse("2006-01-02T15:04:05-07", event.TimeWritten)
+
+			eventBuffer[logfile] = append(eventBuffer[logfile], &resultEvent{
+				MachineName:    event.MachineName,
+				Category:       event.Category,
+				CategoryNumber: event.CategoryNumber,
+				EventID:        event.EventID,
+				EntryType:      event.EntryType,
+				Message:        event.Message,
+				Source:         event.Source,
+				TimeGenerated:  TimeGenerated.Unix(),
+				TimeWritten:    TimeWritten.Unix(),
+				Index:          event.Index,
 			})
 		}
 	}

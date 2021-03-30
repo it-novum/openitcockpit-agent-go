@@ -30,6 +30,7 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		WindowsReleaseId:     c.ReleaseId,
 		WindowsCurrentBuild:  c.CurrentBuild,
 		GOOS:                 runtime.GOOS,
+		GOARCH:               runtime.GOARCH,
 	}, nil
 }
 

@@ -4,12 +4,12 @@ import "time"
 
 // CheckAgent gathers information about the agent itself
 type CheckAgent struct {
-	System       string  // Windows e.g.: Windows Server 2016 Standard / Linux / macOS
-	ReleaseId    string  // Windows e.g.: 1607
-	CurrentBuild string  // Windows e.g.: 14393
-	Family       string  // Windows e.g.: Server
-	LastBootTime time.Time
-	MacVersion string    // macOS
+	System        string // Windows e.g.: Windows Server 2016 Standard / Linux / macOS
+	ReleaseId     string // Windows e.g.: 1607
+	CurrentBuild  string // Windows e.g.: 14393
+	Family        string // Windows e.g.: Server
+	LastBootTime  time.Time
+	MacVersion    string // macOS
 	KernelVersion string // Linux
 }
 
@@ -31,4 +31,5 @@ type resultAgent struct {
 	AgentVersion         string `json:"agent_version"`          // e.g. 3.0.0
 	TemperatureUnit      string `json:"temperature_unit"`       // C (hardcoded)
 	GOOS                 string `json:"goos"`                   // Value of runtime.GOOS
+	GOARCH               string `json:"goarch"`                 // Value of runtime.ARCH
 }
