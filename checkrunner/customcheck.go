@@ -36,6 +36,7 @@ func (c *CustomCheckExecutor) runCheck(ctx context.Context, timeout time.Duratio
 		log.Infoln("Custom check '", c.Configuration.Name, "' error: ", err)
 	}
 	select {
+	// Return custom check result to Agent Instance
 	case c.ResultOutput <- &CustomCheckResult{
 		Name:   c.Configuration.Name,
 		Result: result,

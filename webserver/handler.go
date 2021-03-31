@@ -197,6 +197,7 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 	}
 
 	if w.Reloader != nil {
+		// Reload Agent Instance via Reloader interface
 		go w.Reloader.Reload()
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 	"github.com/it-novum/openitcockpit-agent-go/config"
@@ -227,6 +228,10 @@ func (p *PushClient) registerClient(ctx context.Context, state []byte) {
 	}
 }
 
+// The interval of submitCheckData is defined by the check interval
+// due to submitCheckData get's triggered when new check results are available
+// custom checks get merged into the "normal" checl results so custom checks do not trigger this function.
+// Only the check interval of the inbuild will trigger this.
 func (p *PushClient) submitCheckData(ctx context.Context, state []byte) {
 	log.Infoln("Push Client: send new state to server")
 
@@ -357,6 +362,7 @@ func (p *PushClient) Start(ctx context.Context, cfg *config.Configuration) error
 					return
 				}
 			case newState := <-p.StateInput:
+				// received new check results
 				p.updateState(ctx, newState)
 			}
 		}

@@ -10,6 +10,7 @@ import (
 
 var (
 	commandSysproc *syscall.SysProcAttr = &syscall.SysProcAttr{
+		// Run all processes in an own process group to be able to kill the process group and all child processes
 		Setpgid: true,
 	}
 )
@@ -38,6 +39,8 @@ func killProcessGroup(p *os.Process) error {
 	if !ok {
 		return errors.New("os: unsupported signal type")
 	}
+
+	// Kill to negativ pid number kills the process group (only if Setpgid=true)
 	if e := syscall.Kill(-p.Pid, s); e != nil {
 		if e == syscall.ESRCH {
 			return errors.New("os: process already finished")

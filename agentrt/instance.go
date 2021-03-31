@@ -46,6 +46,7 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 	if a.customCheckResults == nil {
 		result["customchecks"] = map[string]interface{}{}
 	} else {
+		// Merge custom check results into "normal" check results
 		result["customchecks"] = a.customCheckResults
 	}
 
@@ -71,7 +72,7 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 
 			// we may have to give the webserver some time to think about it
 			select {
-			case a.stateWebserver <- data:
+			case a.stateWebserver <- data: // Pass checkresult json to webserver
 			case <-t.C:
 				log.Errorln("Internal error: could not store check result for webserver: timeout")
 			}
@@ -88,7 +89,7 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 
 			// we may have to give the push client some time to think about it
 			select {
-			case a.statePushClient <- data:
+			case a.statePushClient <- data: // Pass checkresult json to push client
 			case <-t.C:
 				log.Errorln("Internal error: could not store check result for push client: timeout")
 			}
@@ -114,7 +115,7 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 	if a.webserver == nil && (!cfg.OITC.Push || (cfg.OITC.Push && cfg.OITC.EnableWebserver)) {
 		a.webserver = &webserver.Server{
 			StateInput: a.stateWebserver,
-			Reloader:   a,
+			Reloader:   a, // Set agent instance to Reloader interface for the webserver handler
 		}
 		a.webserver.Start(ctx)
 	}
@@ -248,30 +249,39 @@ func (a *AgentInstance) Start(parent context.Context) {
 				return
 			case _, ok := <-a.shutdown:
 				if !ok {
+					// a.shutdown channel was closed - Exit agent
 					return
 				}
 			case done := <-a.reload:
+				// Got reload signal
 				cfg, err := config.Load(ctx, a.ConfigurationPath)
 				if err != nil {
 					log.Fatalln("could not load configuration: ", err)
 				}
 				a.doReload(ctx, cfg)
+
+				// Notify caller that reload is done
 				done <- struct{}{}
 			case res := <-a.checkResult:
+				// received check result from checkrunner
 				a.processCheckResult(res)
 			case res := <-a.customCheckResultChan:
+				// received check result from customcheckhandler
 				a.customCheckResults[res.Name] = res.Result
 			}
 		}
 	}()
 
+	// Do initial reload to start the webserver, checkrunner etc...
 	a.Reload()
 }
 
 func (a *AgentInstance) Reload() {
+	// Create new "done" channel and send this to the "a.reload" channel
 	done := make(chan struct{})
 
 	a.reload <- (done)
+	// Wait until we receive a signal on the done channel, so the reload is complete
 	<-done
 }
 

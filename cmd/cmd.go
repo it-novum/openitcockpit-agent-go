@@ -102,6 +102,7 @@ func (r *RootCmd) run(cmd *cobra.Command, args []string) {
 	r.agentRt.Start(ctx)
 	defer r.agentRt.Shutdown()
 
+	// Bind linux signal handler
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	defer signal.Stop(sig)

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
-	"runtime"
 
 	"github.com/it-novum/openitcockpit-agent-go/checks"
 	"github.com/it-novum/openitcockpit-agent-go/config"
@@ -72,6 +72,7 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 
 	results := make(map[string]interface{})
 	go func() {
+		// Run checks in a new thread
 		for _, check := range checks {
 			log.Debugln("Begin Check: ", check.Name())
 			results[check.Name()] = runCheck(ctx, check)
@@ -85,6 +86,7 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 		}
 	}()
 
+	// Parent thread is waiting that all checks are finished
 	select {
 	case <-ctx.Done():
 		err := ctx.Err()
@@ -106,6 +108,8 @@ func (c *CheckRunner) runChecks(parent context.Context, checks []checks.Check, t
 	case <-c.shutdown:
 		log.Errorln("Check: canceled")
 		return
+
+	//Pass check results to Results Channel (AgentInstance)
 	case c.Result <- results:
 	}
 }

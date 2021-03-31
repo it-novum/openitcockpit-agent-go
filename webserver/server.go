@@ -29,6 +29,7 @@ func testPortOpen(address string) bool {
 	return true
 }
 
+// Reloader interface contains a pointer to the agent instance the we can reload the agent on config push
 type Reloader interface {
 	Reload()
 }
@@ -219,10 +220,14 @@ func listenServe(server *http.Server) error {
 // Reload webserver configuration
 func (s *Server) Reload(cfg *config.Configuration) {
 	done := make(chan struct{})
+
+	// Send new configuration to webserver thread
 	s.reload <- &reloadConfig{
 		Configuration: cfg,
 		reloadDone:    done,
 	}
+
+	//Relaod done - notify the caller
 	<-done
 }
 
@@ -253,6 +258,7 @@ func (s *Server) Start(ctx context.Context) {
 					return
 				}
 			case newConfig := <-s.reload:
+				//Go a reload signal from Reload func with new config - do reload
 				s.doReload(ctx, newConfig)
 			}
 		}
