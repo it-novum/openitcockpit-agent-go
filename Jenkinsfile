@@ -38,19 +38,19 @@ pipeline {
                     }
                 }
                 stage('linux') {
-                    agent {
-                        docker { 
-                            image 'golang:buster'
-                            args "-u root --privileged -v agentgocache:/go"
-                            label 'linux'
-                        }
-                    }
                     environment {
                         GOOS = 'linux'
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
                         stage('amd64') {
+                            agent {
+                                docker { 
+                                    image 'golang:buster'
+                                    args "-u root --privileged -v agentgocache:/go"
+                                    label 'linux'
+                                }
+                            }
                             environment {
                                 GOARCH = 'amd64'
                             }
@@ -59,8 +59,30 @@ pipeline {
                             }
                         }
                         stage('386') {
+                            agent {
+                                docker { 
+                                    image 'golang:buster'
+                                    args "-u root --privileged -v agentgocache:/go"
+                                    label 'linux'
+                                }
+                            }
                             environment {
                                 GOARCH = '386'
+                            }
+                            steps {
+                                test()
+                            }
+                        }
+                        stage('arm64') {
+                            agent {
+                                docker { 
+                                    image 'golang:buster'
+                                    args "-u root --privileged -v agentgocache:/go"
+                                    label 'linux-arm64'
+                                }
+                            }
+                            environment {
+                                GOARCH = 'arm64'
                             }
                             steps {
                                 test()
