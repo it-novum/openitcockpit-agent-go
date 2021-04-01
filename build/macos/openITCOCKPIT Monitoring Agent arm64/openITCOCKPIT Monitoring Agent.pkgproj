@@ -856,8 +856,6 @@
 				<array>
 					<string>arm64</string>
 				</array>
-				<key>installer-script:minSpecVersion</key>
-				<string>11.1</string>
 			</dict>
 			<key>BUILD_FORMAT</key>
 			<integer>0</integer>
