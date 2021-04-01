@@ -330,24 +330,26 @@ pipeline {
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
-                        stage('amd64') {
-                            environment {
-                                ARCH = 'amd64'
-                                GOARCH = 'amd64'
-                            }
-                            steps {
-                                package_darwin()
+                        stages {
+                            stage('amd64') {
+                                environment {
+                                    ARCH = 'amd64'
+                                    GOARCH = 'amd64'
+                                }
+                                steps {
+                                    package_darwin()
+                                }
                             }
                         }
-                    }
-                    stages {
-                        stage('arm64') {
-                            environment {
-                                ARCH = 'arm64'
-                                GOARCH = 'arm64'
-                            }
-                            steps {
-                                package_darwin()
+                        stages {
+                            stage('arm64') {
+                                environment {
+                                    ARCH = 'arm64'
+                                    GOARCH = 'arm64'
+                                }
+                                steps {
+                                    package_darwin()
+                                }
                             }
                         }
                     }
@@ -494,14 +496,14 @@ def package_darwin() {
             --description "openITCOCKPIT Monitoring Agent and remote plugin executor." \\
             --url "https://openitcockpit.io" --before-install ../../../build/package/preinst.sh \\
             --after-install ../../../build/package/postinst.sh --version '$VERSION' &&
-            mv openitcockpit-agent-${VERSION}.pkg openitcockpit-agent-${VERSION}-darwin-amd64.pkg"""
+            mv openitcockpit-agent-${VERSION}.pkg openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package_osx_uninstaller --name openitcockpit-agent-uninstaller --vendor "it-novum GmbH" \\
             --license "Apache License Version 2.0" --config-files Applications/openitcockpit-agent \\
             --architecture $ARCH --maintainer "<daniel.ziegler@it-novum.com>" \\
             --description "openITCOCKPIT Monitoring Agent and remote plugin executor." --url "https://openitcockpit.io" \\
             --before-install ../../../build/package/prerm.sh --version '$VERSION' --osxpkg-payload-free &&
-            mv openitcockpit-agent-uninstaller-${VERSION}.pkg openitcockpit-agent-uninstaller-${VERSION}-darwin-amd64.pkg"""
+            mv openitcockpit-agent-uninstaller-${VERSION}.pkg openitcockpit-agent-uninstaller-${VERSION}-darwin-${GOARCH}.pkg"""
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
     }
 }
