@@ -322,30 +322,33 @@ pipeline {
                     }
                 }
                 stage('darwin') {
-                    agent {
-                        label 'macos'
-                    }
                     environment {
                         GOOS = 'darwin'
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
                         stage('amd64') {
+                            agent {
+                                label 'macos'
+                            }
                             environment {
                                 ARCH = 'amd64'
                                 GOARCH = 'amd64'
                             }
                             steps {
-                                package_darwin()
+                                package_darwin_amd64()
                             }
                         }
                         stage('arm64') {
+                            agent {
+                                label 'macos-arm64'
+                            }
                             environment {
                                 ARCH = 'arm64'
                                 GOARCH = 'arm64'
                             }
                             steps {
-                                package_darwin()
+                                package_darwin_arm64()
                             }
                         }
                     }
@@ -473,7 +476,7 @@ def package_windows() {
     }
 }
 
-def package_darwin() {
+def package_darwin_amd64() {
     timeout(time: 5, unit: 'MINUTES') {
         cleanup()
 
@@ -488,6 +491,8 @@ def package_darwin() {
         
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent/build/openitcockpit-agent-darwin-amd64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
+
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
 
         /*sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
@@ -504,6 +509,26 @@ def package_darwin() {
             --description "openITCOCKPIT Monitoring Agent and remote plugin executor." --url "https://openitcockpit.io" \\
             --before-install ../../../build/package/prerm.sh --version '$VERSION' --osxpkg-payload-free &&
             mv openitcockpit-agent-uninstaller-${VERSION}.pkg openitcockpit-agent-uninstaller-${VERSION}-darwin-${GOARCH}.pkg"""
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
+    }
+}
+
+def package_darwin_arm64() {
+    timeout(time: 5, unit: 'MINUTES') {
+        cleanup()
+
+        unstash name: "release-$GOOS-$GOARCH"
+
+        sh "mkdir -p package/Applications/openitcockpit-agent package_osx_uninstaller release/packages/$GOOS"
+        sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
+        sh "cp example/config_example.ini package/Applications/openitcockpit-agent/config.ini"
+        sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
+        sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
+        sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
+        
+        sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
+        sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/build/openitcockpit-agent-darwin-arm64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
+
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
     }
 }
