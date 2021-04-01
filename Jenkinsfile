@@ -492,7 +492,7 @@ def package_darwin_amd64() {
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent/build/openitcockpit-agent-darwin-amd64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
-        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
 
         /*sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
@@ -529,6 +529,6 @@ def package_darwin_arm64() {
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/build/openitcockpit-agent-darwin-arm64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
-        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
     }
 }
