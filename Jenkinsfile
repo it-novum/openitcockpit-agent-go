@@ -340,6 +340,17 @@ pipeline {
                             }
                         }
                     }
+                    stages {
+                        stage('arm64') {
+                            environment {
+                                ARCH = 'arm64'
+                                GOARCH = 'arm64'
+                            }
+                            steps {
+                                package_darwin()
+                            }
+                        }
+                    }
                 }
             }
         }
