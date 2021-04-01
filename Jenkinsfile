@@ -330,26 +330,22 @@ pipeline {
                         BINNAME = 'openitcockpit-agent'
                     }
                     stages {
-                        stages {
-                            stage('amd64') {
-                                environment {
-                                    ARCH = 'amd64'
-                                    GOARCH = 'amd64'
-                                }
-                                steps {
-                                    package_darwin()
-                                }
+                        stage('amd64') {
+                            environment {
+                                ARCH = 'amd64'
+                                GOARCH = 'amd64'
+                            }
+                            steps {
+                                package_darwin()
                             }
                         }
-                        stages {
-                            stage('arm64') {
-                                environment {
-                                    ARCH = 'arm64'
-                                    GOARCH = 'arm64'
-                                }
-                                steps {
-                                    package_darwin()
-                                }
+                        stage('arm64') {
+                            environment {
+                                ARCH = 'arm64'
+                                GOARCH = 'arm64'
+                            }
+                            steps {
+                                package_darwin()
                             }
                         }
                     }
