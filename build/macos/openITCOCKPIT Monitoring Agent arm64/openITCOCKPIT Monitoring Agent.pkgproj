@@ -810,7 +810,7 @@
 					<key>NAME</key>
 					<string>Processor</string>
 					<key>STATE</key>
-					<true/>
+					<false/>
 				</dict>
 				<dict>
 					<key>BEHAVIOR</key>
@@ -840,7 +840,7 @@
 					<key>NAME</key>
 					<string>Operating System</string>
 					<key>STATE</key>
-					<true/>
+					<false/>
 				</dict>
 			</array>
 			<key>RESOURCES</key>
@@ -850,6 +850,15 @@
 		</dict>
 		<key>PROJECT_SETTINGS</key>
 		<dict>
+			<key>ADVANCED_OPTIONS</key>
+			<dict>
+				<key>installer-script.options:hostArchitectures</key>
+				<array>
+					<string>arm64</string>
+				</array>
+				<key>installer-script:minSpecVersion</key>
+				<string>11.1</string>
+			</dict>
 			<key>BUILD_FORMAT</key>
 			<integer>0</integer>
 			<key>BUILD_PATH</key>
