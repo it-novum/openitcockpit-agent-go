@@ -781,40 +781,10 @@
 					<integer>3</integer>
 					<key>DICTIONARY</key>
 					<dict>
-						<key>IC_REQUIREMENT_OS_DISK_TYPE</key>
-						<integer>0</integer>
-						<key>IC_REQUIREMENT_OS_DISTRIBUTION_TYPE</key>
-						<integer>0</integer>
-						<key>IC_REQUIREMENT_OS_MINIMUM_VERSION</key>
-						<integer>101400</integer>
-					</dict>
-					<key>IC_REQUIREMENT_CHECK_TYPE</key>
-					<integer>1</integer>
-					<key>IDENTIFIER</key>
-					<string>fr.whitebox.Packages.requirement.os</string>
-					<key>MESSAGE</key>
-					<array>
-						<dict>
-							<key>LANGUAGE</key>
-							<string>English</string>
-							<key>VALUE</key>
-							<string>The openITCOCKPIT Monitoring Agent requires at least macOS Mojave 10.14</string>
-						</dict>
-					</array>
-					<key>NAME</key>
-					<string>Operating System</string>
-					<key>STATE</key>
-					<true/>
-				</dict>
-				<dict>
-					<key>BEHAVIOR</key>
-					<integer>3</integer>
-					<key>DICTIONARY</key>
-					<dict>
 						<key>IC_REQUIREMENT_CPU_ARCHITECTURE_FAMILY</key>
-						<integer>2</integer>
+						<integer>0</integer>
 						<key>IC_REQUIREMENT_CPU_INTEL_ARCHITECTURE_TYPE</key>
-						<integer>2</integer>
+						<integer>0</integer>
 						<key>IC_REQUIREMENT_CPU_MINIMUM_CPU_CORES_COUNT</key>
 						<integer>1</integer>
 						<key>IC_REQUIREMENT_CPU_MINIMUM_FREQUENCY</key>
@@ -832,13 +802,43 @@
 							<key>LANGUAGE</key>
 							<string>English</string>
 							<key>SECONDARY_VALUE</key>
-							<string>This installer can only be executed on a Intel based Mac (64-bit)</string>
+							<string>This installer can only be executed on a Apple Silicon based Mac (arm64)</string>
 							<key>VALUE</key>
-							<string>Intel 64-bit processor required</string>
+							<string>Apple Silicon processor (M1) required</string>
 						</dict>
 					</array>
 					<key>NAME</key>
 					<string>Processor</string>
+					<key>STATE</key>
+					<true/>
+				</dict>
+				<dict>
+					<key>BEHAVIOR</key>
+					<integer>3</integer>
+					<key>DICTIONARY</key>
+					<dict>
+						<key>IC_REQUIREMENT_OS_DISK_TYPE</key>
+						<integer>0</integer>
+						<key>IC_REQUIREMENT_OS_DISTRIBUTION_TYPE</key>
+						<integer>0</integer>
+						<key>IC_REQUIREMENT_OS_MINIMUM_VERSION</key>
+						<integer>100500</integer>
+					</dict>
+					<key>IC_REQUIREMENT_CHECK_TYPE</key>
+					<integer>1</integer>
+					<key>IDENTIFIER</key>
+					<string>fr.whitebox.Packages.requirement.os</string>
+					<key>MESSAGE</key>
+					<array>
+						<dict>
+							<key>LANGUAGE</key>
+							<string>English</string>
+							<key>VALUE</key>
+							<string>The openITCOCKPIT Monitoring Agent requires at least macOS Big Sur 11.1</string>
+						</dict>
+					</array>
+					<key>NAME</key>
+					<string>Operating System</string>
 					<key>STATE</key>
 					<true/>
 				</dict>
