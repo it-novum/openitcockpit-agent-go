@@ -489,7 +489,8 @@ def package_darwin() {
         sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
-        sh """cd release/packages/$GOOS &&
+        sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\ Monitoring\ Agent/openITCOCKPIT\ Monitoring\ Agent.pkgproj"""
+        /*sh """cd release/packages/$GOOS &&
             fpm -s dir -t osxpkg -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license "Apache License Version 2.0" --config-files Applications/openitcockpit-agent \\
             --architecture $ARCH --maintainer "<daniel.ziegler@it-novum.com>" \\
@@ -504,6 +505,6 @@ def package_darwin() {
             --description "openITCOCKPIT Monitoring Agent and remote plugin executor." --url "https://openitcockpit.io" \\
             --before-install ../../../build/package/prerm.sh --version '$VERSION' --osxpkg-payload-free &&
             mv openitcockpit-agent-uninstaller-${VERSION}.pkg openitcockpit-agent-uninstaller-${VERSION}-darwin-${GOARCH}.pkg"""
-        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+        archiveArtifacts artifacts: 'release/packages/**', fingerprint: true*/
     }
 }
