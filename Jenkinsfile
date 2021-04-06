@@ -355,6 +355,23 @@ pipeline {
                 }
             }
         }
+        stage('Publish') {
+            when {
+                branch 'main'
+            }
+            environment {
+                VERSION = sh(
+                    returnStdout: true,
+                    script: 'cat VERSION'
+                ).trim()
+            }
+            agent {
+                label 'linux'
+            }
+            steps {
+                publish_packages()
+            }
+         }
     }
 }
 
@@ -538,5 +555,23 @@ def package_darwin_arm64() {
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/build/openitcockpit-agent-darwin-arm64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
+    }
+}
+
+def publish_packages() {
+    timeout(time: 5, unit: 'MINUTES') {
+
+        dir('publish'){
+        /* get all packages */
+            unstash name: "*.pkg"
+            unstash name: "*.zst"
+            unstash name: "*.rpm"
+            unstash name: "*.deb"
+            unstash name: "*.msi"
+
+            sh 'ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa oitc@srvitnweb05.master.dns "mkdir -p /var/www/openitcockpit.io/files/openitcockpit-agent-3.x"'
+            sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --progress * oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
+        }
+
     }
 }
