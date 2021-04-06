@@ -492,6 +492,14 @@ def package_darwin_amd64() {
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent/build/openitcockpit-agent-darwin-amd64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
+        sh """cd release/packages/$GOOS &&
+            fpm -s dir -t osxpkg -C ../../../package_osx_uninstaller --name openitcockpit-agent-uninstaller --vendor "it-novum GmbH" \\
+            --license "Apache License Version 2.0" --config-files Applications/openitcockpit-agent \\
+            --maintainer "<daniel.ziegler@it-novum.com>" \\
+            --description "Uninstaller of openITCOCKPIT Monitoring Agent and remote plugin executor." --url "https://openitcockpit.io" \\
+            --before-install ../../../build/package/prerm.sh --version '$VERSION' --osxpkg-payload-free &&
+            mv openitcockpit-agent-uninstaller-${VERSION}.pkg openitcockpit-agent-uninstaller-${VERSION}-darwin-all.pkg"""
+
         archiveArtifacts artifacts: 'release/packages/**', fingerprint: true
 
         /*sh """cd release/packages/$GOOS &&

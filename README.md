@@ -70,7 +70,7 @@ Install
 
 Install with double clicking the msi installer file.
 
-![openITCOCKPIT Monitoring Agent MSI installer](/docs/images/msi_install.png)
+![openITCOCKPIT Monitoring Agent MSI installer](/docs/images/msi_installer_new.png)
 
 **CLI**
 
