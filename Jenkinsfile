@@ -563,11 +563,11 @@ def publish_packages() {
 
         dir('publish'){
         /* get all packages */
-            unstash name: "*.pkg"
-            unstash name: "*.zst"
-            unstash name: "*.rpm"
-            unstash name: "*.deb"
-            unstash name: "*.msi"
+            unstash name: 'release/packages/**.pkg'
+            unstash name: 'release/packages/**.zst'
+            unstash name: 'release/packages/**.rpm'
+            unstash name: 'release/packages/**.deb'
+            unstash name: 'release/packages/**.msi'
 
             sh 'ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa oitc@srvitnweb05.master.dns "mkdir -p /var/www/openitcockpit.io/files/openitcockpit-agent-3.x"'
             sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --progress * oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
