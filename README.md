@@ -12,15 +12,19 @@ Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 * [Supported Platforms](#supported-platforms)
 * [Full documentation](#full-documentation)
 * [License](#license)
+
 ## Supported operating systems
 
 * Microsoft Windows Server 2012
 * Microsoft Windows 8 or newer
-* Apple macOS 10.14 Mojave or newer
+* Apple macOS 10.14 Mojave or newer (Intel / Apple Silicon)
 * Linux (Everything from Debian 6.0 (Squeeze) / CentOS 6.6 and newer should work fine)
 
 Please notice: Due to old versions of PowerShell on Windows 7 / Windows Server 2008 R2 you need to add add the required Firewall rules manually to Windows Firewall.
 Windows 7 / Windows Server 2008 R2 is official not supported by the Agent - even if it probably works.
+
+## Requirements
+* openITCOCKPIT Version >= 4.2
 
 ## Installation
 
@@ -102,15 +106,14 @@ sudo installer -pkg openitcockpit-agent-uninstaller-3.x.x-darwin-amd64.pkg -targ
 
 ## Supported Platforms
 
-| Platform              | Windows | Linux | macOS |
-|-----------------------|---------|-------|-------|
-| 64 bit (amd64)                |    ✅    |   ✅   |   ✅   |
-| 32 bit (i386)         |    ✅    |   ✅   |   -  |
-| arm64 / Apple Silicon |    Native as soon as [Go supports it](https://github.com/golang/go/issues/36439). For now you can use the 32 bit version    |   ✅   |   ✅   |
+| Platform              | Windows                | Linux | macOS |
+|-----------------------|------------------------|-------|-------|
+| 64 bit (amd64)        | ✅                      | ✅     | ✅     |
+| 32 bit (i386)         | ✅                      | ✅     | -     |
+| arm64 / Apple Silicon | Use the 32 bit version | ✅     | ✅     |
+
 
 Please see to Wiki how to [cross compile binaries](https://github.com/it-novum/openitcockpit-agent-go/wiki/Build-binary#cross-compile) for different operating systems and CPU architectures.
-
-For more information about arm64 support in Go see: [Go on ARM and Beyond](https://blog.golang.org/ports)
 
 ## Full documentation
 Do you want to build own binaries, learn more about cross compiling or how to start hacking the Agent?
