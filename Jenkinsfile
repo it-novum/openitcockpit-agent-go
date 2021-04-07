@@ -571,8 +571,8 @@ def publish_packages() {
             unstash name: "release-windows-amd64"
             unstash name: "release-windows-386"
 
-            unstash name: "release-windows-amd64"
-            unstash name: "release-windows-arm64"
+            unstash name: "release-darwin-amd64"
+            unstash name: "release-darwin-arm64"
 
             sh 'ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa oitc@srvitnweb05.master.dns "mkdir -p /var/www/openitcockpit.io/files/openitcockpit-agent-3.x"'
             sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --progress * oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
