@@ -565,8 +565,13 @@ def publish_packages() {
         /* get all packages */
             unarchive mapping: ['release/packages/' : '.']
 
+            sh """mkdir packages"""
+            sh """mv -f release/packages/darwin/* packages/"""
+            sh """mv -f release/packages/linux/* packages/"""
+            sh """mv -f release/packages/windows/* packages/"""
+
             sh 'ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa oitc@srvitnweb05.master.dns "mkdir -p /var/www/openitcockpit.io/files/openitcockpit-agent-3.x"'
-            sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --progress * oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
+            sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --delete --progress packages/* oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
         }
 
     }
