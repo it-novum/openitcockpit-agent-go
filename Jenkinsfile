@@ -453,7 +453,7 @@ def package_linux() {
             --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
             --version '$VERSION'"""
         sh """cd release/packages/$GOOS &&
-            fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+            fpm -s dir -t rpm --rpm-sign -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
             --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
             --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\

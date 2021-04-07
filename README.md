@@ -31,6 +31,19 @@ Windows 7 / Windows Server 2008 R2 is official not supported by the Agent - even
 Please visit the [release page](https://github.com/it-novum/openitcockpit-agent-go/releases) to download the latest or older versions.
 
 ### Debian and Ubuntu
+
+#### Using the repository
+
+```
+curl https://packages.openitcockpit.io/repokey.txt | sudo apt-key add
+
+sudo echo "deb https://packages.openitcockpit.io/openitcockpit-agent/deb/stable deb main" > /etc/apt/sources.list.d/openitcockpit-agent.list
+sudo apt-get update
+
+sudo apt-get install openitcockpit-agent
+```
+
+#### Manually
 Install
 ```
 sudo apt-get install ./openitcockpit-agent_3.x.x_amd64.deb
