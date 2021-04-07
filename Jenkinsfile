@@ -573,6 +573,9 @@ def publish_packages() {
             sh 'ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa oitc@srvitnweb05.master.dns "mkdir -p /var/www/openitcockpit.io/files/openitcockpit-agent-3.x"'
             sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa" --delete --progress packages/* oitc@srvitnweb05.master.dns:/var/www/openitcockpit.io/files/openitcockpit-agent-3.x/'
 
+            /* Remove old packages */
+            sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh repo remove openitcockpit-agent-stable openitcockpit-agent'
+
             /* Add packages to own apt repository */
             sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh repo add -force-replace openitcockpit-agent-stable packages/openitcockpit-agent_*.deb;'
 
