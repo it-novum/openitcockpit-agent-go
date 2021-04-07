@@ -55,6 +55,25 @@ sudo apt-get purge openitcockpit-agent
 ```
 
 ### Red Hat Linux / CentOS / openSUSE
+
+#### Using the repository
+
+```
+cat <<EOT > /etc/yum.repos.d/openitcockpit-agent.repo
+[openitcockpit-agent]
+name=openITCOCKPIT Monitoring Agent
+baseurl=https://packages.openitcockpit.io/openitcockpit-agent/rpm/stable/$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.openitcockpit.io/repokey.txt
+EOT
+
+yum-config-manager --enable openitcockpit-agent
+
+yum install openitcockpit-agent
+```
+
+#### Manually
 Install
 ```
 rpm -i openitcockpit-agent-3.x.x-x.x86_64.rpm
