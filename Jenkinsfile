@@ -453,13 +453,16 @@ def package_linux() {
             --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
             --version '$VERSION'"""
         sh """cd release/packages/$GOOS &&
-            fpm -s dir -t rpm --rpm-sign -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
+            fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
             --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
             --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
             --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
             --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
             --version '$VERSION'"""
+
+        sh """rpmsign --define "_gpg_name it-novum GmbH <support@itsm.it-novum.com>" --define "__gpg_sign_cmd %{__gpg} gpg --no-verbose --no-armor --batch --pinentry-mode loopback --passphrase-file /opt/repository/aptly/pw %{?_gpg_digest_algo:--digest-algo %{_gpg_digest_algo}} --no-secmem-warning -u '%{_gpg_name}' -sbo %{__signature_filename} %{__plaintext_filename}" --addsign release/packages/*.rpm"""
+
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t pacman -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
