@@ -575,7 +575,7 @@ def publish_packages() {
 
             /* Remove old packages */
             sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh repo remove openitcockpit-agent-stable openitcockpit-agent'
-            sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh publish drop openitcockpit-agent-stable filesystem:openitcockpit-agent:deb/stable'
+            sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh publish drop deb filesystem:openitcockpit-agent:deb/stable'
 
             /* Add packages to own apt repository */
             sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh repo add -force-replace openitcockpit-agent-stable packages/openitcockpit-agent_*.deb;'
