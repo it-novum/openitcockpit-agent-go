@@ -294,7 +294,7 @@ pipeline {
                                 GOARCH = 'arm'
                                 ARCH = 'arm'
                                 DEBARCH = 'armhf'
-                                RPMARCH = 'armhfp'
+                                RPMARCH = 'armv7hl'
                             }
                             steps {
                                 package_linux()
