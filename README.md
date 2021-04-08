@@ -37,7 +37,7 @@ Please visit the [release page](https://github.com/it-novum/openitcockpit-agent-
 ```
 curl https://packages.openitcockpit.io/repokey.txt | sudo apt-key add
 
-sudo echo "deb https://packages.openitcockpit.io/openitcockpit-agent/deb/stable deb main" > /etc/apt/sources.list.d/openitcockpit-agent.list
+echo "deb https://packages.openitcockpit.io/openitcockpit-agent/deb/stable deb main"  | sudo tee /etc/apt/sources.list.d/openitcockpit-agent.list
 sudo apt-get update
 
 sudo apt-get install openitcockpit-agent
