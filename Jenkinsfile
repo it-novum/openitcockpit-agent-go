@@ -260,6 +260,8 @@ pipeline {
                             environment {
                                 GOARCH = 'amd64'
                                 ARCH = 'amd64'
+                                DEBARCH = 'amd64'
+                                RPMARCH = 'amd64'
                             }
                             steps {
                                 package_linux()
@@ -269,6 +271,8 @@ pipeline {
                             environment {
                                 GOARCH = '386'
                                 ARCH = 'i386'
+                                DEBARCH = 'i386'
+                                RPMARCH = 'i386'
                             }
                             steps {
                                 package_linux()
@@ -278,6 +282,8 @@ pipeline {
                             environment {
                                 GOARCH = 'arm64'
                                 ARCH = 'arm64'
+                                DEBARCH = 'arm64'
+                                RPMARCH = 'aarch64'
                             }
                             steps {
                                 package_linux()
@@ -287,6 +293,8 @@ pipeline {
                             environment {
                                 GOARCH = 'arm'
                                 ARCH = 'arm'
+                                DEBARCH = 'armhf'
+                                RPMARCH = 'armhfp'
                             }
                             steps {
                                 package_linux()
@@ -447,7 +455,7 @@ def package_linux() {
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t deb -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
-            --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+            --architecture $DEBARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
             --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
             --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
             --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
@@ -455,7 +463,7 @@ def package_linux() {
         sh """cd release/packages/$GOOS &&
             fpm -s dir -t rpm -C ../../../package --name openitcockpit-agent --vendor 'it-novum GmbH' \\
             --license 'Apache License Version 2.0' --config-files etc/openitcockpit-agent \\
-            --architecture $ARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
+            --architecture $RPMARCH --maintainer '<daniel.ziegler@it-novum.com>' \\
             --description 'openITCOCKPIT Monitoring Agent and remote plugin executor.' \\
             --url 'https://openitcockpit.io' --before-install ../../../build/package/preinst.sh \\
             --after-install ../../../build/package/postinst.sh --before-remove ../../../build/package/prerm.sh  \\
