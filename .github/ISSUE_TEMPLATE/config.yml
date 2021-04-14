@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+    - name: 💬 Discord
+      url: https://discord.gg/G8KhxKuQ9G
+      about: Join the openITCOCKPIT Community Discord
+    - name: Report a security vulnerability
+      url: https://openitcockpit.io/security/
+      about: Please review our security policy for more details
