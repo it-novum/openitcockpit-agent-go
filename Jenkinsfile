@@ -590,7 +590,7 @@ def publish_packages() {
 
             /* Publish apt repository */
             sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh publish repo -distribution deb -architectures amd64,i386,arm64,armhf -passphrase-file /opt/repository/aptly/pw -batch openitcockpit-agent-stable filesystem:openitcockpit-agent:deb/stable'
-            sh "rsync -rv --delete-after /opt/repository/aptly/openitcockpit-agent/deb/stable/ www-data@srvoitcapt02.master.dns:/var/www/html/openitcockpit-agent/deb/stable/"
+            sh "rsync -rv --delete-after /opt/repository/aptly/openitcockpit-agent/deb/stable/ www-data@srvoitcapt02.ad.it-novum.com:/var/www/html/openitcockpit-agent/deb/stable/"
 
             /* sign rpm packages */
             sh """rpmsign --define "_gpg_name it-novum GmbH <support@itsm.it-novum.com>" --define "__gpg_sign_cmd %{__gpg} gpg --no-verbose --no-armor --batch --pinentry-mode loopback --passphrase-file /opt/repository/aptly/pw %{?_gpg_digest_algo:--digest-algo %{_gpg_digest_algo}} --no-secmem-warning -u '%{_gpg_name}' -sbo %{__signature_filename} %{__plaintext_filename}" --addsign packages/*.rpm"""
@@ -601,7 +601,7 @@ def publish_packages() {
             sh """createrepo rpm/stable"""
 
             /* Publish yum repository */
-            sh "rsync -rv --delete-after rpm/stable/ www-data@srvoitcapt02.master.dns:/var/www/html/openitcockpit-agent/rpm/stable/"
+            sh "rsync -rv --delete-after rpm/stable/ www-data@srvoitcapt02.ad.it-novum.com:/var/www/html/openitcockpit-agent/rpm/stable/"
         }
 
     }
