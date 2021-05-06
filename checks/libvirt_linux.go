@@ -161,6 +161,8 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 		// GetAllDomainStats is not as powerfull as it looks like
 		domStatsArr, err := conn.GetAllDomainStats(domArr, statsTypes, 0)
 		if err != nil {
+			_ = domArr[0].Free()
+			_ = dom.Free()
 			continue
 		}
 
@@ -178,6 +180,8 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 		if !isDomRunning {
 			// Add current VM to results list
 			libvirtResults[uuid] = result
+			_ = domArr[0].Free()
+			_ = dom.Free()
 			continue
 		}
 
@@ -327,7 +331,8 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 		// Add current VM to results list
 		libvirtResults[uuid] = result
 
-		dom.Free()
+		_ = domArr[0].Free()
+		_ = dom.Free()
 	}
 
 	return libvirtResults, nil
