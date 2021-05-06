@@ -124,6 +124,8 @@ func (c *CheckLibvirt) Run(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// conn.Close() should return number of references
 	defer conn.Close()
 
 	nodeInfo, err := conn.GetNodeInfo()
