@@ -23,6 +23,9 @@ Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 Please notice: Due to old versions of PowerShell on Windows 7 / Windows Server 2008 R2 you need to add add the required Firewall rules manually to Windows Firewall.
 Windows 7 / Windows Server 2008 R2 is official not supported by the Agent - even if it probably works.
 
+## Update from Agent 1.x to 3.x
+Please see the [update guide from the documentation](https://github.com/it-novum/openitcockpit-agent-go/wiki/Update-from-Agent-1.x-to-3.x) for details.
+
 ## Requirements
 * openITCOCKPIT Version >= 4.2
 
