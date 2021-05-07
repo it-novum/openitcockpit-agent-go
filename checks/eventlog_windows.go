@@ -131,7 +131,9 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 		}
 
 		var dst []*JsonEventLog
-		err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+		if commandResult.Stdout != "" {
+			err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+		}
 
 		if err != nil {
 			return nil, err
