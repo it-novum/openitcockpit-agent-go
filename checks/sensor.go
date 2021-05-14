@@ -9,6 +9,7 @@ import (
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
 	"github.com/shirou/gopsutil/v3/host"
+	log "github.com/sirupsen/logrus"
 )
 
 // CheckSensor gathers information about system sensors
@@ -49,37 +50,38 @@ func (c *CheckSensor) Run(ctx context.Context) (interface{}, error) {
 	sensorResults := make([]*temperatureSensor, 0, len(sensors))
 
 	if err != nil {
-		return nil, err
-	}
-	for _, sensor := range sensors {
-		label := sensor.SensorKey
-		if runtime.GOOS == "darwin" {
-			if smcName, ok := utils.SmcSensorNames[sensor.SensorKey]; ok {
-				label = fmt.Sprintf("%v (%v)", smcName, sensor.SensorKey)
+		log.Errorln("Check Sonsors: Temperatures: ", err)
+	} else {
+		for _, sensor := range sensors {
+			label := sensor.SensorKey
+			if runtime.GOOS == "darwin" {
+				if smcName, ok := utils.SmcSensorNames[sensor.SensorKey]; ok {
+					label = fmt.Sprintf("%v (%v)", smcName, sensor.SensorKey)
+				}
 			}
-		}
 
-		sensorResult := &temperatureSensor{
-			Label:    label,
-			Current:  sensor.Temperature,
-			High:     sensor.High,
-			Critical: sensor.Critical}
-		sensorResults = append(sensorResults, sensorResult)
+			sensorResult := &temperatureSensor{
+				Label:    label,
+				Current:  sensor.Temperature,
+				High:     sensor.High,
+				Critical: sensor.Critical}
+			sensorResults = append(sensorResults, sensorResult)
+		}
 	}
 
 	batteries, err := battery.GetAll()
 	batteriesResults := make([]*batterySensor, 0, len(batteries))
 	if err != nil {
-		return nil, err
-	}
-
-	for i, battery := range batteries {
-		batResult := &batterySensor{
-			ID:           i,
-			Percent:      battery.Current / battery.Full * 100,
-			PowerPlugged: (battery.State.String() == "Full" || battery.State.String() == "Charging"),
+		log.Errorln("Check Sensors: Batteries: ", err)
+	} else {
+		for i, battery := range batteries {
+			batResult := &batterySensor{
+				ID:           i,
+				Percent:      battery.Current / battery.Full * 100,
+				PowerPlugged: (battery.State.String() == "Full" || battery.State.String() == "Charging"),
+			}
+			batteriesResults = append(batteriesResults, batResult)
 		}
-		batteriesResults = append(batteriesResults, batResult)
 	}
 
 	result := &resultSensor{
