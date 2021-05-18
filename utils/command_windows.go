@@ -13,7 +13,7 @@ var (
 	commandSysproc = &syscall.SysProcAttr{
 		// Do not open any cmd windows
 		// Run all processes in an own process group to be able to kill the process group and all child processes
-		HideWindow:    true,
+		HideWindow:    true, //This will also hide the powershell windows if you run go test.
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 	}
 )

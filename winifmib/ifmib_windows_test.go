@@ -3,13 +3,14 @@ package winifmib
 import (
 	"encoding/hex"
 	"encoding/json"
-	"golang.org/x/sys/windows"
 	"reflect"
 	"testing"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
-func TestGetIfEntry2Ex(t *testing.T) {
+/*func TestGetIfEntry2Ex(t *testing.T) {
 	row, err := GetIfEntry2Ex(26, true)
 	if err != nil {
 		t.Fatal(err)
@@ -19,7 +20,7 @@ func TestGetIfEntry2Ex(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(string(js))
-}
+}*/
 
 func TestSizeof(t *testing.T) {
 	/* # tested in visual studio 2019 x86 and x64
