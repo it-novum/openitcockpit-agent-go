@@ -115,7 +115,6 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 		// Date as ISO-8601
 		// Format: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-date?view=powershell-7.1#notes
 		cmd := fmt.Sprintf("[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8\r\nGet-EventLog -LogName %s -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
-		log.Errorln("Cmd: ", cmd)
 		commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
 			Timeout: timeout,
 			Command: cmd,
