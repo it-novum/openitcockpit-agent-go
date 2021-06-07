@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/shirou/gopsutil/v3/disk"
+	log "github.com/sirupsen/logrus"
 )
 
 var devToIgnore = map[string]bool{
@@ -57,7 +58,11 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 		//	continue
 		//}
 
-		usage, _ := disk.UsageWithContext(ctx, device.Mountpoint)
+		usage, err := disk.UsageWithContext(ctx, device.Mountpoint)
+
+		if err != nil {
+			log.Errorln("DiskCheck: Error for ", device.Mountpoint, err)
+		}
 
 		result := &resultDisk{}
 
@@ -66,10 +71,12 @@ func (c *CheckDisk) Run(ctx context.Context) (interface{}, error) {
 		result.Disk.Fstype = device.Fstype
 		result.Disk.Opts = device.Opts
 
-		result.Usage.Total = usage.Total
-		result.Usage.Used = usage.Used
-		result.Usage.Free = usage.Free
-		result.Usage.Percent = usage.UsedPercent
+		if usage != nil {
+			result.Usage.Total = usage.Total
+			result.Usage.Used = usage.Used
+			result.Usage.Free = usage.Free
+			result.Usage.Percent = usage.UsedPercent
+		}
 
 		diskResults = append(diskResults, result)
 	}
