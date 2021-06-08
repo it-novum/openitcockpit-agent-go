@@ -31,7 +31,17 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         fi
         
     fi
-    rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
+    
+    if [ "$1" -eq "0" ]; then
+        # Uninstall on CentOS
+        rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
+    fi
+
+    if [ "$1" = "purge" ] || [ "$1" = "remove" ] ; then
+        # Uninstall on Debian / Ubuntu
+        rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
+    fi
+
     set -e
 
 fi
