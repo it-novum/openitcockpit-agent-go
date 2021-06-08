@@ -11,12 +11,14 @@ set -u
 if [ -f /usr/bin/openitcockpit-agent ]; then
 
     if [ -x "$(command -v systemctl)" ]; then
-        if [ ! -f /lib/systemd/system/openitcockpit-agent.service ]; then
-            if [ -d /lib/systemd/system/ ]; then
-                # Debian / Ubuntu / Arch
+        if [ -d /lib/systemd/system/ ]; then
+            # Debian / Ubuntu / Arch
+            if [ ! -f /lib/systemd/system/openitcockpit-agent.service ]; then
                 ln /etc/openitcockpit-agent/init/openitcockpit-agent.service /lib/systemd/system/openitcockpit-agent.service
-            elif [ -d /usr/lib/systemd/system/ ]; then
-                # RedHat / Suse
+            fi
+        elif [ -d /usr/lib/systemd/system/ ]; then
+            # RedHat / Suse
+            if [ ! -f /usr/lib/systemd/system/openitcockpit-agent.service ]; then
                 ln /etc/openitcockpit-agent/init/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service
             fi
         fi
