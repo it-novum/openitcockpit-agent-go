@@ -20,8 +20,7 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
                 # Uninstall on CentOS / Debian / Ubuntu
                 /bin/systemctl stop openitcockpit-agent
                 /bin/systemctl disable openitcockpit-agent
-            if
-
+            fi
 
         fi      
     else
@@ -40,11 +39,14 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
     
     if [ "$1" -eq "0" ]; then
         # Uninstall on CentOS
+        # https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/#_syntax
+        # https://en.opensuse.org/openSUSE:Packaging_scriptlet_snippets
         rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
     fi
 
     if [ "$1" = "purge" ] || [ "$1" = "remove" ] ; then
         # Uninstall on Debian / Ubuntu
+        # https://www.debian.org/doc/debian-policy/ch-maintainerscripts.html
         rm -f /etc/init.d/openitcockpit-agent /lib/systemd/system/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service /var/log/openitcockpit-agent
     fi
 
