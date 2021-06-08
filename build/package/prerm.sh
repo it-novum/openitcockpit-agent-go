@@ -15,8 +15,14 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         /bin/systemctl -a | grep openitcockpit-agent >/dev/null
         RC=$?
         if [ "$RC" -eq 0 ]; then
-            /bin/systemctl stop openitcockpit-agent
-            /bin/systemctl disable openitcockpit-agent
+
+            if [ "$1" -eq "0" ] || [ "$1" = "purge" ] || [ "$1" = "remove" ] ; then
+                # Uninstall on CentOS / Debian / Ubuntu
+                /bin/systemctl stop openitcockpit-agent
+                /bin/systemctl disable openitcockpit-agent
+            if
+
+
         fi      
     else
         service openitcockpit-agent stop
