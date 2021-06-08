@@ -114,7 +114,7 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 
 		// Date as ISO-8601
 		// Format: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-date?view=powershell-7.1#notes
-		cmd := fmt.Sprintf("[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8\r\nGet-EventLog -LogName %s -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
+		cmd := fmt.Sprintf("[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8\r\nGet-EventLog -LogName '%s' -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
 		commandResult, err := utils.RunCommand(ctx, utils.CommandArgs{
 			Timeout: timeout,
 			Command: cmd,
@@ -127,17 +127,57 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 		}
 
 		if commandResult.RC > 0 {
-			log.Errorln("Event Log Error: ", commandResult.Stdout)
+			if commandResult.Stdout != "" {
+				// Otherwise the event log is maybe just empty
+				log.Errorln("Event Log Error: ", commandResult.Stdout)
+			}
+
+			// Add empty array to result
+			eventBuffer[logfile] = make([]*resultEvent, 0)
 			continue
 		}
 
+		/*
+			If only one record gets returned powershell will turn this into an object instead of an array ob objects
+			PowerShell -AsArray is not supported on my Windows 10
+			{
+				"MachineName":  "DESKTOP-BCBF1TR",
+				"Category":  "(0)",
+				"CategoryNumber":  0,
+				"EventID":  1,
+				"EntryType":  1,
+				"Message":  "My first log",
+				"Source":  "MYEVENTSOURCE",
+				"TimeGenerated":  "2021-06-01T09:48:41+02",
+				"TimeWritten":  "2021-06-01T09:48:41+02",
+				"Index":  1
+			}
+		*/
+
 		var dst []*JsonEventLog
+		var jsonError error
 		if len(strings.TrimRight(commandResult.Stdout, "\r\n")) > 0 {
-			err = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+			firstCharacter := commandResult.Stdout[0:1]
+			if firstCharacter == "{" {
+				// Only one event log record
+				var singleRecord *JsonEventLog
+				jsonError = json.Unmarshal([]byte(commandResult.Stdout), &singleRecord)
+				if jsonError == nil {
+					dst = []*JsonEventLog{
+						singleRecord,
+					}
+				}
+			} else {
+				// Array of event log records
+				jsonError = json.Unmarshal([]byte(commandResult.Stdout), &dst)
+			}
+		} else {
+			// Empty event log
+			eventBuffer[logfile] = make([]*resultEvent, 0)
 		}
 
-		if err != nil {
-			return nil, err
+		if jsonError != nil {
+			return nil, jsonError
 		}
 
 		for _, event := range dst {
