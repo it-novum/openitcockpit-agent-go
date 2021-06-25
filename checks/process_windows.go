@@ -13,6 +13,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
 type Win32_Process struct {
 	ProcessId       uint64
 	ParentProcessId uint64
@@ -21,12 +22,16 @@ type Win32_Process struct {
 	ExecutablePath  string
 }
 
+// https://wutils.com/wmi/root/cimv2/win32_perfformatteddata_perfproc_process/
+// PercentProcessorTime is not buggy as https://stackoverflow.com/a/11565773 claims
+// It is the total CPU percentage and has to be divided by the number of CPU cores
 type Win32_PerfFormattedData_PerfProc_Process struct {
-	IDProcess         uint64
-	WorkingSet        uint64
-	WorkingSetPrivate uint64
-	PrivateBytes      uint64
-	HandleCount       uint64
+	IDProcess            uint64
+	WorkingSet           uint64
+	WorkingSetPrivate    uint64
+	PrivateBytes         uint64
+	HandleCount          uint64
+	PercentProcessorTime uint16
 }
 
 type ProcessInfo struct {
@@ -60,7 +65,7 @@ func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
 		return nil, errors.Wrap(err, "could not query wmi for process list")
 	}
 
-	if err := wmi.Query("SELECT IDProcess,WorkingSet,WorkingSetPrivate,PrivateBytes,HandleCount FROM Win32_PerfFormattedData_PerfProc_Process", &processPerf); err != nil {
+	if err := wmi.Query("SELECT IDProcess,WorkingSet,WorkingSetPrivate,PrivateBytes,HandleCount,PercentProcessorTime FROM Win32_PerfFormattedData_PerfProc_Process", &processPerf); err != nil {
 		return nil, errors.Wrap(err, "could not query wmi for process perfdata list")
 	}
 
@@ -116,7 +121,8 @@ func (c *CheckProcess) Run(_ context.Context) (interface{}, error) {
 			newIgnorePid[proc.ProcessId] = 1
 		} else {
 			result.CreateTime = stat.TimeStat.CreateTime
-			result.CPUPercent = (stat.TimeStat.User + stat.TimeStat.System) / float64(runtime.NumCPU())
+			//result.CPUPercent = (stat.TimeStat.User + stat.TimeStat.System) / float64(runtime.NumCPU())
+			result.CPUPercent = float64(perfdata.PercentProcessorTime) / float64(runtime.NumCPU())
 		}
 	}
 
