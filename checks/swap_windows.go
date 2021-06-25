@@ -37,9 +37,9 @@ func (c *CheckSwap) Run(ctx context.Context) (interface{}, error) {
 
 	var info Win32_PageFileUsage = dst[0]
 
-	total := info.AllocatedBaseSize * 1024 * 1024
-	used := info.CurrentUsage * 1024 * 1024
-	var free uint32 = 0
+	total := uint64(info.AllocatedBaseSize) * 1024 * 1024
+	used := uint64(info.CurrentUsage) * 1024 * 1024
+	var free uint64 = 0
 	var percent float64 = 0.0
 
 	if total > 0 {
@@ -48,9 +48,9 @@ func (c *CheckSwap) Run(ctx context.Context) (interface{}, error) {
 	}
 
 	return &resultSwap{
-		Total:   uint64(total),
+		Total:   total,
 		Percent: percent,
-		Used:    uint64(used),
-		Free:    uint64(free),
+		Used:    used,
+		Free:    free,
 	}, nil
 }
