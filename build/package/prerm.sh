@@ -16,7 +16,7 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         RC=$?
         if [ "$RC" -eq 0 ]; then
 
-            if [ "$1" -eq "0" ] || [ "$1" = "purge" ] || [ "$1" = "remove" ] ; then
+            if [ "$1" = "0" ] || [ "$1" = "purge" ] || [ "$1" = "remove" ] ; then
                 # Uninstall on CentOS / Debian / Ubuntu
                 /bin/systemctl stop openitcockpit-agent
                 /bin/systemctl disable openitcockpit-agent
@@ -37,7 +37,7 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         
     fi
     
-    if [ "$1" -eq "0" ]; then
+    if [ "$1" = "0" ]; then
         # Uninstall on CentOS
         # https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/#_syntax
         # https://en.opensuse.org/openSUSE:Packaging_scriptlet_snippets
