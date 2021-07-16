@@ -73,8 +73,10 @@ type JsonEventLog struct {
 }
 
 type CheckWindowsEventLog struct {
-	age      time.Duration
-	logfiles []string
+	age              int64
+	buffer           map[string]map[int64]*resultEvent // Stores the latest event log entries
+	bufferTimestamps map[string]time.Time              // Stores the last read possition of the event log as time
+	logfiles         []string                          // Name of the Windows Event Logs to query
 }
 
 type EventlogCheckOptions struct {
@@ -97,16 +99,13 @@ func (c *CheckWindowsEventLog) Name() string {
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 
-	now := time.Now().UTC()
-	//now = now.Add((3600 * time.Second) * -1)
-	now = now.Add(c.age * -1)
-
-	// Golang date formate: https://golang.org/src/time/format.go
-	datetime := now.Format("2006-01-02T15:04:05")
-
-	//var eventBuffer map[string][]*Win32_NTLogEvent
-	eventBuffer := make(map[string][]*resultEvent)
 	for _, logfile := range c.logfiles {
+
+		// Golang date formate: https://golang.org/src/time/format.go
+		datetime := c.bufferTimestamps[logfile].Format("2006-01-02T15:04:05")
+
+		fmt.Printf("Query logfile %v from %v", logfile, datetime)
+
 		timeout := time.Duration(30 * time.Second)
 
 		// Command for testing
@@ -136,7 +135,7 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 			}
 
 			// Add empty array to result
-			eventBuffer[logfile] = make([]*resultEvent, 0)
+			//eventBuffer[logfile] = make([]*resultEvent, 0)
 			continue
 		}
 
@@ -176,20 +175,26 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 			}
 		} else {
 			// Empty event log
-			eventBuffer[logfile] = make([]*resultEvent, 0)
+			//eventBuffer[logfile] = make([]*resultEvent, 0)
 		}
 
 		if jsonError != nil {
 			return nil, jsonError
 		}
 
+		// This is the last timestamp we have a log record for
+		var latestTimestamp = c.bufferTimestamps[logfile]
 		for _, event := range dst {
 			// Resolve Memory Leak
 
 			TimeGenerated, _ := time.Parse("2006-01-02T15:04:05-07", event.TimeGenerated)
 			TimeWritten, _ := time.Parse("2006-01-02T15:04:05-07", event.TimeWritten)
 
-			eventBuffer[logfile] = append(eventBuffer[logfile], &resultEvent{
+			if TimeGenerated.After(latestTimestamp) {
+				latestTimestamp = TimeGenerated
+			}
+
+			c.buffer[logfile][event.Index] = &resultEvent{
 				MachineName:    event.MachineName,
 				Category:       event.Category,
 				CategoryNumber: event.CategoryNumber,
@@ -200,11 +205,27 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 				TimeGenerated:  TimeGenerated.Unix(),
 				TimeWritten:    TimeWritten.Unix(),
 				Index:          event.Index,
-			})
+			}
+		}
+
+		// Store the new timestamp of the newest log record
+		c.bufferTimestamps[logfile] = latestTimestamp
+
+		// Remove logentires that are older than wineventlog-age from config.ini
+		maxAgeTime := time.Now().UTC()
+		maxAgeTime = maxAgeTime.Add((time.Duration(c.age) * time.Second) * -1)
+
+		for index, record := range c.buffer[logfile] {
+			recordTime := time.Unix(record.TimeGenerated, 0)
+
+			if recordTime.Before(maxAgeTime) {
+				// Record is to olde - drop it from buffer
+				delete(c.buffer[logfile], index)
+			}
 		}
 	}
 
-	return eventBuffer, nil
+	return c.buffer, nil
 }
 
 // Configure the command or return false if the command was disabled
@@ -218,7 +239,21 @@ func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error
 			ageSec = uint64(cfg.WindowsEventLogAge)
 		}
 
-		c.age = time.Second * time.Duration(ageSec)
+		c.age = int64(ageSec)
+
+		now := time.Now().UTC()
+		//now = now.Add((3600 * time.Second) * -1)
+		now = now.Add((time.Duration(c.age) * time.Second) * -1)
+
+		//Create round robbin buffer for eventlog records
+		c.buffer = make(map[string]map[int64]*resultEvent)
+		c.bufferTimestamps = make(map[string]time.Time)
+		for _, logfile := range c.logfiles {
+			c.buffer[logfile] = make(map[int64]*resultEvent)
+
+			//Set the initial logfile start date
+			c.bufferTimestamps[logfile] = now
+		}
 
 		return true, nil
 	}
