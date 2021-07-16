@@ -104,7 +104,7 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 		// Golang date formate: https://golang.org/src/time/format.go
 		datetime := c.bufferTimestamps[logfile].Format("2006-01-02T15:04:05")
 
-		fmt.Printf("Query logfile %v from %v", logfile, datetime)
+		//fmt.Printf("Query logfile %v from %v\n", logfile, datetime)
 
 		timeout := time.Duration(30 * time.Second)
 
@@ -135,7 +135,7 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 			}
 
 			// Add empty array to result
-			//eventBuffer[logfile] = make([]*resultEvent, 0)
+			c.bufferTimestamps[logfile] = time.Now().UTC()
 			continue
 		}
 
@@ -175,7 +175,7 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 			}
 		} else {
 			// Empty event log
-			//eventBuffer[logfile] = make([]*resultEvent, 0)
+			c.bufferTimestamps[logfile] = time.Now().UTC()
 		}
 
 		if jsonError != nil {
@@ -245,7 +245,7 @@ func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error
 		//now = now.Add((3600 * time.Second) * -1)
 		now = now.Add((time.Duration(c.age) * time.Second) * -1)
 
-		//Create round robbin buffer for eventlog records
+		//Create buffer for eventlog records
 		c.buffer = make(map[string]map[int64]*resultEvent)
 		c.bufferTimestamps = make(map[string]time.Time)
 		for _, logfile := range c.logfiles {
