@@ -109,6 +109,9 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 	for _, logfile := range c.logfiles {
 		timeout := time.Duration(30 * time.Second)
 
+		// Command for testing
+		// Get-EventLog -LogName 'System' -After (Get-Date).AddHours(-1) | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%Y-%%m-%%dT%%H:%%M:%%S%%Z }}, Index | ConvertTo-Json -depth 100
+
 		// Unix timestamp with timezone :/
 		//cmd := fmt.Sprintf("Get-EventLog -LogName %s -After %s | Select-Object MachineName, Category, CategoryNumber, EventID, EntryType, Message, Source, @{n='TimeGenerated';e={Get-Date ($_.timegenerated) -UFormat %%s }}, @{n='TimeWritten';e={Get-Date ($_.timegenerated) -UFormat %%s }}, Index | ConvertTo-Json -depth 100", logfile, datetime)
 
