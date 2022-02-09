@@ -598,7 +598,14 @@ def publish_packages() {
             /* create yum repository */
             sh """mkdir -p rpm/stable"""
             sh """cp packages/*.rpm rpm/stable/"""
-            sh """createrepo rpm/stable"""
+            /*
+            createrepo is the old Python createrepo which does not exists on Ubuntu Focal.
+            Ubuntu Focal has no createrepo_c.
+            For this reason we use a Docker image with a recent version of createrepo_c which works fine
+            https://github.com/it-novum/createrepo_c-docker
+            */
+            /*sh """createrepo rpm/stable"""*/
+            sh """docker run --rm -v "$PWD/rpm/stable":/rpm openitcockpit/createrepo_c"""
 
             /* Publish yum repository */
             sh "rsync -rv --delete-after rpm/stable/ www-data@srvoitcapt02.ad.it-novum.com:/var/www/html/openitcockpit-agent/rpm/stable/"
