@@ -606,6 +606,7 @@ def publish_packages() {
             */
             /*sh """createrepo rpm/stable"""*/
             sh """docker run --rm --user 0:0 -v '${env.WORKSPACE}/rpm/stable':/rpm openitcockpit/createrepo_c"""
+            sh """chown jenkins:jenkins ${env.WORKSPACE} -R"""
 
             /* Publish yum repository */
             sh "rsync -rv --delete-after rpm/stable/ www-data@srvoitcapt02.ad.it-novum.com:/var/www/html/openitcockpit-agent/rpm/stable/"
