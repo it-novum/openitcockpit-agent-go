@@ -605,7 +605,7 @@ def publish_packages() {
             https://github.com/it-novum/createrepo_c-docker
             */
             /*sh """createrepo rpm/stable"""*/
-            sh """docker run --rm --user 0:0 -v '${env.WORKSPACE}/rpm/stable':/rpm openitcockpit/createrepo_c"""
+            sh """docker run --rm --user 111:116 -v '${env.WORKSPACE}/publish/rpm/stable':/rpm openitcockpit/createrepo_c"""
             /*sh """chown jenkins:jenkins ${env.WORKSPACE} -R"""*/
 
             /* Publish yum repository */
