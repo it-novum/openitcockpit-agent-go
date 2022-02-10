@@ -1,6 +1,9 @@
 # openITCOCKPIT Monitoring Agent 3.0
 Cross-Platform Monitoring Agent for openITCOCKPIT written in Go
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/it-novum/openitcockpit-agent-go)](https://goreportcard.com/report/github.com/it-novum/openitcockpit-agent-go)
+[![Build Status](https://drone.openitcockpit.io/buildStatus/icon?job=openitcockpit-agent-go%2Fmain)](https://drone.openitcockpit.io/job/openitcockpit-agent-go/job/main/)
+
 ## Table of contents
 * [Supported operating systems](#supported-operating-systems)
 * [Installation](#installation)
