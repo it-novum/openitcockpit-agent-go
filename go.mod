@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
-	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
 	github.com/andybalholm/crlf v0.0.0-20171020200849-670099aa064f
 	github.com/containerd/containerd v1.5.9 // indirect
@@ -12,7 +11,6 @@ require (
 	github.com/distatus/battery v0.10.0
 	github.com/docker/docker v20.10.14+incompatible
 	github.com/elastic/beats/v7 v7.0.0-alpha2.0.20210222102351-e315d66b518a
-	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
@@ -37,6 +35,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
+	github.com/yusufpapurcu/wmi v1.2.2
 	go.elastic.co/ecszap v1.0.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect

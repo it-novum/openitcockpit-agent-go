@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/StackExchange/wmi"
+	"github.com/yusufpapurcu/wmi"
 )
 
 // https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-pagefileusage

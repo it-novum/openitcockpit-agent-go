@@ -3,7 +3,7 @@ package checks
 import (
 	"context"
 
-	"github.com/StackExchange/wmi"
+	"github.com/yusufpapurcu/wmi"
 )
 
 // https://wutils.com/wmi/root/cimv2/win32_perfformatteddata_perfos_processor/
