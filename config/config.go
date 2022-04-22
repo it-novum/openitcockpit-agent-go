@@ -187,9 +187,6 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	cfg.ConfigurationPath = v.ConfigFileUsed()
 	cfg.viper = v
 
-	logger, _ := basiclog.New()
-	logger.Errorln("Configuration: could not load custom checks: ", "barss")
-
 	if cfg.CustomchecksFilePath != "" {
 		if utils.FileExists(cfg.CustomchecksFilePath) {
 			if ccc, err := unmarshalCustomChecks(cfg.CustomchecksFilePath); err != nil {
