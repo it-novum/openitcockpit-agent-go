@@ -10,7 +10,7 @@ require (
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/distatus/battery v0.10.0
-	github.com/docker/docker v20.10.3+incompatible
+	github.com/docker/docker v20.10.14+incompatible
 	github.com/elastic/beats/v7 v7.0.0-alpha2.0.20210222102351-e315d66b518a
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
