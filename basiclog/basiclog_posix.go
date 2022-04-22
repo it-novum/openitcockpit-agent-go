@@ -5,8 +5,6 @@ package basiclog
 
 import (
 	"log/syslog"
-
-	"golang.org/x/sys/windows/svc/eventlog"
 )
 
 // This very basic log gets used to log any config parser errors
@@ -14,7 +12,7 @@ import (
 // This is because if the agent can not parse it's config.ini it has no logfile path.
 
 type BasicLogger struct {
-	handler *eventlog.Log
+	handler *syslog.Writer
 }
 
 func New() (*BasicLogger, error) {
