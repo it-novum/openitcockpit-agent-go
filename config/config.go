@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/it-novum/openitcockpit-agent-go/basiclog"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/viper"
 )
 
@@ -187,15 +187,20 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	cfg.ConfigurationPath = v.ConfigFileUsed()
 	cfg.viper = v
 
+	logger, _ := basiclog.New()
+	logger.Errorln("Configuration: could not load custom checks: ", "barss")
+
 	if cfg.CustomchecksFilePath != "" {
 		if utils.FileExists(cfg.CustomchecksFilePath) {
 			if ccc, err := unmarshalCustomChecks(cfg.CustomchecksFilePath); err != nil {
-				log.Errorln("Configuration: could not load custom checks: ", err)
+				logger, _ := basiclog.New()
+				logger.Errorln("Configuration: could not load custom checks: ", err)
 			} else {
 				cfg.CustomCheckConfiguration = ccc
 			}
 		} else {
-			log.Errorln("Configuration: custom check configuration does not exist: ", cfg.CustomchecksFilePath)
+			logger, _ := basiclog.New()
+			logger.Errorln("Configuration: custom check configuration does not exist: ", cfg.CustomchecksFilePath)
 		}
 	}
 
