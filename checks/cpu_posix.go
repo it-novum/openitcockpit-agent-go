@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"runtime"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -68,7 +67,7 @@ func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
 	}
 
 	if len(prevTimeStats) != len(timeStats) {
-		return nil, fmt.Errorf("Number of CPU cores has changed %v != %v", len(prevTimeStats), len(timeStats))
+		return nil, fmt.Errorf("number of CPU cores has changed %v != %v", len(prevTimeStats), len(timeStats))
 	}
 
 	// Get CPU usage per core
@@ -86,23 +85,25 @@ func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
 	}
 	result.PercentageTotal = totalCpuPercentage / float64(len(cpuPercentages))
 
-	if runtime.GOOS == "linux" {
+	// Get CPU timing details per core
+	var timings []cpuDetails
+	var totalUser, totalNice, totalSystem, totalIoWait, totalIdle, totalTotal float64
+	for i := range prevTimeStats {
+		// Ignore t.Irq + t.Softirq + t.Steal to get 100% over all values we list in the json
+		prevTotal := prevTimeStats[i].User + prevTimeStats[i].Nice + prevTimeStats[i].System + prevTimeStats[i].Idle + prevTimeStats[i].Iowait
+		currentTotal := timeStats[i].User + timeStats[i].Nice + timeStats[i].System + timeStats[i].Idle + timeStats[i].Iowait
 
-		// Get CPU timing details per core
-		var timings []cpuDetails
-		var totalUser, totalNice, totalSystem, totalIoWait, totalIdle, totalTotal float64
-		for i := range prevTimeStats {
-			// Ignore t.Irq + t.Softirq + t.Steal to get 100% over all values we list in the json
-			prevTotal := prevTimeStats[i].User + prevTimeStats[i].Nice + prevTimeStats[i].System + prevTimeStats[i].Idle + prevTimeStats[i].Iowait
-			currentTotal := timeStats[i].User + timeStats[i].Nice + timeStats[i].System + timeStats[i].Idle + timeStats[i].Iowait
+		userDelta := saturatingSub(timeStats[i].User, prevTimeStats[i].User)
+		niceDelta := saturatingSub(timeStats[i].Nice, prevTimeStats[i].Nice)
+		systemDelta := saturatingSub(timeStats[i].System, prevTimeStats[i].System)
+		ioWaitDelta := saturatingSub(timeStats[i].Iowait, prevTimeStats[i].Iowait)
+		idleDelta := saturatingSub(timeStats[i].Idle, prevTimeStats[i].Idle)
+		totalDelta := saturatingSub(currentTotal, prevTotal)
 
-			userDelta := saturatingSub(timeStats[i].User, prevTimeStats[i].User)
-			niceDelta := saturatingSub(timeStats[i].Nice, prevTimeStats[i].Nice)
-			systemDelta := saturatingSub(timeStats[i].System, prevTimeStats[i].System)
-			ioWaitDelta := saturatingSub(timeStats[i].Iowait, prevTimeStats[i].Iowait)
-			idleDelta := saturatingSub(timeStats[i].Idle, prevTimeStats[i].Idle)
-			totalDelta := saturatingSub(currentTotal, prevTotal)
-
+		if totalDelta == 0 {
+			timings = append(timings, cpuDetails{})
+		} else {
+			// Do not Division by zero (not sure if this could ever happen to be honest but better safe than sorry)
 			timings = append(timings, cpuDetails{
 				User:   userDelta / totalDelta * 100,
 				Nice:   niceDelta / totalDelta * 100,
@@ -110,54 +111,24 @@ func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
 				Idle:   idleDelta / totalDelta * 100,
 				Iowait: ioWaitDelta / totalDelta * 100,
 			})
-
-			totalUser = totalUser + userDelta
-			totalNice = totalNice + niceDelta
-			totalSystem = totalSystem + systemDelta
-			totalIoWait = totalIoWait + ioWaitDelta
-			totalIdle = totalIdle + idleDelta
-			totalTotal = totalTotal + totalDelta
 		}
-		result.DetailsPerCore = timings
 
-		// Get total CPU timing details
-		result.DetailsTotal = &cpuDetails{
-			User:   totalUser / totalTotal * 100,
-			Nice:   totalNice / totalTotal * 100,
-			System: totalSystem / totalTotal * 100,
-			Idle:   totalIdle / totalTotal * 100,
-			Iowait: totalIoWait / totalTotal * 100,
-		}
+		totalUser = totalUser + userDelta
+		totalNice = totalNice + niceDelta
+		totalSystem = totalSystem + systemDelta
+		totalIoWait = totalIoWait + ioWaitDelta
+		totalIdle = totalIdle + idleDelta
+		totalTotal = totalTotal + totalDelta
 	}
+	result.DetailsPerCore = timings
 
-	if runtime.GOOS == "darwin" {
-		timeStats, err := cpu.TimesWithContext(ctx, false)
-
-		if err == nil {
-			total := timeStats[0].User + timeStats[0].Nice + timeStats[0].System + timeStats[0].Idle
-			result.DetailsTotal = &cpuDetails{
-				User:   timeStats[0].User / total * 100,
-				Nice:   timeStats[0].Nice / total * 100,
-				System: timeStats[0].System / total * 100,
-				Idle:   timeStats[0].Idle / total * 100,
-			}
-		}
-
-		//get timings per CPU
-		var timings []cpuDetails
-		timeStats, err = cpu.TimesWithContext(ctx, true)
-		if err == nil {
-			for _, timeStat := range timeStats {
-				total := timeStat.User + timeStat.Nice + timeStat.System + timeStat.Idle
-				timings = append(timings, cpuDetails{
-					User:   timeStat.User / total * 100,
-					Nice:   timeStat.Nice / total * 100,
-					System: timeStat.System / total * 100,
-					Idle:   timeStat.Idle / total * 100,
-				})
-			}
-			result.DetailsPerCore = timings
-		}
+	// Get total CPU timing details
+	result.DetailsTotal = &cpuDetails{
+		User:   totalUser / totalTotal * 100,
+		Nice:   totalNice / totalTotal * 100,
+		System: totalSystem / totalTotal * 100,
+		Idle:   totalIdle / totalTotal * 100,
+		Iowait: totalIoWait / totalTotal * 100,
 	}
 
 	return result, nil
