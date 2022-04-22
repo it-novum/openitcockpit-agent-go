@@ -1,13 +1,15 @@
-//+build linux darwin
+//go:build linux || darwin
+// +build linux darwin
 
 package checks
 
 import (
 	"context"
+	"time"
+
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/shirou/gopsutil/v3/net"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 // Run the actual check

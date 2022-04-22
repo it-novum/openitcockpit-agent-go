@@ -1,3 +1,4 @@
+//go:build linux || darwin
 // +build linux darwin
 
 package checks
@@ -26,4 +27,3 @@ func (c *CheckSwap) Run(ctx context.Context) (interface{}, error) {
 		Sout:    s.Sout,
 	}, nil
 }
-
