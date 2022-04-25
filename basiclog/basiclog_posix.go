@@ -19,7 +19,7 @@ func New() (*BasicLogger, error) {
 
 	logHandle, err := syslog.New(syslog.LOG_ERR, "openITCOCKPITAgent")
 	if err != nil {
-		return nil, err
+		return &BasicLogger{}, err
 	}
 
 	return &BasicLogger{

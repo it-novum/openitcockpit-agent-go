@@ -16,7 +16,7 @@ func New() (*BasicLogger, error) {
 
 	logHandle, err := eventlog.Open("openITCOCKPITAgent")
 	if err != nil {
-		return nil, err
+		return &BasicLogger{}, err
 	}
 
 	return &BasicLogger{

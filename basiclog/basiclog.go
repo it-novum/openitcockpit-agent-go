@@ -20,7 +20,14 @@ func (l *BasicLogger) Errorln(args ...interface{}) error {
 
 	msg = fmt.Sprintf(template, t.Format(time.RFC3339), msg, source)
 
+	// Print msg
 	fmt.Print(msg)
+
+	if l.handler == nil {
+		return fmt.Errorf("No log handler initialized! Message will only be printed to stdout.")
+	}
+
+	// Save msg to logfile via given handler
 	return l.LogError(msg)
 }
 
