@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/it-novum/openitcockpit-agent-go/basiclog"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/viper"
 )
 
 // AgentVersion as the name says
-const AgentVersion = "3.0.8"
+const AgentVersion = "3.0.9"
 
 // CustomCheck are external plugins and scripts which should be executed by the Agent
 type CustomCheck struct {
@@ -111,9 +111,10 @@ type Configuration struct {
 
 	// WindowsEventLog with all event log types to monitor
 
-	WindowsEventLogTypes []string `mapstructure:"wineventlog-logtypes"`
-	WindowsEventLogAge   int64    `mapstructure:"wineventlog-age"`   // WMI Version
-	WindowsEventLogCache int64    `mapstructure:"wineventlog-cache"` // JD Version
+	WindowsEventLogTypes  []string `mapstructure:"wineventlog-logtypes"`
+	WindowsEventLogAge    int64    `mapstructure:"wineventlog-age"`    // WMI Version
+	WindowsEventLogCache  int64    `mapstructure:"wineventlog-cache"`  // JD Version
+	WindowsEventLogMethod string   `mapstructure:"wineventlog-method"` // WMI or PowerShell
 
 	// Push Mode
 
@@ -148,6 +149,7 @@ var defaultValue = map[string]interface{}{
 	"wineventlog-logtypes": "System,Application",
 	"wineventlog-age":      3600,
 	"wineventlog-cache":    3600,
+	"wineventlog-method":   "WMI",
 	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
@@ -190,12 +192,14 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	if cfg.CustomchecksFilePath != "" {
 		if utils.FileExists(cfg.CustomchecksFilePath) {
 			if ccc, err := unmarshalCustomChecks(cfg.CustomchecksFilePath); err != nil {
-				log.Errorln("Configuration: could not load custom checks: ", err)
+				logger, _ := basiclog.New()
+				logger.Errorln("Configuration: could not load custom checks: ", err)
 			} else {
 				cfg.CustomCheckConfiguration = ccc
 			}
 		} else {
-			log.Errorln("Configuration: custom check configuration does not exist: ", cfg.CustomchecksFilePath)
+			logger, _ := basiclog.New()
+			logger.Errorln("Configuration: custom check configuration does not exist: ", cfg.CustomchecksFilePath)
 		}
 	}
 

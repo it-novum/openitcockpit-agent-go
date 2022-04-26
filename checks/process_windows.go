@@ -4,12 +4,12 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/it-novum/openitcockpit-agent-go/winpsapi"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/mem"
 	log "github.com/sirupsen/logrus"
+	"github.com/yusufpapurcu/wmi"
 	"golang.org/x/sys/windows"
 )
 

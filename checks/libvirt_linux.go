@@ -1,3 +1,4 @@
+//go:build libvirt
 // +build libvirt
 
 // sudo apt-get install libvirt-dev

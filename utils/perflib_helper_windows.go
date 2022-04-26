@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-	perflibMapper "github.com/leoluk/perflib_exporter/collector"
 	"github.com/leoluk/perflib_exporter/perflib"
 )
 
@@ -14,6 +13,56 @@ import (
 const WINDOWS_TICKS_PER_SECONDS float64 = 1.0e-7 // = 1 / 10000000
 
 const WINDOWS_TICKS_PER_MILISECONDS float64 = 1.0e-6 // = 1 / 1000000
+
+// The github.com/leoluk/perflib_exporter/collector dependency requires github.com/prometheus/common/log
+// which does not exists anymore. We only need the constants, so we copy&paste this instead.
+// Source: https://github.com/leoluk/perflib_exporter/blob/da7e746e1ac6876bbb7dac385b6a415fee2a8172/collector/mapper.go
+// License: MIT License
+// Author: Bismarck Paliz bismarck https://github.com/bismarck
+// (c) all contributors lofeoluk/perflib_exporter many thanks!
+const (
+	PERF_COUNTER_RAWCOUNT_HEX           = 0x00000000
+	PERF_COUNTER_LARGE_RAWCOUNT_HEX     = 0x00000100
+	PERF_COUNTER_TEXT                   = 0x00000b00
+	PERF_COUNTER_RAWCOUNT               = 0x00010000
+	PERF_COUNTER_LARGE_RAWCOUNT         = 0x00010100
+	PERF_DOUBLE_RAW                     = 0x00012000
+	PERF_COUNTER_DELTA                  = 0x00400400
+	PERF_COUNTER_LARGE_DELTA            = 0x00400500
+	PERF_SAMPLE_COUNTER                 = 0x00410400
+	PERF_COUNTER_QUEUELEN_TYPE          = 0x00450400
+	PERF_COUNTER_LARGE_QUEUELEN_TYPE    = 0x00450500
+	PERF_COUNTER_100NS_QUEUELEN_TYPE    = 0x00550500
+	PERF_COUNTER_OBJ_TIME_QUEUELEN_TYPE = 0x00650500
+	PERF_COUNTER_COUNTER                = 0x10410400
+	PERF_COUNTER_BULK_COUNT             = 0x10410500
+	PERF_RAW_FRACTION                   = 0x20020400
+	PERF_LARGE_RAW_FRACTION             = 0x20020500
+	PERF_COUNTER_TIMER                  = 0x20410500
+	PERF_PRECISION_SYSTEM_TIMER         = 0x20470500
+	PERF_100NSEC_TIMER                  = 0x20510500
+	PERF_PRECISION_100NS_TIMER          = 0x20570500
+	PERF_OBJ_TIME_TIMER                 = 0x20610500
+	PERF_PRECISION_OBJECT_TIMER         = 0x20670500
+	PERF_SAMPLE_FRACTION                = 0x20c20400
+	PERF_COUNTER_TIMER_INV              = 0x21410500
+	PERF_100NSEC_TIMER_INV              = 0x21510500
+	PERF_COUNTER_MULTI_TIMER            = 0x22410500
+	PERF_100NSEC_MULTI_TIMER            = 0x22510500
+	PERF_COUNTER_MULTI_TIMER_INV        = 0x23410500
+	PERF_100NSEC_MULTI_TIMER_INV        = 0x23510500
+	PERF_AVERAGE_TIMER                  = 0x30020400
+	PERF_ELAPSED_TIME                   = 0x30240500
+	PERF_COUNTER_NODATA                 = 0x40000200
+	PERF_AVERAGE_BULK                   = 0x40020500
+	PERF_SAMPLE_BASE                    = 0x40030401
+	PERF_AVERAGE_BASE                   = 0x40030402
+	PERF_RAW_BASE                       = 0x40030403
+	PERF_PRECISION_TIMESTAMP            = 0x40030500
+	PERF_LARGE_RAW_BASE                 = 0x40030503
+	PERF_COUNTER_MULTI_BASE             = 0x42030500
+	PERF_COUNTER_HISTOGRAM_TYPE         = 0x80000000
+)
 
 // Credit to: https://github.com/bosun-monitor/bosun/blob/master/cmd/scollector/collectors/disk_windows.go#L15-L22
 //Converts 100ns samples to 0-100 Percent samples
@@ -81,9 +130,9 @@ func UnmarshalObject(object *perflib.PerfObject, dst interface{}) error {
 			}
 
 			switch ctr.Def.CounterType {
-			case perflibMapper.PERF_ELAPSED_TIME:
+			case PERF_ELAPSED_TIME:
 				target.Field(i).SetFloat(float64(ctr.Value-WINDOWS_TO_UNIX_EPOCH) / float64(object.Frequency))
-			case perflibMapper.PERF_100NSEC_TIMER, perflibMapper.PERF_PRECISION_100NS_TIMER:
+			case PERF_100NSEC_TIMER, PERF_PRECISION_100NS_TIMER:
 				//target.Field(i).SetFloat(float64(ctr.Value) / WINDOWS_TICKS_PER_SECONDS)
 				target.Field(i).SetFloat(float64(ctr.Value) * WINDOWS_TICKS_PER_SECONDS)
 				//target.Field(i).SetFloat(float64(ctr.Value))

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/StackExchange/wmi"
+	"github.com/yusufpapurcu/wmi"
 
 	"github.com/it-novum/openitcockpit-agent-go/agentrt"
 	"github.com/it-novum/openitcockpit-agent-go/platformpaths"

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/yusufpapurcu/wmi"
 
 	"github.com/it-novum/openitcockpit-agent-go/config"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
@@ -75,6 +76,7 @@ type JsonEventLog struct {
 type CheckWindowsEventLog struct {
 	age      time.Duration
 	logfiles []string
+	method   string
 }
 
 type EventlogCheckOptions struct {
@@ -82,20 +84,47 @@ type EventlogCheckOptions struct {
 	Logfiles []string
 }
 
+func mapWmiEventTypeToDotNetEventEventLogEntryType(wmiEventType int64) int64 {
+	// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/eventlogprov/win32-ntlogevent
+	// https://docs.microsoft.com/de-de/dotnet/api/system.diagnostics.eventlogentrytype?view=dotnet-plat-ext-6.0
+	var mapping = map[int64]int64{
+		1: 1,  // Error
+		2: 2,  // Warning
+		3: 4,  // Information
+		4: 8,  // Security Audit Success
+		5: 16, // Security Audit Failure
+	}
+
+	if val, found := mapping[wmiEventType]; found {
+		return val
+	}
+
+	// We use 0 as default which gets mapped to "Information" from the Check Receiver
+	return 0
+
+}
+
 // Name will be used in the response as check name
 func (c *CheckWindowsEventLog) Name() string {
 	return "windows_eventlog"
 }
 
-// This check is a Memory Leak as a Service
-// See: https://github.com/StackExchange/wmi/issues/55
-// https://github.com/go-ole/go-ole/issues/135
-//
 // Run the actual check
 // if error != nil the check result will be nil
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
+	if strings.ToLower(c.method) == "wmi" {
+		return c.RunWmi(ctx)
+	}
+
+	// Default to PowerShell
+	return c.RunPowerShell(ctx)
+}
+
+// This Version of the check uses PowerShell and the Get-EventLog cmdlet to query the Windows Event Log
+// It works OKish. Some systems are running into bluescreen issues with this OA-40
+func (c *CheckWindowsEventLog) RunPowerShell(ctx context.Context) (interface{}, error) {
 
 	now := time.Now().UTC()
 	//now = now.Add((3600 * time.Second) * -1)
@@ -204,6 +233,69 @@ func (c *CheckWindowsEventLog) Run(ctx context.Context) (interface{}, error) {
 	return eventBuffer, nil
 }
 
+// This check was a Memory Leak as a Service
+// See: https://github.com/StackExchange/wmi/issues/55
+// https://github.com/go-ole/go-ole/issues/135
+// We have replaced the StackExchange WMI lib with github.com/yusufpapurcu/wmi no more memory leak on
+// Windows 10, Windows Server 2016 and Windows Server 2022
+func (c *CheckWindowsEventLog) RunWmi(ctx context.Context) (interface{}, error) {
+	now := time.Now().UTC()
+	//now = now.Add((3600 * time.Second) * -1)
+	now = now.Add(c.age * -1)
+
+	// Get DMTF-DateTime for WMI.
+	// PowerShell Example to generate this:
+	// PS C:\Users\Administrator> $WMIDATEAGE = [System.Management.ManagementDateTimeConverter]::ToDmtfDateTime([DateTime]::UtcNow.AddDays(-14))
+	// PS C:\Users\Administrator> echo $WMIDATEAGE
+	// 20210308075246.091047+000
+	// Docs: https://blogs.iis.net/bobbyv/working-with-wmi-dates-and-times
+	//
+	// Golang date formate: https://golang.org/src/time/format.go
+	wmidate := now.Format("20060102150405.000000-070")
+
+	var dst []Win32_NTLogEvent
+	var sql string
+	//var eventBuffer map[string][]*Win32_NTLogEvent
+	eventBuffer := make(map[string][]*resultEvent)
+	for _, logfile := range c.logfiles {
+		sql = fmt.Sprintf("SELECT * FROM Win32_NTLogEvent WHERE Logfile='%v' AND TimeWritten >= '%v'", logfile, wmidate)
+		//fmt.Println(sql)
+
+		err := wmi.Query(sql, &dst)
+		if err != nil {
+			log.Errorln("Event Log: ", err)
+			continue
+		}
+
+		for _, event := range dst {
+			// Resolve Memory Leak
+			// EventType IDs of WMI are different from PowerShell
+			// WMI: https://docs.microsoft.com/en-us/previous-versions/windows/desktop/eventlogprov/win32-ntlogevent (search EventType)
+			// PowerShell / .NET: https://docs.microsoft.com/de-de/dotnet/api/system.diagnostics.eventlogentrytype?view=dotnet-plat-ext-6.0
+
+			eventBuffer[logfile] = append(eventBuffer[logfile], &resultEvent{
+				MachineName:    event.ComputerName,
+				Category:       event.CategoryString,
+				CategoryNumber: int64(event.Category),
+				EventID:        int64(event.EventCode),
+				EntryType:      mapWmiEventTypeToDotNetEventEventLogEntryType(int64(event.EventType)),
+				Message:        event.Message,
+				Source:         event.SourceName,
+				TimeGenerated:  event.TimeGenerated.Unix(),
+				TimeWritten:    event.TimeWritten.Unix(),
+				Index:          int64(event.RecordNumber),
+			})
+		}
+
+		if len(dst) == 0 {
+			// Empty event logF
+			eventBuffer[logfile] = make([]*resultEvent, 0)
+		}
+	}
+
+	return eventBuffer, nil
+}
+
 // Configure the command or return false if the command was disabled
 func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error) {
 	if cfg.WindowsEventLog && len(cfg.WindowsEventLogTypes) > 0 {
@@ -216,6 +308,8 @@ func (c *CheckWindowsEventLog) Configure(cfg *config.Configuration) (bool, error
 		}
 
 		c.age = time.Second * time.Duration(ageSec)
+
+		c.method = cfg.WindowsEventLogMethod
 
 		return true, nil
 	}

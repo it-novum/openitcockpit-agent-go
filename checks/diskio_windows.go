@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/StackExchange/wmi"
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
+	"github.com/yusufpapurcu/wmi"
 )
 
 // WMI Structs
