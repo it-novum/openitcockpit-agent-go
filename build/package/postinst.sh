@@ -14,26 +14,26 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
         if [ -d /lib/systemd/system/ ]; then
             # Debian / Ubuntu / Arch
             if [ ! -f /lib/systemd/system/openitcockpit-agent.service ]; then
-                ln /etc/openitcockpit-agent/init/openitcockpit-agent.service /lib/systemd/system/openitcockpit-agent.service
+                ln -s /etc/openitcockpit-agent/init/openitcockpit-agent.service /lib/systemd/system/openitcockpit-agent.service
             fi
         elif [ -d /usr/lib/systemd/system/ ]; then
             # RedHat / Suse
             if [ ! -f /usr/lib/systemd/system/openitcockpit-agent.service ]; then
-                ln /etc/openitcockpit-agent/init/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service
+                ln -s /etc/openitcockpit-agent/init/openitcockpit-agent.service /usr/lib/systemd/system/openitcockpit-agent.service
             fi
         fi
-        
+
         systemctl daemon-reload
         systemctl start openitcockpit-agent
         systemctl enable openitcockpit-agent
     else
-        
+
         enableConfig="0"
         if [ ! -f /etc/init.d/openitcockpit-agent ]; then
             enableConfig="1"
-            ln /etc/openitcockpit-agent/init/openitcockpit-agent.init /etc/init.d/openitcockpit-agent
+            ln -s /etc/openitcockpit-agent/init/openitcockpit-agent.init /etc/init.d/openitcockpit-agent
         fi
-        
+
         if [ "$enableConfig" == "1" ]; then
             if [ -x "$(command -v update-rc.d)" ]; then
                 # Debian / Ubuntu
@@ -44,7 +44,7 @@ if [ -f /usr/bin/openitcockpit-agent ]; then
                 chkconfig openitcockpit-agent on
             fi
         fi
-        
+
         service openitcockpit-agent start
     fi
 
@@ -78,7 +78,7 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     if [ "$enableConfig" == "1" ]; then
         /bin/launchctl load /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist
     fi
-    
+
     if [ ! -d "/Library/Logs/openitcockpit-agent" ]; then
         mkdir -p /Library/Logs/openitcockpit-agent
     fi
