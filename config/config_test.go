@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,10 +20,10 @@ address = 0.0.0.0
 certfile =
 keyfile =
 try-autossl = true
-autossl-csr-file = 
-autossl-crt-file = 
-autossl-key-file = 
-autossl-ca-file = 
+autossl-csr-file =
+autossl-crt-file =
+autossl-key-file =
+autossl-ca-file =
 verbose = false
 stacktrace = false
 config-update-mode = false
@@ -51,13 +50,13 @@ alfresco-jmxpassword = change_asap
 alfresco-jmxaddress = 0.0.0.0
 alfresco-jmxport = 50500
 alfresco-jmxpath = /alfresco/jmxrmi
-alfresco-jmxquery = 
+alfresco-jmxquery =
 alfresco-javapath = /usr/bin/java
 
 [oitc]
 enabled = false
 hostuuid =
-url = 
+url =
 apikey =
 proxy =
 interval = 60
@@ -101,7 +100,7 @@ alfresco-jmxpassword = change_asap
 alfresco-jmxaddress = 0.0.0.0
 alfresco-jmxport = 50500
 alfresco-jmxpath = /alfresco/jmxrmi
-alfresco-jmxquery = 
+alfresco-jmxquery =
 alfresco-javapath = /usr/bin/java
 
 [oitc]
@@ -164,7 +163,7 @@ var customChecksAgentVersion1ConfigEmptyCommand string = `
   enabled = true
 
 [empty_command_line]
-  command = 
+  command =
   interval = 15
   timeout = 10
   enabled = false
@@ -187,25 +186,25 @@ func saveTempConfig(config string, customchecks bool) string {
 	if customchecks {
 		filename = "customchecks.ini"
 	}
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, filename), []byte(config), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, filename), []byte(config), 0600); err != nil {
 		panic(err)
 	}
 	return tmpDir
 }
 
 func saveTempConfigWithCC(config string, customchecks string) string {
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "config.ini"), []byte(fmt.Sprintf(config, filepath.Join(tmpDir, "customchecks.ini"))), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "config.ini"), []byte(fmt.Sprintf(config, filepath.Join(tmpDir, "customchecks.ini"))), 0600); err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "customchecks.ini"), []byte(customchecks), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "customchecks.ini"), []byte(customchecks), 0600); err != nil {
 		panic(err)
 	}
 	return tmpDir

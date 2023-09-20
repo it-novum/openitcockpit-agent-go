@@ -8,7 +8,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -18,7 +17,7 @@ func CertPoolFromFiles(files ...string) (*x509.CertPool, []byte, error) {
 	pem := bytes.Buffer{}
 
 	for _, fileName := range files {
-		bytes, err := ioutil.ReadFile(fileName)
+		bytes, err := os.ReadFile(fileName)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -49,7 +48,7 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 			Type:  "PRIVATE KEY",
 			Bytes: pemBytes,
 		})
-		if err := ioutil.WriteFile(keyFile, pemData, 0600); err != nil {
+		if err := os.WriteFile(keyFile, pemData, 0600); err != nil {
 			return err
 		}
 	}
@@ -58,7 +57,7 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 
 // CSRFromKeyFile reads keyFile and generates a csr in PEM format
 func CSRFromKeyFile(keyFile, subject string) ([]byte, error) {
-	pemData, err := ioutil.ReadFile(keyFile)
+	pemData, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}

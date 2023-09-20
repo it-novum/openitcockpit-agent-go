@@ -35,6 +35,7 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		TemperatureUnit:      "C",
 		GOOS:                 runtime.GOOS,
 		GOARCH:               runtime.GOARCH,
+		GOVERSION:            runtime.Version(),
 	}, nil
 }
 

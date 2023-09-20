@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -63,7 +63,7 @@ func TestWebserverHandlerState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func TestWebserverHandlerState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err = ioutil.ReadAll(r.Body)
+	body, err = io.ReadAll(r.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,7 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tmpdir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tmpdir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestWebserverHandlerConfig(t *testing.T) {
 		t.Error("Status code is not 200")
 	}
 
-	d, err := ioutil.ReadFile(cfgPath)
+	d, err := os.ReadFile(cfgPath)
 	if err != nil {
 		t.Error(err)
 	} else {
@@ -199,7 +199,7 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

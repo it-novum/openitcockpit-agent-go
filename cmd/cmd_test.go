@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -73,7 +72,7 @@ func newTestPath(t *testing.T, invalidLogDir bool) *testPlatformPath {
 		tpp     = &testPlatformPath{}
 	)
 
-	tpp.tempPath, err = ioutil.TempDir(tempDir, "*-test")
+	tpp.tempPath, err = os.MkdirTemp(tempDir, "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +88,7 @@ func newTestPath(t *testing.T, invalidLogDir bool) *testPlatformPath {
 	}
 
 	tpp.configPath = filepath.Join(tpp.tempPath, "config.ini")
-	err = ioutil.WriteFile(tpp.configPath, []byte(fmt.Sprintf(exampleConfig, dynamicPort())), 0600)
+	err = os.WriteFile(tpp.configPath, []byte(fmt.Sprintf(exampleConfig, dynamicPort())), 0600)
 	if err != nil {
 		t.Fatal(err)
 	}

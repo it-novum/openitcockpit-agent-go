@@ -32,4 +32,5 @@ type resultAgent struct {
 	TemperatureUnit      string `json:"temperature_unit"`       // C (hardcoded)
 	GOOS                 string `json:"goos"`                   // Value of runtime.GOOS
 	GOARCH               string `json:"goarch"`                 // Value of runtime.ARCH
+	GOVERSION            string `json:"goversion"`              // Value of runtime.Version()
 }

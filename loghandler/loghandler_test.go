@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestLogHandler(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -49,7 +48,7 @@ func TestLogHandler(t *testing.T) {
 }
 
 func TestLogHandlerRotate(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -108,7 +107,7 @@ outerfor:
 }
 
 func TestLogHandlerCancel(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		log.Fatalln(err)
 	}

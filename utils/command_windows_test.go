@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,7 +62,7 @@ var (
 )
 
 func TestWindowsShells(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +70,7 @@ func TestWindowsShells(t *testing.T) {
 
 	writeCommand := func(command, suffix string) string {
 		res := filepath.Join(tempDir, fmt.Sprintf("testcommand.%s", suffix))
-		if err := ioutil.WriteFile(res, []byte(command), 0600); err != nil {
+		if err := os.WriteFile(res, []byte(command), 0600); err != nil {
 			t.Fatal(err)
 		}
 		return res

@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"strings"
 	"sync"
 
@@ -154,7 +155,7 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	body, err := ioutil.ReadAll(request.Body)
+	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		log.Errorln("Webserver: Could not read body: ", err)
 		http.Error(response, "could not read body", http.StatusInternalServerError)
@@ -217,7 +218,7 @@ func (w *handler) handlerCsr(response http.ResponseWriter, request *http.Request
 		return
 	}
 	log.Infoln("Webserver: CSR generated")
-	if err := ioutil.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0600); err != nil {
+	if err := os.WriteFile(w.Configuration.AutoSslCsrFile, csr, 0600); err != nil {
 		log.Infoln("Webserver: could not store csr: ", err)
 	}
 	js, err := json.Marshal(csrResponse{Csr: string(csr)})
@@ -242,7 +243,7 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 
 	log.Debugln("Webserver: Certificate update")
 
-	body, err := ioutil.ReadAll(request.Body)
+	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		log.Errorln("Webserver: Could not read body: ", err)
 		http.Error(response, "could not read body", http.StatusInternalServerError)
@@ -258,13 +259,13 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 		return
 	}
 
-	if err := ioutil.WriteFile(w.Configuration.AutoSslCrtFile, []byte(crtReq.Signed), 0600); err != nil {
+	if err := os.WriteFile(w.Configuration.AutoSslCrtFile, []byte(crtReq.Signed), 0600); err != nil {
 		log.Errorln("Webserver: Could not write certificate file: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	if err := ioutil.WriteFile(w.Configuration.AutoSslCaFile, []byte(crtReq.CA), 0600); err != nil {
+	if err := os.WriteFile(w.Configuration.AutoSslCaFile, []byte(crtReq.CA), 0600); err != nil {
 		log.Errorln("Webserver: Could not write ca certificate file: ", err)
 		http.Error(response, "internal server error", http.StatusInternalServerError)
 		return

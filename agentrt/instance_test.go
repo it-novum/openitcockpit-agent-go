@@ -3,7 +3,6 @@ package agentrt
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -61,20 +60,20 @@ command = "sleep 120"
 func writeTestConfig(t *testing.T, tempDir, config, cccLin, cccWin string) {
 	cfgPath := filepath.Join(tempDir, "config.ini")
 	cccPath := filepath.Join(tempDir, "customchecks.ini")
-	if err := ioutil.WriteFile(cfgPath, []byte(fmt.Sprintf(config, dynamicPort(), cccPath)), 0600); err != nil {
+	if err := os.WriteFile(cfgPath, []byte(fmt.Sprintf(config, dynamicPort(), cccPath)), 0600); err != nil {
 		t.Fatal(err)
 	}
 	cccConfig := cccLin
 	if runtime.GOOS == "windows" {
 		cccConfig = cccWin
 	}
-	if err := ioutil.WriteFile(cccPath, []byte(cccConfig), 0600); err != nil {
+	if err := os.WriteFile(cccPath, []byte(cccConfig), 0600); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAgentReload(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +98,7 @@ func TestAgentReload(t *testing.T) {
 }
 
 func TestAgentCancel(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +133,7 @@ func TestAgentCancel(t *testing.T) {
 }
 
 func TestAgentReloadWithLongRunningTask(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +158,7 @@ func TestAgentReloadWithLongRunningTask(t *testing.T) {
 }
 
 func TestAgentShortInterval(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -37,7 +36,7 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		}
 	}
 
-	file, err := ioutil.TempFile(os.TempDir(), "makeSomeIops")
+	file, err := os.CreateTemp(os.TempDir(), "makeSomeIops")
 	if err != nil {
 		t.Fatal(err)
 	}

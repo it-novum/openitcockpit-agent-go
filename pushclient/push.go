@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -107,7 +107,7 @@ func (p *PushClient) saveAuthConfig() error {
 	if err != nil {
 		return fmt.Errorf("could not write push client auth file: %s", err)
 	}
-	if err := ioutil.WriteFile(p.configuration.AuthFile, data, 0600); err != nil {
+	if err := os.WriteFile(p.configuration.AuthFile, data, 0600); err != nil {
 		return fmt.Errorf("could not write push client auth file: %s", err)
 	}
 	return nil
@@ -115,7 +115,7 @@ func (p *PushClient) saveAuthConfig() error {
 
 func (p *PushClient) readAuthConfig() error {
 	if utils.FileExists(p.configuration.AuthFile) {
-		data, err := ioutil.ReadFile(p.configuration.AuthFile)
+		data, err := os.ReadFile(p.configuration.AuthFile)
 		if err != nil {
 			return fmt.Errorf("could not read push client auth file: %s", err)
 		}
@@ -150,7 +150,7 @@ func (p *PushClient) httpRequest(ctx context.Context, url *url.URL, sendJson int
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return 0, errors.Wrap(err, "reading response body from server was not successful")
 	}

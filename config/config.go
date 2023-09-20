@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -14,7 +14,7 @@ import (
 )
 
 // AgentVersion as the name says
-const AgentVersion = "3.0.10"
+const AgentVersion = "3.0.11"
 
 // CustomCheck are external plugins and scripts which should be executed by the Agent
 type CustomCheck struct {
@@ -265,25 +265,25 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 }
 
 func (c *Configuration) SaveConfiguration(config []byte) error {
-	if err := ioutil.WriteFile(c.ConfigurationPath, config, 0600); err != nil {
+	if err := os.WriteFile(c.ConfigurationPath, config, 0600); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Configuration) ReadConfigurationFile() ([]byte, error) {
-	return ioutil.ReadFile(c.ConfigurationPath)
+	return os.ReadFile(c.ConfigurationPath)
 }
 
 func (c *Configuration) SaveCustomCheckConfiguration(config []byte) error {
-	if err := ioutil.WriteFile(c.CustomchecksFilePath, config, 0600); err != nil {
+	if err := os.WriteFile(c.CustomchecksFilePath, config, 0600); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Configuration) ReadCustomCheckConfiguration() []byte {
-	data, err := ioutil.ReadFile(c.CustomchecksFilePath)
+	data, err := os.ReadFile(c.CustomchecksFilePath)
 	if err != nil {
 		data = []byte{}
 	}
