@@ -45,7 +45,7 @@ pipeline {
                     stages {
                         stage('amd64') {
                             agent {
-                                docker { 
+                                docker {
                                     image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux'
@@ -60,7 +60,7 @@ pipeline {
                         }
                         stage('386') {
                             agent {
-                                docker { 
+                                docker {
                                     image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux'
@@ -75,7 +75,7 @@ pipeline {
                         }
                         stage('arm64') {
                             agent {
-                                docker { 
+                                docker {
                                     image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux-arm64'
@@ -155,7 +155,7 @@ pipeline {
                 }
                 stage('linux') {
                     agent {
-                        docker { 
+                        docker {
                             image 'golang:bookworm'
                             args "-u root --privileged -v agentgocache:/go"
                             label 'linux'
@@ -388,6 +388,7 @@ def cleanup_windows() {
 }
 
 def cleanup() {
+    sh 'git config --global --add safe.directory "$PWD"'
     sh 'git clean -f -d -x'
 }
 
@@ -513,7 +514,7 @@ def package_darwin_amd64() {
         sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
-        
+
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent/build/openitcockpit-agent-darwin-amd64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
@@ -558,7 +559,7 @@ def package_darwin_arm64() {
         sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
-        
+
         sh """/usr/local/bin/packagesbuild --package-version "${VERSION}" --reference-folder . build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/openITCOCKPIT\\ Monitoring\\ Agent.pkgproj"""
         sh """mv -f build/macos/openITCOCKPIT\\ Monitoring\\ Agent\\ arm64/build/openitcockpit-agent-darwin-arm64.pkg release/packages/${GOOS}/openitcockpit-agent-${VERSION}-darwin-${GOARCH}.pkg"""
 
