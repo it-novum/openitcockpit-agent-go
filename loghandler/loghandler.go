@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -68,8 +67,8 @@ func (h *LogHandler) closeLogFile() {
 
 func (h *LogHandler) doRotate() {
 	if h.LogRotate > 0 && h.logFile != nil {
-		baseName := path.Base(h.LogPath)
-		dirName := path.Dir(h.LogPath)
+		baseName := filepath.Base(h.LogPath)
+		dirName := filepath.Dir(h.LogPath)
 		if h.LogRotate > 1 {
 			for i := h.LogRotate - 1; i >= 1; i-- {
 				curName := filepath.Join(dirName, fmt.Sprintf("%s.%d", baseName, i))
