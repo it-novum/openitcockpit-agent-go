@@ -1,6 +1,6 @@
 module github.com/it-novum/openitcockpit-agent-go
 
-go 1.21
+go 1.20
 
 require (
 	github.com/andybalholm/crlf v0.0.0-20171020200849-670099aa064f
