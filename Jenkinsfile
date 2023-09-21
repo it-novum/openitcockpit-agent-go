@@ -46,7 +46,7 @@ pipeline {
                         stage('amd64') {
                             agent {
                                 docker { 
-                                    image 'golang:buster'
+                                    image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux'
                                 }
@@ -61,7 +61,7 @@ pipeline {
                         stage('386') {
                             agent {
                                 docker { 
-                                    image 'golang:buster'
+                                    image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux'
                                 }
@@ -76,7 +76,7 @@ pipeline {
                         stage('arm64') {
                             agent {
                                 docker { 
-                                    image 'golang:buster'
+                                    image 'golang:bookworm'
                                     args "-u root --privileged -v agentgocache:/go"
                                     label 'linux-arm64'
                                 }
@@ -156,7 +156,7 @@ pipeline {
                 stage('linux') {
                     agent {
                         docker { 
-                            image 'golang:buster'
+                            image 'golang:bookworm'
                             args "-u root --privileged -v agentgocache:/go"
                             label 'linux'
                         }
