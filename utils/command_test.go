@@ -39,6 +39,7 @@ func TestRunPingCommand(t *testing.T) {
 		Timeout: timeout,
 	})
 	if err != nil {
+		fmt.Println(err.Error())
 		t.Fatal("there was an error running ping")
 	}
 
