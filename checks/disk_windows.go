@@ -2,12 +2,13 @@ package checks
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/it-novum/openitcockpit-agent-go/safemaths"
 	"github.com/it-novum/openitcockpit-agent-go/utils"
-	"github.com/leoluk/perflib_exporter/perflib"
+	"github.com/prometheus-community/windows_exporter/perflib"
 )
 
 // Credit to:
