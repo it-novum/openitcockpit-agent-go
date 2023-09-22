@@ -10,6 +10,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
+	github.com/hectane/go-acl v0.0.0-20230122075934-ca0b05cb1adb
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-community/windows_exporter v0.23.1
 	github.com/prometheus/procfs v0.11.1

@@ -16,7 +16,6 @@
             "args": ["-c", "./config.ini", "--disable-logfile", "--debug"]
             //"args": ["-c", ".\\config.ini", "--disable-logfile", "--debug"] // Windows
             //"args": ["-c", "./config.ini", "--log", "/tmp/agent-debug.log", "--debug"] // With logfile
-
         }
     ]
 }
