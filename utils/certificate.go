@@ -9,12 +9,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	"runtime"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/hectane/go-acl"
-	"golang.org/x/sys/windows"
 )
 
 // CertPoolFromFiles reads listed file names and returns the certpool for ca or other usage
@@ -59,29 +55,10 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 		}
 
 		// Make sure that the private key can only be readed by the current user
-		if runtime.GOOS == "windows" {
-			if err := acl.Chmod(keyFile, 0660); err != nil {
-				log.Errorln("Could not set file permissions to private key file to current user only")
-				return err
-			}
-
-			if err := acl.Apply(
-				keyFile,
-				false,
-				false,
-				acl.GrantName(windows.GENERIC_READ, "SYSTEM"),
-				acl.GrantName(windows.GENERIC_WRITE, "SYSTEM"),
-			); err != nil {
-				log.Errorln("Could not set file permissions to private key file to current for SYSTEM user")
-				return err
-			}
-
-		} else {
-			// Linux / macOS
-			if err := os.Chmod(keyFile, 0600); err != nil {
-				log.Errorln("Could not set file permissions to private key file to current user only")
-				return err
-			}
+		// We have to use utils.Chmod because on Windows Systems golang was to lazy to implement propper Windows filesystem permissions
+		if err := Chmod(keyFile, 0600); err != nil {
+			log.Errorln("Could not set file permissions to private key file to current user only")
+			return err
 		}
 	}
 	return nil
