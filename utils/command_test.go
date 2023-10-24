@@ -25,8 +25,8 @@ func init() {
 		testCommands.notExecutable = `C:\\Windows\\System32\\drivers\\etc\\hosts`
 	} else {
 		testCommands.sleep = "sleep 10"
-		testCommands.ping = "ping 127.0.0.1 -c 1"
-		testCommands.pingOutput = "PING 127.0.0.1 (127.0.0.1)"
+		testCommands.ping = "echo thisImageHasNoPingCommand"
+		testCommands.pingOutput = "thisImageHasNoPingCommand"
 		testCommands.notExecutable = "/etc/hosts"
 	}
 }
@@ -39,6 +39,7 @@ func TestRunPingCommand(t *testing.T) {
 		Timeout: timeout,
 	})
 	if err != nil {
+		fmt.Println(err.Error())
 		t.Fatal("there was an error running ping")
 	}
 

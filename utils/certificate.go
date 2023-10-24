@@ -8,8 +8,9 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CertPoolFromFiles reads listed file names and returns the certpool for ca or other usage
@@ -18,7 +19,7 @@ func CertPoolFromFiles(files ...string) (*x509.CertPool, []byte, error) {
 	pem := bytes.Buffer{}
 
 	for _, fileName := range files {
-		bytes, err := ioutil.ReadFile(fileName)
+		bytes, err := os.ReadFile(fileName)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -49,7 +50,14 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 			Type:  "PRIVATE KEY",
 			Bytes: pemBytes,
 		})
-		if err := ioutil.WriteFile(keyFile, pemData, 0600); err != nil {
+		if err := os.WriteFile(keyFile, pemData, 0600); err != nil {
+			return err
+		}
+
+		// Make sure that the private key can only be readed by the current user
+		// We have to use utils.Chmod because on Windows Systems golang was to lazy to implement propper Windows filesystem permissions
+		if err := Chmod(keyFile, 0600); err != nil {
+			log.Errorln("Could not set file permissions to private key file to current user only")
 			return err
 		}
 	}
@@ -58,7 +66,7 @@ func GeneratePrivateKeyIfNotExists(keyFile string) error {
 
 // CSRFromKeyFile reads keyFile and generates a csr in PEM format
 func CSRFromKeyFile(keyFile, subject string) ([]byte, error) {
-	pemData, err := ioutil.ReadFile(keyFile)
+	pemData, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}

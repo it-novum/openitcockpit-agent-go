@@ -31,6 +31,7 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		WindowsCurrentBuild:  c.CurrentBuild,
 		GOOS:                 runtime.GOOS,
 		GOARCH:               runtime.GOARCH,
+		GOVERSION:            runtime.Version(),
 	}, nil
 }
 

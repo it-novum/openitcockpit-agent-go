@@ -6,9 +6,9 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -117,13 +117,13 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 		}
 		pem := bytes.Buffer{}
 
-		certPem, err := ioutil.ReadFile(certFilePath)
+		certPem, err := os.ReadFile(certFilePath)
 		if err != nil {
 			log.Fatalln("Webserver: Could not read server certificate: ", err)
 		}
 		pem.Write(certPem)
 		pem.WriteByte('\n')
-		keyPem, err := ioutil.ReadFile(keyFilePath)
+		keyPem, err := os.ReadFile(keyFilePath)
 		if err != nil {
 			log.Fatalln("Webserver: Could not read server key: ", err)
 		}

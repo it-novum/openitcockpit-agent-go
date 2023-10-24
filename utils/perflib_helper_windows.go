@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/leoluk/perflib_exporter/perflib"
+	"github.com/prometheus-community/windows_exporter/perflib"
 )
 
 // Ein einzelner Takt stellt hundert Nanosekunden oder ein Zehnmillionstel einer Sekunde dar. Es gibt 10.000 Ticks in einer Millisekunde (siehe TicksPerMillisecond )
@@ -65,7 +65,7 @@ const (
 )
 
 // Credit to: https://github.com/bosun-monitor/bosun/blob/master/cmd/scollector/collectors/disk_windows.go#L15-L22
-//Converts 100ns samples to 0-100 Percent samples
+// Converts 100ns samples to 0-100 Percent samples
 const WIDOWS_TICKS_TO_PERCENT = 100000
 
 // Windows timestamps starts at 1601-01-01T00:00:00Z which is 11644473600 before unix timestamps starts 1970-01-01T00:00:00Z.

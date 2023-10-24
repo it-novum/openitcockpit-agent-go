@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -226,7 +226,7 @@ func TestServerAutoTLSBasicAuthRealClient(t *testing.T) {
 		defer func() {
 			_ = res.Body.Close()
 		}()
-		if body, err := ioutil.ReadAll(res.Body); err != nil {
+		if body, err := io.ReadAll(res.Body); err != nil {
 			t.Error(body)
 		} else {
 			sbody := string(body)
@@ -279,7 +279,7 @@ func connectionTest(host string, port int, crt *certs) bool {
 		}
 		if crt.caCertPath != "" {
 			certPool := x509.NewCertPool()
-			caPEM, err := ioutil.ReadFile(crt.caCertPath)
+			caPEM, err := os.ReadFile(crt.caCertPath)
 			if err != nil {
 				log.Fatal("could not read ca file: ", err)
 			}
@@ -317,7 +317,7 @@ type certs struct {
 
 func copyTestCertificates(autoTLS bool) (*certs, error) {
 	crt := &certs{}
-	tmpDir, err := ioutil.TempDir(os.TempDir(), "*-test")
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*-test")
 	crt.tmpDir = tmpDir
 	ok := false
 	if err != nil {

@@ -34,6 +34,13 @@ func TestChecksWithDefault(t *testing.T) {
 				fmt.Println(err)
 				continue
 			}
+
+			if strings.Contains(err.Error(), "/var/run/utmp: no such file or directory") {
+				// https://github.com/shirou/gopsutil/issues/900
+				fmt.Println(err)
+				fmt.Println("The golang docker image does not have this directory. Are you using the golang docker image?")
+				continue
+			}
 		}
 
 		if err != nil {
