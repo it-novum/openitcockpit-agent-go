@@ -200,6 +200,20 @@ pipeline {
                                 build_binary()
                             }
                         }
+                        // Build for PowerPC (Little-endian)
+                        // Fedora had removed PowerPC (big endian) with Fedora 28 is it is probably mostly dead?
+                        // https://fedoraproject.org/wiki/Architectures/PowerPC
+                        // Looks like Debian still supports it (at least for now)
+                        // https://wiki.debian.org/PPC64
+                        // How ever at the moment we ignore this and only build Little-endian versions
+                        stage('ppc64le') {
+                            environment {
+                                GOARCH = 'ppc64le'
+                            }
+                            steps {
+                                build_binary()
+                            }
+                        }
                     }
                 }
                 stage('darwin') {
@@ -295,6 +309,17 @@ pipeline {
                                 ARCH = 'arm'
                                 DEBARCH = 'armhf'
                                 RPMARCH = 'armv7hl'
+                            }
+                            steps {
+                                package_linux()
+                            }
+                        }
+                        stage('ppc64le') {
+                            environment {
+                                GOARCH = 'ppc64le'
+                                ARCH = 'ppc64le'
+                                DEBARCH = 'ppc64el'
+                                RPMARCH = 'ppc64le'
                             }
                             steps {
                                 package_linux()
@@ -590,7 +615,7 @@ def publish_packages() {
             sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh repo add -force-replace openitcockpit-agent-stable packages/openitcockpit-agent_*.deb;'
 
             /* Publish apt repository */
-            sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh publish repo -distribution deb -architectures amd64,i386,arm64,armhf -passphrase-file /opt/repository/aptly/pw -batch openitcockpit-agent-stable filesystem:openitcockpit-agent:deb/stable'
+            sh '/var/lib/jenkins/openITCOCKPIT-build/aptly.sh publish repo -distribution deb -architectures amd64,i386,arm64,armhf,ppc64el -passphrase-file /opt/repository/aptly/pw -batch openitcockpit-agent-stable filesystem:openitcockpit-agent:deb/stable'
             sh "rsync -rv --delete-after /opt/repository/aptly/openitcockpit-agent/deb/stable/ www-data@srvoitcapt02.ad.it-novum.com:/var/www/html/openitcockpit-agent/deb/stable/"
 
             /* sign rpm packages */
