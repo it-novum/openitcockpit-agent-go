@@ -97,7 +97,7 @@ func (h *LogHandler) doRotate() {
 // this is a var for testing
 var midnight = func() time.Duration {
 	now := time.Now()
-	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Add(time.Hour * 24).Sub(now)
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Add(time.Hour * 24).Sub(now)
 }
 
 // Start the log handling (should NOT be run in a go routine). Reload must be called at least once
