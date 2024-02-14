@@ -98,6 +98,7 @@ type Configuration struct {
 	LaunchdServices bool  `mapstructure:"launchdservices"`
 	Alfresco        bool  `mapstructure:"alfrescostats"`
 	Libvirt         bool  `mapstructure:"libvirt"`
+	Ntp             bool  `mapstructure:"ntp"`
 
 	// Alfresco
 
@@ -146,6 +147,7 @@ var defaultValue = map[string]interface{}{
 	"systemdservices":      true,
 	"alfrescostats":        true,
 	"libvirt":              true,
+	"ntp":                  true,
 	"wineventlog-logtypes": "System,Application",
 	"wineventlog-age":      3600,
 	"wineventlog-cache":    3600,
