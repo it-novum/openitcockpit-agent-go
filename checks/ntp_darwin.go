@@ -2,12 +2,7 @@ package checks
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"os"
 	"time"
-
-	"golang.org/x/sys/unix"
 )
 
 // Run the actual check
@@ -34,7 +29,7 @@ func (c *CheckNtp) Run(ctx context.Context) (interface{}, error) {
 		Timestamp:      time.Now().Unix(),
 		TimestampMicro: time.Now().UnixMicro(),
 		SyncStatus:     false,
-		Offset:         0
+		Offset:         0,
 	}
 
 	return result, nil
