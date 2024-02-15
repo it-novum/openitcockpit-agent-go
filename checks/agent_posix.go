@@ -36,12 +36,14 @@ func (c *CheckAgent) Run(ctx context.Context) (interface{}, error) {
 		GOOS:                 runtime.GOOS,
 		GOARCH:               runtime.GOARCH,
 		GOVERSION:            runtime.Version(),
+		CheckInterval:        c.CheckInterval,
 	}, nil
 }
 
 // Configure the command or return false if the command was disabled
 func (c *CheckAgent) Configure(config *config.Configuration) (bool, error) {
 	c.Init()
+	c.CheckInterval = config.CheckInterval
 	return true, nil
 }
 

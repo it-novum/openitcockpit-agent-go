@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/prometheus-community/windows_exporter/perflib"
 )
@@ -73,7 +74,7 @@ const WIDOWS_TICKS_TO_PERCENT = 100000
 // diff from Windows epoch to unix epoch in nanoseconds:
 const WINDOWS_TO_UNIX_EPOCH = 11644473600 * 1000 * 1000
 
-// Source: https://github.com/prometheus-community/windows_exporter/blob/9723aa221885f593ac77019566c1ced9d4d746fd/collector/perflib.go#L32-L99
+// Source: https://github.com/prometheus-community/windows_exporter/blob/b5284aca85433c097fdbd64671b4c6dcaff10037/pkg/perflib/unmarshal.go#L18-L111
 // License: MIT License
 // Author: Calle Pettersson carlpett https://github.com/carlpett
 // (c) all contributors of prometheus-community/windows_exporter many thanks!
@@ -117,6 +118,17 @@ func UnmarshalObject(object *perflib.PerfObject, dst interface{}) error {
 				continue
 			}
 
+			secondValue := false
+
+			st := strings.Split(tag, ",")
+			tag = st[0]
+
+			for _, t := range st {
+				if t == "secondvalue" {
+					secondValue = true
+				}
+			}
+
 			ctr, found := counters[tag]
 			if !found {
 				fmt.Printf("missing counter %q, have %v", tag, counterMapKeys(counters))
@@ -127,6 +139,14 @@ func UnmarshalObject(object *perflib.PerfObject, dst interface{}) error {
 			}
 			if fieldType := target.Field(i).Type(); fieldType != reflect.TypeOf((*float64)(nil)).Elem() {
 				return fmt.Errorf("tagged field %v has wrong type %v, must be float64", f.Name, fieldType)
+			}
+
+			if secondValue {
+				if !ctr.Def.HasSecondValue {
+					return fmt.Errorf("tagged field %v expected a SecondValue, which was not present", f.Name)
+				}
+				target.Field(i).SetFloat(float64(ctr.SecondValue))
+				continue
 			}
 
 			switch ctr.Def.CounterType {

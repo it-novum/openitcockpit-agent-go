@@ -14,7 +14,7 @@ import (
 )
 
 // AgentVersion as the name says
-const AgentVersion = "3.0.11"
+const AgentVersion = "3.0.12"
 
 // CustomCheck are external plugins and scripts which should be executed by the Agent
 type CustomCheck struct {
@@ -98,6 +98,7 @@ type Configuration struct {
 	LaunchdServices bool  `mapstructure:"launchdservices"`
 	Alfresco        bool  `mapstructure:"alfrescostats"`
 	Libvirt         bool  `mapstructure:"libvirt"`
+	Ntp             bool  `mapstructure:"ntp"`
 
 	// Alfresco
 
@@ -146,6 +147,7 @@ var defaultValue = map[string]interface{}{
 	"systemdservices":      true,
 	"alfrescostats":        true,
 	"libvirt":              true,
+	"ntp":                  true,
 	"wineventlog-logtypes": "System,Application",
 	"wineventlog-age":      3600,
 	"wineventlog-cache":    3600,

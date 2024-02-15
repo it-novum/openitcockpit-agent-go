@@ -11,6 +11,7 @@ type CheckAgent struct {
 	LastBootTime  time.Time
 	MacVersion    string // macOS
 	KernelVersion string // Linux
+	CheckInterval int64  // Checkinterval of the Agent in Seconds
 }
 
 // Name will be used in the response as check name
@@ -33,4 +34,5 @@ type resultAgent struct {
 	GOOS                 string `json:"goos"`                   // Value of runtime.GOOS
 	GOARCH               string `json:"goarch"`                 // Value of runtime.ARCH
 	GOVERSION            string `json:"goversion"`              // Value of runtime.Version()
+	CheckInterval        int64  `json:"check_interval"`         // Check intervall in seconds of the agent
 }

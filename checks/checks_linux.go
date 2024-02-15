@@ -19,5 +19,6 @@ func getPlatformChecks() []Check {
 		&CheckSensor{},
 		&CheckDocker{},
 		&CheckSystemd{},
+		&CheckNtp{},
 	}
 }

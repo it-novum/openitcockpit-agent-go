@@ -15,5 +15,6 @@ func getPlatformChecks() []Check {
 		&CheckDocker{},
 		&CheckWinService{},
 		&CheckWindowsEventLog{},
+		&CheckNtp{},
 	}
 }
