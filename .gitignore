@@ -49,3 +49,5 @@ agent.csr
 selfsigned.crt
 selfsigned.key
 server_ca-crt
+
+__debug_bin*
