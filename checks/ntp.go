@@ -15,10 +15,11 @@ func (c *CheckNtp) Name() string {
 
 type resultNtp struct {
 	//Meta data
-	Timestamp int64 // Timestamp of the last check evaluation
+	Timestamp      int64 // Timestamp of the last check evaluation
+	TimestampMicro int64 // Timestamp of the last check evaluation in micro seconds (can be used if no NTP server is configured or on macOS)
 
 	SyncStatus bool    // Is synchronized with an NTP server
-	Offset     float64 // Time offset between local system and NTP in seconds
+	Offset     float64 // Time offset between local system and NTP server in seconds
 
 }
 

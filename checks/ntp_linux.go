@@ -41,7 +41,7 @@ func (c *CheckNtp) Run(ctx context.Context) (interface{}, error) {
 	status, err := unix.Adjtimex(timex)
 	if err != nil {
 		if errors.Is(err, os.ErrPermission) {
-			return nil, fmt.Errorf("Permission denied for timex checks %v", err)
+			return nil, fmt.Errorf("permission denied for timex checks %v", err)
 		}
 		return nil, err
 	}
@@ -57,9 +57,10 @@ func (c *CheckNtp) Run(ctx context.Context) (interface{}, error) {
 	}
 
 	result := &resultNtp{
-		Timestamp:  time.Now().Unix(),
-		SyncStatus: syncStatus,
-		Offset:     float64(timex.Offset) / divisor,
+		Timestamp:      time.Now().Unix(),
+		TimestampMicro: time.Now().UnixMicro(),
+		SyncStatus:     syncStatus,
+		Offset:         float64(timex.Offset) / divisor,
 	}
 
 	return result, nil

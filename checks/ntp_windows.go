@@ -64,17 +64,19 @@ func (c *CheckNtp) Run(ctx context.Context) (interface{}, error) {
 		}
 
 		return &resultNtp{
-			Timestamp:  time.Now().Unix(),
-			Offset:     float64(dst[0].ComputedTimeOffset / 1000000), // Converts microseconds into seconds
-			SyncStatus: syncStatus,
+			Timestamp:      time.Now().Unix(),
+			TimestampMicro: time.Now().UnixMicro(),
+			Offset:         float64(dst[0].ComputedTimeOffset / 1000000), // Converts microseconds into seconds
+			SyncStatus:     syncStatus,
 		}, nil
 
 	}
 
 	return &resultNtp{
-		Timestamp:  time.Now().Unix(),
-		Offset:     0,
-		SyncStatus: false,
+		Timestamp:      time.Now().Unix(),
+		TimestampMicro: time.Now().UnixMicro(),
+		Offset:         0,
+		SyncStatus:     false,
 	}, nil
 
 }
