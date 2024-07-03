@@ -46,6 +46,21 @@ type PushConfiguration struct {
 	AuthFile string `mapstructure:"authfile"`
 }
 
+type PrometheusConfiguration struct {
+	Enable            bool   `mapstructure:"enabled"`
+	ExportersFilePath string `mapstructure:"exporters"`
+}
+
+type PrometheusExporter struct {
+	Name     string `mapstructure:"-"`
+	Enabled  bool   `mapstructure:"enabled"`
+	Method   string `mapstructure:"method"` //http or https
+	Port     int64  `mapstructure:"port"`   // 9100
+	Path     string `mapstructure:"path"`   // /metrics
+	Interval int64  `mapstructure:"interval"`
+	Timeout  int64  `mapstructure:"timeout"`
+}
+
 // Configuration with all sub configuration structs
 type Configuration struct {
 	ConfigurationPath string `json:"-" mapstructure:"-"`
@@ -125,6 +140,10 @@ type Configuration struct {
 	Default *Configuration `json:"-"`
 
 	CustomCheckConfiguration []*CustomCheck `json:"customchecks_configuration" mapstructure:"-"`
+
+	// Prometheus Exporter / Proxy
+	Prometheus            *PrometheusConfiguration `json:"prometheus"`
+	PrometheusExporterConfiguration []*PrometheusExporter    `json:"prometheus_exporter_configuration" mapstructure:"-"`
 }
 
 var defaultValue = map[string]interface{}{
@@ -164,6 +183,11 @@ var oitcDefaultvalue = map[string]interface{}{
 	"authfile": filepath.Join(platformpaths.Get().ConfigPath(), "auth.json"),
 }
 
+var prometheusDefaultvalue = map[string]interface{}{
+	"enabled":   false,
+	"exporters": filepath.Join(platformpaths.Get().ConfigPath(), "prometheus_exporters.ini"),
+}
+
 func setConfigurationDefaults(v *viper.Viper) {
 	for key, value := range defaultValue {
 		v.SetDefault("default."+key, value)
@@ -171,6 +195,10 @@ func setConfigurationDefaults(v *viper.Viper) {
 
 	for key, value := range oitcDefaultvalue {
 		v.SetDefault("oitc."+key, value)
+	}
+
+	for key, value := range prometheusDefaultvalue {
+		v.SetDefault("prometheus."+key, value)
 	}
 }
 
@@ -208,6 +236,26 @@ func unmarshalConfiguration(v *viper.Viper) (*Configuration, error) {
 	// we have to set at least an empty array if we don't load any configuration
 	if cfg.CustomCheckConfiguration == nil {
 		cfg.CustomCheckConfiguration = []*CustomCheck{}
+	}
+
+	// Parse Prometheus Exporter configuration
+	if cfg.Prometheus.ExportersFilePath != "" && cfg.Prometheus.Enable {
+		if utils.FileExists(cfg.Prometheus.ExportersFilePath) {
+			if promExporters, err := unmarshalPrometheusExporters(cfg.Prometheus.ExportersFilePath); err != nil {
+				logger, _ := basiclog.New()
+				logger.Errorln("Configuration: could not load prometheus exporter: ", err)
+			} else {
+				cfg.PrometheusExporterConfiguration = promExporters
+			}
+		} else {
+			logger, _ := basiclog.New()
+			logger.Errorln("Configuration: Prometheus exporter configuration does not exist: ", cfg.CustomchecksFilePath)
+		}
+	}
+
+	// we have to set at least an empty array if we don't load any exporter configuration
+	if cfg.PrometheusExporterConfiguration == nil {
+		cfg.PrometheusExporterConfiguration = []*PrometheusExporter{}
 	}
 
 	return cfg, nil
@@ -266,6 +314,47 @@ func unmarshalCustomChecks(configPath string) ([]*CustomCheck, error) {
 	return checks, nil
 }
 
+func unmarshalPrometheusExporters(configPath string) ([]*PrometheusExporter, error) {
+	v := viper.New()
+	v.SetConfigFile(configPath)
+	v.SetConfigType("ini")
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	cfg := map[string]*PrometheusExporter{}
+
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+
+	exporters := make([]*PrometheusExporter, 0)
+	for name, check := range cfg {
+		if name != "default" {
+			check.Name = name
+			if check.Timeout <= 0 {
+				check.Timeout = 15
+			}
+
+			if strings.TrimSpace(check.Method) == "https" {
+				check.Method = "https"
+			} else {
+				check.Method = "http"
+			}
+
+			if strings.TrimSpace(check.Path) == "" {
+				return nil, fmt.Errorf("missing path for prometheus exporter: %s", check.Name)
+			}
+			if check.Enabled {
+				exporters = append(exporters, check)
+			}
+		}
+	}
+
+	return exporters, nil
+}
+
 func (c *Configuration) SaveConfiguration(config []byte) error {
 	if err := os.WriteFile(c.ConfigurationPath, config, 0600); err != nil {
 		return err
@@ -290,4 +379,19 @@ func (c *Configuration) ReadCustomCheckConfiguration() []byte {
 		data = []byte{}
 	}
 	return data
+}
+
+func (c *Configuration) ReadPrometheusExporterConfiguration() []byte {
+	data, err := os.ReadFile(c.Prometheus.ExportersFilePath)
+	if err != nil {
+		data = []byte{}
+	}
+	return data
+}
+
+func (c *Configuration) SavePrometheusExporterConfiguration(config []byte) error {
+	if err := os.WriteFile(c.Prometheus.ExportersFilePath, config, 0600); err != nil {
+		return err
+	}
+	return nil
 }
