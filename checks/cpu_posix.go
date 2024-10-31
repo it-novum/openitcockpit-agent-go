@@ -28,9 +28,10 @@ func calcuateBusy(t cpu.TimesStat) (float64, float64, float64) {
 
 func calculateUsagePercentage(prev, current cpu.TimesStat) float64 {
 	// This is highly inspired by
-	// https://github.com/shirou/gopsutil/blob/master/cpu/cpu.go#L107
+	// https://github.com/shirou/gopsutil/blob/aa9796d3d754cc700939236e2fa8c3a95374c61b/cpu/cpu.go#L93-L144
 	// and htop
 	// https://github.com/htop-dev/htop/blob/main/linux/LinuxProcessList.c#L1948-L2006
+	// https://github.com/htop-dev/htop/blob/4102862d12695cdf003e2d51ef6ce5984b7136d7/linux/LinuxMachine.c#L402-L512 (code got moved 31.10.2024)
 	// and yes - htop is reading /proc/stat as we do
 	prevBusy, _, prevTotal := calcuateBusy(prev)
 	currentBusy, _, currentTotal := calcuateBusy(current)
