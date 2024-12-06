@@ -42,8 +42,9 @@ type reloadConfig struct {
 
 // Server handling for http, should be created by New
 type Server struct {
-	StateInput <-chan []byte
-	Reloader   Reloader
+	StateInput      <-chan []byte
+	PrometheusInput <-chan map[string]string
+	Reloader        Reloader
 
 	reload   chan *reloadConfig
 	shutdown chan struct{}
@@ -77,9 +78,10 @@ func isAutosslEnabled(cfg *config.Configuration) bool {
 func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	log.Infoln("Webserver: Reload")
 	newHandler := &handler{
-		StateInput:    s.StateInput,
-		Configuration: cfg.Configuration,
-		Reloader:      s.Reloader,
+		StateInput:      s.StateInput,
+		PrometheusInput: s.PrometheusInput,
+		Configuration:   cfg.Configuration,
+		Reloader:        s.Reloader,
 	}
 	newHandler.Start(ctx)
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)
