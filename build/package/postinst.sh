@@ -75,6 +75,10 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
         cp /Applications/openitcockpit-agent/customchecks.ini.old /Applications/openitcockpit-agent/customchecks.ini
     fi
 
+    if [ -f /Applications/openitcockpit-agent/prometheus_exporters.ini.old ]; then
+        cp /Applications/openitcockpit-agent/prometheus_exporters.ini.old /Applications/openitcockpit-agent/prometheus_exporters.ini
+    fi
+
     if [ "$enableConfig" == "1" ]; then
         /bin/launchctl load /Library/LaunchDaemons/com.it-novum.openitcockpit.agent.plist
     fi
