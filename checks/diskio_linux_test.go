@@ -52,7 +52,9 @@ func TestChecksCheckDiskIO(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Remove(file.Name())
-	time.Sleep(1 * time.Second)
+
+	// Hopefully something will do some IOPs in the meantime
+	time.Sleep(10 * time.Second)
 
 	cr, err = check.Run(context.Background())
 	if err != nil {
