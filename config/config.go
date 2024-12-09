@@ -68,14 +68,15 @@ type Configuration struct {
 
 	// TLS
 
-	AutoSslEnabled  bool   `mapstructure:"try-autossl"`
-	CertificateFile string `mapstructure:"certfile"`
-	KeyFile         string `mapstructure:"keyfile"`
-	AutoSslFolder   string `mapstructure:"autossl-folder"`
-	AutoSslCsrFile  string `mapstructure:"autossl-csr-file"`
-	AutoSslCrtFile  string `mapstructure:"autossl-crt-file"`
-	AutoSslKeyFile  string `mapstructure:"autossl-key-file"`
-	AutoSslCaFile   string `mapstructure:"autossl-ca-file"`
+	AutoSslEnabled   bool   `mapstructure:"try-autossl"`
+	TlsSecurityLevel string `mapstructure:"tls-security-level"`
+	CertificateFile  string `mapstructure:"certfile"`
+	KeyFile          string `mapstructure:"keyfile"`
+	AutoSslFolder    string `mapstructure:"autossl-folder"`
+	AutoSslCsrFile   string `mapstructure:"autossl-csr-file"`
+	AutoSslCrtFile   string `mapstructure:"autossl-crt-file"`
+	AutoSslKeyFile   string `mapstructure:"autossl-key-file"`
+	AutoSslCaFile    string `mapstructure:"autossl-ca-file"`
 
 	// Webserver
 
@@ -142,7 +143,7 @@ type Configuration struct {
 	CustomCheckConfiguration []*CustomCheck `json:"customchecks_configuration" mapstructure:"-"`
 
 	// Prometheus Exporter / Proxy
-	Prometheus            *PrometheusConfiguration `json:"prometheus"`
+	Prometheus                      *PrometheusConfiguration `json:"prometheus"`
 	PrometheusExporterConfiguration []*PrometheusExporter    `json:"prometheus_exporter_configuration" mapstructure:"-"`
 }
 
@@ -172,6 +173,7 @@ var defaultValue = map[string]interface{}{
 	"wineventlog-cache":    3600,
 	"wineventlog-method":   "WMI",
 	"customchecks":         filepath.Join(platformpaths.Get().ConfigPath(), "customchecks.ini"),
+	"tls-security-level":   "lax",
 	"autossl-folder":       platformpaths.Get().ConfigPath(),
 	"autossl-csr-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.csr"),
 	"autossl-crt-file":     filepath.Join(platformpaths.Get().ConfigPath(), "agent.crt"),
