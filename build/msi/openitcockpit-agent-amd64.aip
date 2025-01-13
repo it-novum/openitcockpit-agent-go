@@ -2,7 +2,7 @@
 <DOCUMENT Type="Advanced Installer" CreateVersion="17.6" version="18.8.1" Modules="professional" RootPath="." Language="de" Id="{E9288F5E-2AE7-47CD-B0B1-6A57BBA9B105}">
   <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0"/>
-    <ROW Property="AI_CURRENT_YEAR" Value="2024" ValueLocId="-"/>
+    <ROW Property="AI_CURRENT_YEAR" Value="2025" ValueLocId="-"/>
     <ROW Property="AI_PRODUCTNAME_ARP" Value="[|DISPLAYNAME]"/>
     <ROW Property="AI_ThemeStyle" Value="aero" MsiKey="AI_ThemeStyle"/>
     <ROW Property="AI_UNINSTALLER" Value="msiexec.exe"/>
@@ -58,7 +58,7 @@
     <ROW File="example_config.cnf" Component_="example_config.cnf" FileName="config.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\config_example.ini" SelfReg="false"/>
     <ROW File="example_customchecks.cnf" Component_="example_config.cnf" FileName="CUSTOM~1.INI|customchecks.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\customchecks_example.ini" SelfReg="false"/>
     <ROW File="openitcockpitagent.exe" Component_="openitcockpitagent.exe" FileName="OPENIT~1.EXE|openitcockpit-agent.exe" Version="65535.65535.65535.65535" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;release\windows\amd64\openitcockpit-agent.exe" SelfReg="false" DigSign="true"/>
-    <ROW File="customchecks1.ini" Component_="example_config.cnf" FileName="PROMET~1.INI|prometheus_exporters.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\prometheus_exporters.ini" SelfReg="false"/>
+    <ROW File="customchecks1.ini" Component_="example_config.cnf" FileName="PROMET~1.INI|prometheus_exporters.ini" Attributes="0" SourcePath="&lt;AGENT_SOURCE&gt;example\prometheus_exporters_example.ini" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.AiPersistentDataComponent">
     <ROW PersistentRow="example_config.cnf" Type="0" Condition="1"/>
