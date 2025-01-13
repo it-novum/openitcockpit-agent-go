@@ -522,7 +522,7 @@ def package_windows() {
         bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
 
         bat 'move example\\prometheus_exporters_example.ini example\\prometheus_exporters_linux.ini'
-        bat 'TYPE example\\prometheus_exporters_linux.ini | MORE /P > example\\prometheus_exporters.ini'
+        bat 'TYPE example\\prometheus_exporters_linux.ini | MORE /P > example\\prometheus_exporters_example.ini'
 
         powershell "& $ADVINST /loadpathvars \"build\\msi\\PathVariables_Jenkins.apf\""
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""

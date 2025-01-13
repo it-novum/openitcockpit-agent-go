@@ -34,6 +34,7 @@ Thumbs.db
 /config.ini
 /customchecks.ini
 /customchecks.ini
+/prometheus_exporters.ini
 /__debug_bin
 /agent.log
 /auth.json
