@@ -66,14 +66,17 @@ type updateCrtRequest struct {
 }
 
 type handler struct {
-	StateInput    <-chan []byte
-	Reloader      Reloader
-	Configuration *config.Configuration
+	StateInput      <-chan []byte
+	PrometheusInput <-chan map[string]string
+	Reloader        Reloader
+	Configuration   *config.Configuration
 
-	mtx      sync.RWMutex
-	shutdown chan struct{}
-	state    []byte
-	wg       sync.WaitGroup
+	mtx             sync.RWMutex
+	prometheusMtx   sync.RWMutex
+	shutdown        chan struct{}
+	state           []byte
+	prometheusState map[string]string
+	wg              sync.WaitGroup
 
 	router              *mux.Router
 	basicAuthMiddleware *basicAuthMiddleware
@@ -95,6 +98,28 @@ func (w *handler) setState(newState []byte) {
 	w.state = newState
 }
 
+func (w *handler) getPrometheusState() map[string]string {
+	w.prometheusMtx.RLock()
+	defer w.prometheusMtx.RUnlock()
+
+	return w.prometheusState
+}
+
+func (w *handler) setPrometheusState(newState map[string]string) {
+	w.prometheusMtx.Lock()
+	defer w.prometheusMtx.Unlock()
+	log.Debugln("Webserver Prometheus: set new exporter state")
+
+	// Create a new map to have a copy
+	// https://stackoverflow.com/a/23058707/11885414
+	state := make(map[string]string, len(newState))
+	for k, v := range newState {
+		state[k] = v
+	}
+
+	w.prometheusState = state
+}
+
 func (w *handler) handleStatus(response http.ResponseWriter, _ *http.Request) {
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
@@ -104,9 +129,57 @@ func (w *handler) handleStatus(response http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+func (w *handler) handlePrometheusExporterStatus(response http.ResponseWriter, r *http.Request) {
+	exporter := r.URL.Query().Get("exporter") // ?exporter=node_exporter
+
+	if exporter == "" {
+		// Return a list of all available exporters
+		exporterNames := make([]string, 0)
+		for _, e := range w.Configuration.PrometheusExporterConfiguration {
+			exporterNames = append(exporterNames, e.Name)
+		}
+		response.Header().Add("Content-Type", "application/json")
+		response.WriteHeader(http.StatusOK)
+
+		exporterNamesJson, err := json.Marshal(exporterNames)
+		if err != nil {
+			_, err = response.Write([]byte("[]"))
+		} else {
+			_, err = response.Write(exporterNamesJson)
+		}
+
+		if err != nil {
+			log.Errorln("Webserver Prometheus: ", err)
+		}
+
+		return
+	}
+
+	// Return the output of a specific exporter
+	response.Header().Add("Content-Type", "text/plain")
+
+	exporterState := w.getPrometheusState()
+	if exporterState != nil {
+		response.WriteHeader(http.StatusOK)
+
+		if val, ok := exporterState[exporter]; ok {
+			_, err := response.Write([]byte(val))
+			if err != nil {
+				log.Errorln("Webserver: ", err)
+			}
+
+			return
+		}
+	}
+
+	response.WriteHeader(http.StatusOK)
+	response.Write([]byte("Unknown exporter"))
+}
+
 type configurationPush struct {
-	Configuration            string `json:"configuration"`
-	CustomCheckConfiguration string `json:"customcheck_configuration"`
+	Configuration                   string `json:"configuration"`
+	CustomCheckConfiguration        string `json:"customcheck_configuration"`
+	PrometheusExporterConfiguration string `json:"prometheus_exporter"`
 }
 
 func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.Request) {
@@ -131,6 +204,9 @@ func (w *handler) handleConfigRead(response http.ResponseWriter, request *http.R
 
 	data = w.Configuration.ReadCustomCheckConfiguration()
 	r.CustomCheckConfiguration = base64.StdEncoding.EncodeToString(data)
+
+	data = w.Configuration.ReadPrometheusExporterConfiguration()
+	r.PrometheusExporterConfiguration = base64.StdEncoding.EncodeToString(data)
 
 	data, err = json.Marshal(&r)
 	if err != nil {
@@ -183,6 +259,13 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 		return
 	}
 
+	prometheusData, err := base64.StdEncoding.DecodeString(r.PrometheusExporterConfiguration)
+	if err != nil {
+		log.Errorln("Webserver: Could not decode Prometheus Exporter configuration string for configuration push: ", err)
+		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
+		return
+	}
+
 	if len(cfgData) == 0 {
 		log.Errorln("Webserver: received empty configuration for configuration push: ", err)
 		http.Error(response, "invalid json or base64 string", http.StatusInternalServerError)
@@ -194,6 +277,10 @@ func (w *handler) handleConfigPush(response http.ResponseWriter, request *http.R
 	}
 
 	if err := w.Configuration.SaveCustomCheckConfiguration(cccData); err != nil {
+		log.Errorln("Webserver: ", err)
+	}
+
+	if err := w.Configuration.SavePrometheusExporterConfiguration(prometheusData); err != nil {
 		log.Errorln("Webserver: ", err)
 	}
 
@@ -282,6 +369,8 @@ func (w *handler) handlerUpdateCert(response http.ResponseWriter, request *http.
 func (w *handler) Handler() *mux.Router {
 	w.mtx.Lock()
 	defer w.mtx.Unlock()
+	w.prometheusMtx.Lock()
+	defer w.prometheusMtx.Unlock()
 	if w.router == nil {
 		routes := mux.NewRouter()
 		if log.GetLevel() == log.DebugLevel {
@@ -305,6 +394,7 @@ func (w *handler) Handler() *mux.Router {
 			routes.Use(w.basicAuthMiddleware.Middleware)
 		}
 		routes.Path("/").Methods("GET").HandlerFunc(w.handleStatus)
+		routes.Path("/prometheus").Methods("GET").HandlerFunc(w.handlePrometheusExporterStatus)
 		routes.Path("/config").Methods("GET").HandlerFunc(w.handleConfigRead)
 		routes.Path("/config").Methods("POST").HandlerFunc(w.handleConfigPush)
 		routes.Path("/autotls").Methods("GET").HandlerFunc(w.handlerCsr)
@@ -356,6 +446,8 @@ func (w *handler) Start(parentCtx context.Context) {
 				return
 			case s := <-w.StateInput:
 				w.setState(s)
+			case s := <-w.PrometheusInput:
+				w.setPrometheusState(s)
 			}
 		}
 	}()

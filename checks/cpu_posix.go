@@ -9,6 +9,8 @@ import (
 	"math"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/shirou/gopsutil/v3/cpu"
 )
 
@@ -51,6 +53,19 @@ func calculateUsagePercentage(prev, current cpu.TimesStat) float64 {
 // ctx can be canceled and runs the timeout
 // CheckResult will be serialized after the return and should not change until the next call to Run
 func (c *CheckCpu) Run(ctx context.Context) (interface{}, error) {
+
+	if c.checkInterval > 5 {
+		// The Agent executes all checks in parallel, so we need to sleep here to avoid high CPU usage / wrong measurements
+		// This is a workaround until we have a better solution
+
+		log.Debugln("CPU check will sleep for 3 seconds to avoid high CPU usage")
+		c.SleepWithContext(ctx, 3*time.Second)
+		log.Debugln("CPU check is awake now")
+
+	} else {
+		log.Infoln("checkinterval is less than 5 seconds, which could lead to high CPU usage values.")
+	}
+
 	result := &resultCpu{}
 
 	prevTimeStats, err := cpu.TimesWithContext(ctx, true)

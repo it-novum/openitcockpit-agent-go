@@ -28,18 +28,23 @@ type AgentInstance struct {
 	shutdown chan struct{}
 	reload   chan chan struct{}
 
-	stateWebserver        chan []byte
-	statePushClient       chan []byte
-	checkResult           chan map[string]interface{}
-	customCheckResultChan chan *checkrunner.CustomCheckResult
+	stateWebserver               chan []byte
+	statePushClient              chan []byte
+	prometheusStateWebserver     chan map[string]string
+	checkResult                  chan map[string]interface{}
+	customCheckResultChan        chan *checkrunner.CustomCheckResult
+	prometheusExporterResultChan chan *checkrunner.PrometheusExporterResult
 
 	customCheckResults map[string]interface{}
 
-	logHandler         *loghandler.LogHandler
-	webserver          *webserver.Server
-	checkRunner        *checkrunner.CheckRunner
-	customCheckHandler *checkrunner.CustomCheckHandler
-	pushClient         *pushclient.PushClient
+	prometheusExporterResults map[string]string
+
+	logHandler             *loghandler.LogHandler
+	webserver              *webserver.Server
+	checkRunner            *checkrunner.CheckRunner
+	customCheckHandler     *checkrunner.CustomCheckHandler
+	prometheusCheckHandler *checkrunner.PrometheusCheckHandler
+	pushClient             *pushclient.PushClient
 }
 
 func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
@@ -48,6 +53,22 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 	} else {
 		// Merge custom check results into "normal" check results
 		result["customchecks"] = a.customCheckResults
+	}
+
+	prometheus_results_data := make(map[string]string, len(a.prometheusExporterResults))
+	if a.prometheusExporterResults == nil {
+		result["prometheus_exporters"] = "[]"
+	} else {
+		// Merge the name of all available prometheus exporters into the check result
+		keys := make([]string, len(a.prometheusExporterResults))
+		i := 0
+		for k, result := range a.prometheusExporterResults {
+			keys[i] = k
+			prometheus_results_data[k] = result
+			i++
+		}
+
+		result["prometheus_exporters"] = keys
 	}
 
 	data, err := json.Marshal(result)
@@ -73,6 +94,7 @@ func (a *AgentInstance) processCheckResult(result map[string]interface{}) {
 			// we may have to give the webserver some time to think about it
 			select {
 			case a.stateWebserver <- data: // Pass checkresult json to webserver
+			case a.prometheusStateWebserver <- prometheus_results_data: // Pass Prometheus Exporter data to webserver
 			case <-t.C:
 				log.Errorln("Internal error: could not store check result for webserver: timeout")
 			}
@@ -104,6 +126,9 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 	if a.checkResult == nil {
 		a.checkResult = make(chan map[string]interface{})
 	}
+	if a.prometheusStateWebserver == nil {
+		a.prometheusStateWebserver = make(chan map[string]string)
+	}
 
 	// we do not stop the webserver on every reload for better availability during the wizard setup
 
@@ -114,8 +139,9 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 
 	if a.webserver == nil && (!cfg.OITC.Push || (cfg.OITC.Push && cfg.OITC.EnableWebserver)) {
 		a.webserver = &webserver.Server{
-			StateInput: a.stateWebserver,
-			Reloader:   a, // Set agent instance to Reloader interface for the webserver handler
+			StateInput:      a.stateWebserver,
+			PrometheusInput: a.prometheusStateWebserver,
+			Reloader:        a, // Set agent instance to Reloader interface for the webserver handler
 		}
 		a.webserver.Start(ctx)
 	}
@@ -154,6 +180,7 @@ func (a *AgentInstance) doReload(ctx context.Context, cfg *config.Configuration)
 		}
 	}
 	a.doCustomCheckReload(ctx, cfg.CustomCheckConfiguration)
+	a.doPrometheusExporterCheckReload(ctx, cfg.PrometheusExporterConfiguration)
 }
 
 func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.CustomCheck) {
@@ -167,6 +194,20 @@ func (a *AgentInstance) doCustomCheckReload(ctx context.Context, ccc []*config.C
 			ResultOutput:  a.customCheckResultChan,
 		}
 		a.customCheckHandler.Start(ctx)
+	}
+}
+
+func (a *AgentInstance) doPrometheusExporterCheckReload(ctx context.Context, exporters []*config.PrometheusExporter) {
+	if a.prometheusCheckHandler != nil {
+		a.prometheusCheckHandler.Shutdown()
+		a.prometheusCheckHandler = nil
+	}
+	if len(exporters) > 0 {
+		a.prometheusCheckHandler = &checkrunner.PrometheusCheckHandler{
+			Configuration: exporters,
+			ResultOutput:  a.prometheusExporterResultChan,
+		}
+		a.prometheusCheckHandler.Start(ctx)
 	}
 }
 
@@ -221,6 +262,8 @@ func (a *AgentInstance) Start(parent context.Context) {
 	a.checkResult = make(chan map[string]interface{})
 	a.customCheckResultChan = make(chan *checkrunner.CustomCheckResult)
 	a.customCheckResults = map[string]interface{}{}
+	a.prometheusExporterResultChan = make(chan *checkrunner.PrometheusExporterResult)
+	a.prometheusExporterResults = make(map[string]string)
 	a.shutdown = make(chan struct{})
 	a.reload = make(chan chan struct{})
 	a.logHandler = &loghandler.LogHandler{
@@ -268,7 +311,11 @@ func (a *AgentInstance) Start(parent context.Context) {
 			case res := <-a.customCheckResultChan:
 				// received check result from customcheckhandler
 				a.customCheckResults[res.Name] = res.Result
+			case res := <-a.prometheusExporterResultChan:
+				// received check result from prometheus exporter
+				a.prometheusExporterResults[res.Name] = res.Result
 			}
+
 		}
 	}()
 

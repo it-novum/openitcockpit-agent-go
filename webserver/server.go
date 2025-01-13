@@ -42,8 +42,9 @@ type reloadConfig struct {
 
 // Server handling for http, should be created by New
 type Server struct {
-	StateInput <-chan []byte
-	Reloader   Reloader
+	StateInput      <-chan []byte
+	PrometheusInput <-chan map[string]string
+	Reloader        Reloader
 
 	reload   chan *reloadConfig
 	shutdown chan struct{}
@@ -77,9 +78,10 @@ func isAutosslEnabled(cfg *config.Configuration) bool {
 func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	log.Infoln("Webserver: Reload")
 	newHandler := &handler{
-		StateInput:    s.StateInput,
-		Configuration: cfg.Configuration,
-		Reloader:      s.Reloader,
+		StateInput:      s.StateInput,
+		PrometheusInput: s.PrometheusInput,
+		Configuration:   cfg.Configuration,
+		Reloader:        s.Reloader,
 	}
 	newHandler.Start(ctx)
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Configuration.Address, cfg.Configuration.Port)
@@ -98,11 +100,51 @@ func (s *Server) doReload(ctx context.Context, cfg *reloadConfig) {
 	}
 
 	if isAutosslEnabled(cfg.Configuration) || (cfg.Configuration.KeyFile != "" && cfg.Configuration.CertificateFile != "") {
+		// the values for "intermediate" and "modern" are taken from https://ssl-config.mozilla.org/
+		// also see https://wiki.mozilla.org/Security/Server_Side_TLS for more information about client compatibility
+		var tlsConfig *tls.Config
+		switch cfg.Configuration.TlsSecurityLevel {
+		case "intermediate":
+			log.Infoln("Webserver: Using intermediate TLS configuration")
+			tlsConfig = &tls.Config{
+				MinVersion: tls.VersionTLS12,
+				CurvePreferences: []tls.CurveID{
+					tls.X25519, // Go 1.8+
+					tls.CurveP256,
+					tls.CurveP384,
+					//tls.x25519Kyber768Draft00, // Go 1.23+
+				},
+				CipherSuites: []uint16{
+					tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+					tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+				},
+			}
+		case "modern":
+			log.Infoln("Webserver: Using modern TLS configuration")
+			tlsConfig = &tls.Config{
+				MinVersion: tls.VersionTLS13,
+				CurvePreferences: []tls.CurveID{
+					tls.X25519, // Go 1.8+
+					tls.CurveP256,
+					tls.CurveP384,
+					//tls.x25519Kyber768Draft00, // Go 1.23+
+				},
+			}
+		default:
+			// Lax or any other typo in the config file
+			// Lax is the default behevior
+			log.Infoln("Webserver: Using lax TLS configuration")
+			tlsConfig = &tls.Config{
+				MinVersion: tls.VersionTLS12,
+			}
+		}
 
 		log.Debugln("Webserver: TLS enabled")
-		tlsConfig := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		}
+
 		certFilePath := cfg.Configuration.CertificateFile
 		keyFilePath := cfg.Configuration.KeyFile
 		caFilePath := ""

@@ -473,6 +473,7 @@ def package_linux() {
         sh "mkdir -p package/usr/bin package/etc/openitcockpit-agent/init release/packages/$GOOS package/var/log/openitcockpit-agent"
         sh 'cp example/config_example.ini package/etc/openitcockpit-agent/config.ini'
         sh 'cp example/customchecks_example.ini package/etc/openitcockpit-agent/customchecks.ini'
+        sh 'cp example/prometheus_exporters_example.ini package/etc/openitcockpit-agent/prometheus_exporters.ini'
         sh 'cp build/package/openitcockpit-agent.init package/etc/openitcockpit-agent/init/openitcockpit-agent.init'
         sh 'cp build/package/openitcockpit-agent.service package/etc/openitcockpit-agent/init/openitcockpit-agent.service'
         sh "cp release/linux/$GOARCH/$BINNAME package/usr/bin/$BINNAME"
@@ -520,6 +521,9 @@ def package_windows() {
         bat 'move example\\customchecks_example.ini example\\customchecks_example_linux.ini'
         bat 'TYPE example\\customchecks_example_linux.ini | MORE /P > example\\customchecks_example.ini'
 
+        bat 'move example\\prometheus_exporters_example.ini example\\prometheus_exporters_linux.ini'
+        bat 'TYPE example\\prometheus_exporters_linux.ini | MORE /P > example\\prometheus_exporters.ini'
+
         powershell "& $ADVINST /loadpathvars \"build\\msi\\PathVariables_Jenkins.apf\""
         powershell "& $ADVINST /edit \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\" \\SetVersion \"$VERSION\""
         powershell "& $ADVINST /build \"build\\msi\\openitcockpit-agent-${GOARCH}.aip\""
@@ -537,6 +541,7 @@ def package_darwin_amd64() {
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
         sh "cp example/config_example.ini package/Applications/openitcockpit-agent/config.ini"
         sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
+        sh "cp example/prometheus_exporters_example.ini package/Applications/openitcockpit-agent/prometheus_exporters.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
 
@@ -582,6 +587,7 @@ def package_darwin_arm64() {
         sh "cp release/$GOOS/$GOARCH/$BINNAME package/Applications/openitcockpit-agent/"
         sh "cp example/config_example.ini package/Applications/openitcockpit-agent/config.ini"
         sh "cp example/customchecks_example.ini package/Applications/openitcockpit-agent/customchecks.ini"
+        sh "cp example/prometheus_exporters_example.ini package/Applications/openitcockpit-agent/prometheus_exporters.ini"
         sh "cp build/package/com.it-novum.openitcockpit.agent.plist package/Applications/openitcockpit-agent/com.it-novum.openitcockpit.agent.plist"
         sh "chmod +x package/Applications/openitcockpit-agent/$BINNAME"
 

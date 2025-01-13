@@ -6,6 +6,7 @@ import (
 
 // CheckCpu gathers information about system CPU load
 type CheckCpu struct {
+	checkInterval int64
 }
 
 type cpuDetails struct {
@@ -30,5 +31,6 @@ func (c *CheckCpu) Name() string {
 
 // Configure the command or return false if the command was disabled
 func (c *CheckCpu) Configure(config *config.Configuration) (bool, error) {
+	c.checkInterval = config.CheckInterval // check interval in seconds (default: 30)
 	return config.CPU, nil
 }

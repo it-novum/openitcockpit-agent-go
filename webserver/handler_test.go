@@ -151,12 +151,17 @@ func TestWebserverHandlerConfig(t *testing.T) {
 		_ = os.RemoveAll(tmpdir)
 	}()
 	cfgPath := filepath.Join(tmpdir, "config.ini")
+	exporterPath := filepath.Join(tmpdir, "prometheus_exporters.ini")
 
 	w := &handler{
 		StateInput: state,
 		Configuration: &config.Configuration{
 			ConfigurationPath: cfgPath,
 			ConfigUpdate:      true,
+			Prometheus: &config.PrometheusConfiguration{
+				ExportersFilePath: exporterPath,
+				Enable:            false,
+			},
 		},
 	}
 
@@ -167,8 +172,9 @@ func TestWebserverHandlerConfig(t *testing.T) {
 	w.Start(ctx)
 
 	data, err := json.Marshal(&configurationPush{
-		Configuration:            base64.StdEncoding.EncodeToString([]byte(`[default]`)),
-		CustomCheckConfiguration: "",
+		Configuration:                   base64.StdEncoding.EncodeToString([]byte(`[default]`)),
+		CustomCheckConfiguration:        "",
+		PrometheusExporterConfiguration: "",
 	})
 	if err != nil {
 		t.Fatal(err)

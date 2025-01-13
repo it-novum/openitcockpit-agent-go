@@ -76,5 +76,9 @@ if [ -f /Applications/openitcockpit-agent/openitcockpit-agent ]; then
     if [ -f /Applications/openitcockpit-agent/customchecks.ini ]; then
         cp /Applications/openitcockpit-agent/customchecks.ini /Applications/openitcockpit-agent/customchecks.ini.old
     fi
+
+    if [ -f /Applications/openitcockpit-agent/prometheus_exporters.ini ]; then
+        cp /Applications/openitcockpit-agent/prometheus_exporters.ini /Applications/openitcockpit-agent/prometheus_exporters.ini.old
+    fi
     
 fi
